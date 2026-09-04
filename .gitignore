@@ -1,0 +1,25 @@
+# macOS
+.DS_Store
+
+# Xcode / Swift build artifacts
+build/
+DerivedData/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+.swiftpm/
+.build/
+
+# Xcode per-user state (track shared project, ignore user-specific)
+xcuserdata/
+*.xcuserdatad
+
+# 发布产物
+dist/
+
+# 图标中间产物（.icns 要进仓，iconset 不要）
+icon/*.iconset/
+
+# 本地开发说明与 harness 配置：含本机路径与内部约定，不进公开仓
+CLAUDE.md
+.claude/

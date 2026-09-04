@@ -1,0 +1,21 @@
+name: unrevoke
+display_name: Unrevoke
+domain: apps-mac
+function: 给 macOS 微信打防撤回补丁的图形界面 —— 自动认版本、一键打、微信更新后自动打回、出错一键还原。字节改写与重签全部委托内嵌的 wechattweak 引擎，Swift 层零业务。
+public_api: "Unrevoke.app(GUI) → Contents/Resources/wechattweak {doctor --json, patch, restore}"
+key_scripts:
+  - Sources/UnrevokeApp.swift  # @main 入口
+  - Sources/ContentView.swift  # 一屏状态卡 + 单一主按钮 + 详情 + 守护开关
+  - Sources/ViewModel.swift    # AppModel：流程编排 / 自动重打 / 通知 / 登录项
+  - Sources/Engine.swift       # 内嵌 CLI 的薄封装（并发 drain / 超时 / osascript 提权）
+  - Sources/Models.swift       # doctor --json 解码契约 + 中英文案表
+  - build.sh                   # 构建 + 内嵌引擎 + adhoc 签名 + 装 /Applications
+depends_on:
+  - WeChatTweak    # 引擎 SSOT，https://github.com/zengtianli/WeChatTweak（AGPL-3.0）
+tier: PACKAGE
+owner: tianli
+docs: ./README.md
+status: active
+origin: self
+upstream: https://github.com/zengtianli/WeChatTweak
+license: AGPL-3.0

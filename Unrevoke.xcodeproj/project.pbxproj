@@ -1,0 +1,258 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		BF0000000000000000000101 /* UnrevokeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000201 /* UnrevokeApp.swift */; };
+		BF0000000000000000000102 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000202 /* ContentView.swift */; };
+		BF0000000000000000000103 /* ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000203 /* ViewModel.swift */; };
+		BF0000000000000000000104 /* Engine.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000204 /* Engine.swift */; };
+		BF0000000000000000000105 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000205 /* Models.swift */; };
+		BF0000000000000000000106 /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000206 /* AppIcon.icns */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		BF0000000000000000000201 /* UnrevokeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnrevokeApp.swift; sourceTree = "<group>"; };
+		BF0000000000000000000202 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		BF0000000000000000000203 /* ViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModel.swift; sourceTree = "<group>"; };
+		BF0000000000000000000204 /* Engine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Engine.swift; sourceTree = "<group>"; };
+		BF0000000000000000000205 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		BF0000000000000000000206 /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = icon/AppIcon.icns; sourceTree = "<group>"; };
+		BF0000000000000000000301 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BF0000000000000000000401 /* Unrevoke.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Unrevoke.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		BF0000000000000000000501 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		BF0000000000000000000601 = {
+			isa = PBXGroup;
+			children = (
+				BF0000000000000000000603 /* Sources */,
+				BF0000000000000000000301 /* Info.plist */,
+				BF0000000000000000000206 /* AppIcon.icns */,
+				BF0000000000000000000602 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		BF0000000000000000000602 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				BF0000000000000000000401 /* Unrevoke.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		BF0000000000000000000603 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				BF0000000000000000000201 /* UnrevokeApp.swift */,
+				BF0000000000000000000202 /* ContentView.swift */,
+				BF0000000000000000000203 /* ViewModel.swift */,
+				BF0000000000000000000204 /* Engine.swift */,
+				BF0000000000000000000205 /* Models.swift */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		BF0000000000000000000701 /* Unrevoke */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BF0000000000000000000901 /* Build configuration list for PBXNativeTarget "Unrevoke" */;
+			buildPhases = (
+				BF0000000000000000000801 /* Sources */,
+				BF0000000000000000000501 /* Frameworks */,
+				BF0000000000000000000A01 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Unrevoke;
+			productName = Unrevoke;
+			productReference = BF0000000000000000000401 /* Unrevoke.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		BF0000000000000000000B01 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					BF0000000000000000000701 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = BF0000000000000000000C01 /* Build configuration list for PBXProject "Unrevoke" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = BF0000000000000000000601;
+			productRefGroup = BF0000000000000000000602 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				BF0000000000000000000701 /* Unrevoke */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		BF0000000000000000000A01 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BF0000000000000000000106 /* AppIcon.icns in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		BF0000000000000000000801 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BF0000000000000000000101 /* UnrevokeApp.swift in Sources */,
+				BF0000000000000000000102 /* ContentView.swift in Sources */,
+				BF0000000000000000000103 /* ViewModel.swift in Sources */,
+				BF0000000000000000000104 /* Engine.swift in Sources */,
+				BF0000000000000000000105 /* Models.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		BF0000000000000000000D01 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		BF0000000000000000000D02 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_OPTIMIZATION_LEVEL = s;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+			};
+			name = Release;
+		};
+		BF0000000000000000000E01 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.zengtianli.unrevoke;
+				PRODUCT_NAME = Unrevoke;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		BF0000000000000000000E02 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.zengtianli.unrevoke;
+				PRODUCT_NAME = Unrevoke;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		BF0000000000000000000C01 /* Build configuration list for PBXProject "Unrevoke" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BF0000000000000000000D01 /* Debug */,
+				BF0000000000000000000D02 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BF0000000000000000000901 /* Build configuration list for PBXNativeTarget "Unrevoke" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BF0000000000000000000E01 /* Debug */,
+				BF0000000000000000000E02 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = BF0000000000000000000B01 /* Project object */;
+}

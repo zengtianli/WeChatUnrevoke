@@ -1,0 +1,32 @@
+#!/bin/bash
+# release.sh — 打一个可以挂到 GitHub Release 上的 zip。
+#
+# 刻意不做公证：用 Apple 开发者 ID 签这个工具，等于把一个真实开发者身份绑到
+# 「修改别家客户端」上。所以产物是 adhoc 签名的，README 里写清楚怎么过 Gatekeeper。
+set -euo pipefail
+DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$DIR"
+
+./build.sh
+APP="/Applications/Unrevoke.app"
+[ -d "$APP" ] || APP="$HOME/Applications/Unrevoke.app"
+[ -d "$APP" ] || { echo "❌ 找不到已安装的 Unrevoke.app"; exit 1; }
+
+VERSION="$(plutil -extract CFBundleShortVersionString raw "$APP/Contents/Info.plist")"
+BUILD="$(plutil -extract CFBundleVersion raw "$APP/Contents/Info.plist")"
+OUT="$DIR/dist"
+mkdir -p "$OUT"
+ZIP="$OUT/Unrevoke-$VERSION-$BUILD.zip"
+rm -f "$ZIP"
+ditto -c -k --sequesterRsrc --keepParent "$APP" "$ZIP"
+
+# 自检：解出来的那份必须仍带得动引擎。压坏的包和没打包一样糟，且更难发现。
+TMP="$(mktemp -d)"
+ditto -x -k "$ZIP" "$TMP"
+"$TMP/Unrevoke.app/Contents/Resources/wechattweak" versions \
+  -c "$TMP/Unrevoke.app/Contents/Resources/config.json" >/dev/null \
+  || { echo "❌ 打出来的包里引擎跑不起来"; rm -rf "$TMP"; exit 1; }
+rm -rf "$TMP"
+
+echo "✅ $ZIP  ($(du -h "$ZIP" | cut -f1))"
+echo "   上传：gh release create v$VERSION \"$ZIP\" --title \"v$VERSION\" --notes-file <(...)"
