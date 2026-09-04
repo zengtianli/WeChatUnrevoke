@@ -114,6 +114,12 @@ final class AppModel: ObservableObject {
         if let build = fresh.build, build != knownBuild {
             defaults.set(build, forKey: Keys.lastBuild)
         }
+        // 已经打上了 = 这人要这个功能，不管是谁打的。
+        // 少了这一句，用命令行打过补丁再来装 GUI 的人（这个 fork 的现有用户基本都是）
+        // everProtected 永远是 false，自动重打永远不触发，而且**一点声音都没有**。
+        if fresh.overall == .protected {
+            defaults.set(true, forKey: Keys.everProtected)
+        }
         guard fresh.overall == .unprotected || fresh.overall == .partial else { return }
         guard autoRepatch, defaults.bool(forKey: Keys.everProtected), !isBusy else { return }
 
