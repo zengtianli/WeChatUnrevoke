@@ -7,7 +7,7 @@ set -euo pipefail
 DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$DIR"
 
-./build.sh
+CONFIG=Release UNIVERSAL=1 ./build.sh
 APP="/Applications/Unrevoke.app"
 [ -d "$APP" ] || APP="$HOME/Applications/Unrevoke.app"
 [ -d "$APP" ] || { echo "❌ 找不到已安装的 Unrevoke.app"; exit 1; }
@@ -26,6 +26,14 @@ ditto -x -k "$ZIP" "$TMP"
 "$TMP/Unrevoke.app/Contents/Resources/wechattweak" versions \
   -c "$TMP/Unrevoke.app/Contents/Resources/config.json" >/dev/null \
   || { echo "❌ 打出来的包里引擎跑不起来"; rm -rf "$TMP"; exit 1; }
+# 双架构门放在**解压出来的那份**上：要验的是别人下载到的东西，不是我这台机器上的构建产物。
+for BIN in "$TMP/Unrevoke.app/Contents/MacOS/Unrevoke" "$TMP/Unrevoke.app/Contents/Resources/wechattweak"; do
+  A="$(lipo -archs "$BIN")"
+  case "$A" in
+    *arm64*x86_64*|*x86_64*arm64*) ;;
+    *) echo "❌ $(basename "$BIN") 不是 universal（${A}）—— Intel Mac 上打不开，拒绝发布"; rm -rf "$TMP"; exit 1 ;;
+  esac
+done
 rm -rf "$TMP"
 
 echo "✅ $ZIP  ($(du -h "$ZIP" | cut -f1))"

@@ -63,10 +63,21 @@ esac
 [ -f "$ENGINE_REPO/config.json" ] || { echo "❌ 引擎仓缺 config.json"; exit 1; }
 
 # ── 2. 构建 app ──────────────────────────────────────────────────────────
-echo "→ 构建 Unrevoke…"
-xcodebuild -project Unrevoke.xcodeproj -scheme Unrevoke -configuration Debug build | tail -3
+# CONFIG=Release UNIVERSAL=1 → 发布用（release.sh 就是这么调的）。
+# 默认 Debug + 当前架构：本机迭代快。
+#
+# ⚠ UNIVERSAL 这一段不是可选的洁癖：xcodebuild 默认 ONLY_ACTIVE_ARCH=YES，在 Apple Silicon
+# 上只出 arm64。2026-09-04 第一次发 v1.0 就是这么发出去的 —— 引擎是 universal，app 本体不是，
+# Intel Mac 上根本打不开，而构建、签名、自检全绿。所以下面有一道 lipo 门。
+CONFIG="${CONFIG:-Debug}"
+XCARGS=()
+if [ "${UNIVERSAL:-0}" = "1" ]; then
+  XCARGS=(ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO)
+fi
+echo "→ 构建 Unrevoke（$CONFIG${UNIVERSAL:+, universal}）…"
+xcodebuild -project Unrevoke.xcodeproj -scheme Unrevoke -configuration "$CONFIG" ${XCARGS[@]+"${XCARGS[@]}"} build | tail -3
 
-BUILT="$(xcodebuild -project Unrevoke.xcodeproj -scheme Unrevoke -configuration Debug -showBuildSettings 2>/dev/null | awk -F' = ' '/ BUILT_PRODUCTS_DIR =/{print $2; exit}')"
+BUILT="$(xcodebuild -project Unrevoke.xcodeproj -scheme Unrevoke -configuration "$CONFIG" ${XCARGS[@]+"${XCARGS[@]}"} -showBuildSettings 2>/dev/null | awk -F' = ' '/ BUILT_PRODUCTS_DIR =/{print $2; exit}')"
 APP="$BUILT/Unrevoke.app"
 [ -d "$APP" ] || { echo "❌ 未找到产物 $APP"; exit 1; }
 
@@ -89,7 +100,14 @@ codesign --force -s - "$APP"
 "$APP/Contents/Resources/wechattweak" versions -c "$APP/Contents/Resources/config.json" >/dev/null \
   || { echo "❌ 内嵌引擎跑不起来"; exit 1; }
 BUILDS="$(python3 -c "import json,sys;print(len(json.load(open(sys.argv[1]))))" "$APP/Contents/Resources/config.json")"
-echo "   引擎 OK（${ARCHS}），补丁库收录 ${BUILDS} 个微信 build"
+APP_ARCHS="$(lipo -archs "$APP/Contents/MacOS/Unrevoke")"
+if [ "${UNIVERSAL:-0}" = "1" ]; then
+  case "$APP_ARCHS" in
+    *arm64*x86_64*|*x86_64*arm64*) : ;;
+    *) echo "❌ 要求 universal，但 app 本体只有 ${APP_ARCHS} —— 拒绝收工"; exit 1 ;;
+  esac
+fi
+echo "   引擎 OK（${ARCHS}）· app ${APP_ARCHS} · 补丁库收录 ${BUILDS} 个微信 build"
 
 DEST="/Applications/$DISPLAY_NAME.app"
 if ! rm -rf "$DEST" 2>/dev/null || ! cp -R "$APP" "$DEST" 2>/dev/null; then
