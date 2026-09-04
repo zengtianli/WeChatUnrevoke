@@ -1,9 +1,9 @@
-# Unrevoke
+# WeChatUnrevoke
 
 **English** | [中文](README_CN.md)
 
 A one-click macOS app that stops WeChat from deleting recalled messages — and stops WeChat's
-own updater from quietly undoing it.
+own updater from quietly undoing it. *(The app itself shows up as **Unrevoke** in your Dock.)*
 
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-green?style=for-the-badge)](LICENSE)
 [![Platform](https://img.shields.io/badge/macOS-15%2B-black?style=for-the-badge&logo=apple)](#requirements)
@@ -50,6 +50,15 @@ when WeChat replaces it.
 
 ## Install
 
+### Homebrew
+
+```bash
+brew install --cask zengtianli/tap/wechat-unrevoke
+xattr -dr com.apple.quarantine /Applications/Unrevoke.app
+```
+
+### Or download the release
+
 There is no signed release, because signing this with an Apple Developer ID would tie a real
 developer identity to a tool that modifies another vendor's app. So macOS will not open it
 until you say so — that is Gatekeeper doing its job on an unsigned app, not a bug:
@@ -59,14 +68,16 @@ until you say so — that is Gatekeeper doing its job on an unsigned app, not a 
 xattr -dr com.apple.quarantine /Applications/Unrevoke.app
 ```
 
+(Homebrew 6 removed `--no-quarantine`, so the `xattr` line is needed either way.)
+
 Or right-click the app → **Open** → **Open** in the dialog.
 
 If you would rather build it yourself (recommended — it is ~1000 lines of Swift):
 
 ```bash
 git clone https://github.com/zengtianli/WeChatTweak     # the engine
-git clone https://github.com/zengtianli/Unrevoke        # this app
-cd Unrevoke
+git clone https://github.com/zengtianli/WeChatUnrevoke  # this app
+cd WeChatUnrevoke
 ENGINE_REPO=../WeChatTweak ./build.sh
 ```
 

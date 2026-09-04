@@ -1,8 +1,9 @@
-# Unrevoke
+# WeChatUnrevoke
 
 [English](README.md) | **中文**
 
 macOS 上给微信打防撤回补丁的图形界面：一个按钮，自己认版本，微信更新后自己打回去。
+（app 装好后在程序坞里显示的名字是 **Unrevoke**。）
 
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-green?style=for-the-badge)](LICENSE)
 [![Platform](https://img.shields.io/badge/macOS-15%2B-black?style=for-the-badge&logo=apple)](#运行要求)
@@ -44,6 +45,15 @@ macOS 上给微信打防撤回补丁的图形界面：一个按钮，自己认�
 
 ## 安装
 
+### Homebrew
+
+```bash
+brew install --cask zengtianli/tap/wechat-unrevoke
+xattr -dr com.apple.quarantine /Applications/Unrevoke.app
+```
+
+### 或者直接下 release
+
 **没有签名版本**。用 Apple 开发者 ID 签它，等于把一个真实开发者身份绑到「修改别家客户端」的工具上，
 所以这里不做。代价是 macOS 默认不让它打开——这是 Gatekeeper 在正常工作，不是 bug：
 
@@ -52,14 +62,16 @@ macOS 上给微信打防撤回补丁的图形界面：一个按钮，自己认�
 xattr -dr com.apple.quarantine /Applications/Unrevoke.app
 ```
 
+（Homebrew 6 已经删掉了 `--no-quarantine`，所以两条路都要跑一次 `xattr`。）
+
 或者右键点 app →**打开**→ 在弹出的对话框里再点一次**打开**。
 
 **更建议自己编译**（一共 1000 行左右 Swift，看得完）：
 
 ```bash
 git clone https://github.com/zengtianli/WeChatTweak     # 引擎
-git clone https://github.com/zengtianli/Unrevoke        # 本 app
-cd Unrevoke
+git clone https://github.com/zengtianli/WeChatUnrevoke        # 本 app
+cd WeChatUnrevoke
 ENGINE_REPO=../WeChatTweak ./build.sh
 ```
 

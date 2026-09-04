@@ -16,7 +16,9 @@ VERSION="$(plutil -extract CFBundleShortVersionString raw "$APP/Contents/Info.pl
 BUILD="$(plutil -extract CFBundleVersion raw "$APP/Contents/Info.plist")"
 OUT="$DIR/dist"
 mkdir -p "$OUT"
-ZIP="$OUT/Unrevoke-$VERSION-$BUILD.zip"
+# 文件名只带版本号，不带 build ——
+# Homebrew cask 的 url 是 "…/Unrevoke-#{version}.zip" 模板，多一段 build 号就套不上。
+ZIP="$OUT/Unrevoke-$VERSION.zip"
 rm -f "$ZIP"
 ditto -c -k --sequesterRsrc --keepParent "$APP" "$ZIP"
 
