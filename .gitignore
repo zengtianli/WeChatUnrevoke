@@ -23,3 +23,6 @@ icon/*.iconset/
 # 本地开发说明与 harness 配置：含本机路径与内部约定，不进公开仓
 CLAUDE.md
 .claude/
+
+# 舰队台账：内部注册表用，不属于产品本身
+catalog.yaml

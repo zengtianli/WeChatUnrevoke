@@ -15,7 +15,9 @@ depends_on:
 tier: PACKAGE
 owner: tianli
 docs: ./README.md
-status: active
-origin: self
+lifecycle: active    # status 是废弃键名，schema 认 lifecycle
+origin: own          # 代码是我写的；引擎是 fork，住 vendor/ 那边
+form: mac            # 装进 /Applications 的 GUI —— home_of 靠它算落位
+bundle_id: io.github.zengtianli.unrevoke
 upstream: https://github.com/zengtianli/WeChatTweak
 license: AGPL-3.0
