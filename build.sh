@@ -14,12 +14,43 @@
 # 于是那个字段永远解不出来 —— 编译不报错、运行不报错,界面上那块内容直接是空的。
 # 拦不住构建的守卫是装饰,所以这里**硬失败**。逃生开关:SKIP_FLEET_GATE=1 ./build.sh
 if [ "${SKIP_FLEET_GATE:-0}" != "1" ]; then
-  _GATE="$HOME/Dev/tools/dev/lib/tools/macapp/check_codingkeys.py"
+  _GATE="${FLEET_GATE:-$HOME/Dev/tools/dev/lib/tools/macapp/check_codingkeys.py}"
+  PYTHON="${PYTHON:-$(command -v python3 || echo /opt/homebrew/bin/python3)}"
   if [ -f "$_GATE" ]; then
-    /opt/homebrew/bin/python3 "$_GATE" "$(cd "$(dirname "$0")" && pwd)" \
+    "$PYTHON" "$_GATE" "$(cd "$(dirname "$0")" && pwd)" \
       || { echo "❌ CodingKey 契约门未过,拒绝构建(临时绕过 SKIP_FLEET_GATE=1)"; exit 1; }
   else
-    echo "❌ 找不到舰队门 $_GATE —— 拒绝静默跳过(守卫哑掉与它要防的 bug 同类)"; exit 1
+    # 外部独立构建时，若未安装原作者内部舰队门，走内置轻量静态检查，保证守卫不哑掉
+    "$PYTHON" - "$(cd "$(dirname "$0")" && pwd)" <<'PYEOF' || { echo "❌ CodingKey 契约门未过,拒绝构建(临时绕过 SKIP_FLEET_GATE=1)"; exit 1; }
+import os, sys, re
+
+root = sys.argv[1]
+pattern_enum = re.compile(r'enum\s+CodingKeys\s*:\s*[^\{]*\{([^}]+)\}', re.MULTILINE | re.DOTALL)
+pattern_case = re.compile(r'case\s+([a-zA-Z0-9_,\s]+)')
+
+errors = []
+sources_dir = os.path.join(root, "Sources")
+if os.path.exists(sources_dir):
+    for dirpath, _, filenames in os.walk(sources_dir):
+        for f in filenames:
+            if f.endswith(".swift"):
+                path = os.path.join(dirpath, f)
+                with open(path, "r", encoding="utf-8") as fp:
+                    content = fp.read()
+                for enum_match in pattern_enum.finditer(content):
+                    enum_body = enum_match.group(1)
+                    for case_match in pattern_case.finditer(enum_body):
+                        cases = [c.strip().split('=')[0].strip() for c in case_match.group(1).split(',')]
+                        for case_name in cases:
+                            if '_' in case_name:
+                                errors.append(f"{path}: CodingKey '{case_name}' 含有下划线 snake_case，与 .convertFromSnakeCase 冲突")
+
+if errors:
+    print("❌ CodingKey 契约门未过:")
+    for err in errors:
+        print(f"  {err}")
+    sys.exit(1)
+PYEOF
   fi
 fi
 set -euo pipefail
@@ -34,8 +65,12 @@ if [ -f "$_XCODE_ENV_SH" ]; then
   xcode_env_use macosx
 fi
 
-DISPLAY_NAME="$(grep '^display_name:' "$DIR/catalog.yaml" | head -1 | sed 's/^display_name:[[:space:]]*//; s/[[:space:]]*#.*//')"
-[ -n "$DISPLAY_NAME" ] || { echo "❌ catalog.yaml 缺 display_name"; exit 1; }
+if [ -f "$DIR/catalog.yaml" ]; then
+  DISPLAY_NAME="$(grep '^display_name:' "$DIR/catalog.yaml" | head -1 | sed 's/^display_name:[[:space:]]*//; s/[[:space:]]*#.*//')"
+else
+  DISPLAY_NAME="Unrevoke"
+fi
+[ -n "$DISPLAY_NAME" ] || { echo "❌ 缺少 display_name"; exit 1; }
 
 # ── 1. 引擎：构建 wechattweak（universal），准备好待拷贝 ──────────────────
 ENGINE_REPO="${ENGINE_REPO:-$DIR/../../vendor/WeChatTweak}"
