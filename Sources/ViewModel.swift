@@ -251,7 +251,7 @@ final class AppModel: ObservableObject {
     func copyReport() {
         guard let s = status else { return }
         let report = """
-        Unrevoke diagnostics
+        WeChatUnrevoke diagnostics
         app version    : \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown") (\(Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown"))
         overall        : \(s.overall.rawValue)
         build          : \(s.build ?? "unknown")
@@ -306,7 +306,7 @@ final class AppModel: ObservableObject {
 
     private func notify(_ body: String) {
         let content = UNMutableNotificationContent()
-        content.title = "Unrevoke"
+        content.title = "WeChatUnrevoke"
         content.body = body
         let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
         UNUserNotificationCenter.current().add(request)

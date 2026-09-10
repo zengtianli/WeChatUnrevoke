@@ -1,177 +1,83 @@
-# WeChatUnrevoke
+<p align="center"><img src="icon/AppIcon.png" width="128" height="128" alt="WeChatUnrevoke icon"></p>
+<h1 align="center">WeChatUnrevoke</h1>
+<p align="center"><strong>Keep the message. Even after recall.</strong><br>A native SwiftUI app to check, apply and restore WeChat anti-recall patches on Mac.</p>
+<p align="center"><a href="https://github.com/zengtianli/WeChatUnrevoke/releases/latest">Download for Mac</a> · <a href="#get-started">Get started</a> · <a href="https://github.com/zengtianli/WeChatUnrevoke/issues">Report an issue</a> · <a href="README.md">中文</a></p>
+<p align="center">macOS 15+ · Apple Silicon + Intel · Free and open source · AGPL-3.0</p>
+<p align="center"><img src="docs/screenshots/main-en.png" width="620" alt="Actual WeChatUnrevoke interface"></p>
+<p align="center"><sub>Actual app screenshot using a WeChat build 269627 test copy, with anti-recall and update blocking active. Compatibility with other builds varies.</sub></p>
 
-[中文](README.md) | **English**
+## Leave the commands to the engine
 
-A one-click macOS app that stops WeChat from deleting recalled messages — and stops WeChat's
-own updater from quietly undoing it. *(The app itself shows up as **Unrevoke** in your Dock.)*
+WeChatUnrevoke reads your WeChat build and lets you manage patches through a native interface. The embedded [WeChatTweak engine](https://github.com/zengtianli/WeChatTweak) performs the work and determines protection status.
 
-[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-green?style=for-the-badge)](LICENSE)
-[![Platform](https://img.shields.io/badge/macOS-15%2B-black?style=for-the-badge&logo=apple)](#requirements)
-[![WeChat](https://img.shields.io/badge/WeChat-4.x%20%E2%9C%93-brightgreen?style=for-the-badge&logo=wechat&logoColor=white)](#supported-versions)
-
-![Unrevoke](docs/screenshots/main-en.png)
-
----
-
-## Why this exists
-
-[`sunnyyoung/WeChatTweak`](https://github.com/sunnyyoung/WeChatTweak) is the tool everyone used
-for this — 13.8k stars, 1.6k forks. Its last commit was **February 2026**, and WeChat 4.x moved
-the message logic out of the main binary into `Contents/Resources/wechat.dylib`, which broke
-every patch point it knew about.
-
-[`zengtianli/WeChatTweak`](https://github.com/zengtianli/WeChatTweak) picked that up: it locates
-the 4.x patch points, verifies the original bytes before writing anything, and re-signs the
-bundle without stripping its entitlements. **Unrevoke is the graphical front end for it.**
-
-The command line still asks a lot of you: read your build number off a table, pick the right
-subcommand, remember to re-run it after every WeChat update. This app is the answer to all
-three — it reads the build itself, gives you one button, and puts the patch back on its own
-when WeChat replaces it.
-
-## What it does
-
-| | |
+| What you need | What the app provides |
 |---|---|
-| **Reads your build itself** | No version tables. It tells you whether your exact WeChat build is covered. |
-| **One button** | The button text is always what will happen next — nothing else to decide. |
-| **Survives WeChat updates** | A WeChat update replaces the whole bundle and wipes the patch. It has done that four times. Unrevoke notices and puts it back. |
-| **Blocks the auto-updater** | Both patches go in together, so the next update can't silently revert you. |
-| **One-click restore** | Writes every patch point back to its original bytes and re-signs. WeChat returns to stock, updater and all. |
-| **Says what went wrong in plain words** | Wrong build, foreign bytes, stripped entitlements, WeChat still running — each gets an explanation and a way out, not a stack trace. |
-| **New WeChat versions without an app update** | Patch points live in a `config.json` fetched from GitHub. When a new WeChat build is covered, your installed copy picks it up on its own. |
+| Preserve recalled messages | Keep notice mode retains messages and notices in private chats. Group chats preserve messages without notices. Silent mode suppresses notices. |
+| Understand protection | Separate anti-recall, update-blocking and entitlement details. |
+| Recover after updates | Automatic reapplication only when WeChat is closed, no password is needed, and full protection previously succeeded. |
+| Work around an unsupported updater | Explicit anti-recall-only action with confirmation. |
+| Restore or troubleshoot | Restore patch bytes or copy diagnostics with retained engine output and write errors. |
 
-### Two anti-recall styles
+**No activation codes, no need to disable SIP, no kernel extension or persistent root helper.** Native SwiftUI with an embedded Swift CLI; no Python runtime. Patch configuration can update online; engine and interface changes still require app updates.
 
-- **Keep the tip** (default) — the message stays **and** one-to-one chats still show
-  "X recalled a message". You see both what was recalled and that it was.
-  Group chats keep the message but show no tip ([why](https://github.com/zengtianli/WeChatTweak)).
-- **Silent** — the message stays and no recall tip appears at all.
+## Get started
 
-## Install
+1. Download `WeChatUnrevoke-<version>.zip` from the **[latest release](https://github.com/zengtianli/WeChatUnrevoke/releases/latest)** and move **WeChatUnrevoke.app** into Applications. Quit the old version first. When upgrading from Unrevoke, move the old app to Trash to avoid duplicate launchers. Preferences and bundle ID remain unchanged.
+2. Quit WeChat, open WeChatUnrevoke, select **Keep notice**, then enable anti-recall. Enter your administrator password if macOS requests it and wait for signing to finish. Press `⌘R` to refresh.
+3. Expand **Details** and check that anti-recall is active and entitlements are intact. Open WeChat and verify with a real recalled message. Check again after WeChat updates.
 
-### Homebrew
+Or use Homebrew:
 
 ```bash
 brew install --cask zengtianli/tap/wechat-unrevoke
-xattr -dr com.apple.quarantine /Applications/Unrevoke.app
+# Upgrade: brew update && brew upgrade --cask zengtianli/tap/wechat-unrevoke
 ```
 
-### Or download the release
-
-There is no signed release, because signing this with an Apple Developer ID would tie a real
-developer identity to a tool that modifies another vendor's app. So macOS will not open it
-until you say so — that is Gatekeeper doing its job on an unsigned app, not a bug:
+Releases are ad-hoc signed, **without Apple Developer ID signing or notarization**. After confirming the download comes from this repository, remove its quarantine attribute if macOS blocks it:
 
 ```bash
-# after dragging Unrevoke.app into /Applications
-xattr -dr com.apple.quarantine /Applications/Unrevoke.app
+xattr -dr com.apple.quarantine /Applications/WeChatUnrevoke.app
 ```
 
-(Homebrew 6 removed `--no-quarantine`, so the `xattr` line is needed either way.)
+If you encounter `XAppUpdateManager not found` (for example, build `269136`), the updater layout does not match the current blocking rules. Choose the **anti-recall-only** action and confirm the update risk. This can produce a **partial** status because updates remain unblocked; it does not mean anti-recall failed. SIP can stay enabled.
 
-Or right-click the app → **Open** → **Open** in the dialog.
+For problems, copy diagnostics into an [issue](https://github.com/zengtianli/WeChatUnrevoke/issues), including app version, last engine log and last write error. Remove personal paths you do not want to publish.
 
-If you would rather build it yourself (recommended — it is ~1000 lines of Swift):
+## Requirements and limits
+
+- **macOS 15+, Apple Silicon or Intel.** Patch coverage depends on the WeChat build and architecture. A universal app does not imply every WeChat build has patches for both architectures.
+- Supported builds come from the [patch configuration](https://github.com/zengtianli/WeChatTweak/blob/master/config.json). Unsupported builds are reported explicitly.
+- Group chats preserve messages without recall notices. Private-chat notices may not appear immediately next to the original message.
+- Anti-recall-only mode leaves automatic updates enabled. Updates can remove patches.
+- This is an unofficial tool, unaffiliated with Tencent. It modifies your local WeChat client; understand and accept the associated risks. It does not read or upload chat content. Configuration updates connect to GitHub; help links open the project website.
+
+## Open source, feedback and sharing
+
+Maintained by [zengtianli](https://github.com/zengtianli). If the app helps you, **star this repository** or share the [download page](https://github.com/zengtianli/WeChatUnrevoke/releases/latest). Reproducible reports, compatibility fixes and documentation contributions are welcome.
+
+Use the [press kit](docs/press-kit.md) for the canonical name, icon, bilingual descriptions, real screenshots and download link. Screenshots demonstrate the interface, not compatibility with every WeChat build.
+
+## Build from source
 
 ```bash
-git clone https://github.com/zengtianli/WeChatTweak     # the engine
-git clone https://github.com/zengtianli/WeChatUnrevoke  # this app
+git clone https://github.com/zengtianli/WeChatTweak
+git clone https://github.com/zengtianli/WeChatUnrevoke
 cd WeChatUnrevoke
 ENGINE_REPO=../WeChatTweak ./build.sh
 ```
 
-`build.sh` builds the engine as a universal binary, embeds it in the app, ad-hoc signs, and
-installs to `/Applications`. It refuses to package a single-architecture engine and refuses to
-finish if the embedded engine won't run.
+An appropriate Xcode toolchain is required. The build embeds the universal engine and configuration, signs ad-hoc and installs the app. `release.sh` packages both architectures. The stable bundle ID is `io.github.zengtianli.unrevoke`; the display name and archive use WeChatUnrevoke.
 
-## Requirements
-
-- macOS 15 or later, Apple Silicon or Intel
-- WeChat for Mac — see [supported versions](#supported-versions)
-- No SIP changes. No kernel extensions. No background daemon running as root.
-
-## Supported versions
-
-The engine tracks WeChat by **build number** (`CFBundleVersion`), not the marketing version.
-As of now `config.json` covers 37 builds, including WeChat 4.x from `268575` through `269627`,
-plus the legacy 3.8.x line. Unrevoke shows you plainly whether your build is one of them.
-
-If yours is not covered yet, the app says so instead of guessing — see
-[the engine README](https://github.com/zengtianli/WeChatTweak) on adding a build.
-
-## How it works, and what it will not do
-
-Unrevoke itself never touches a byte of WeChat. Every read and write goes through the embedded
-`wechattweak` binary, which:
-
-1. matches your build against `config.json` and refuses if it is unknown;
-2. **checks the current bytes against the expected originals before writing** — a wrong build,
-   or another tool's patch, aborts instead of corrupting the binary;
-3. re-signs the bundle **keeping its entitlements** (the app sandbox, the team identifier, the
-   app-group grants). A bare `codesign --deep --sign -` strips those, and a WeChat without them
-   will not launch at all on a machine with SIP enabled.
-
-Nothing is sent anywhere. The only network request the app makes is fetching `config.json`
-from this project's GitHub repository, and a response that doesn't parse — or that knows fewer
-builds than the copy you already have — is discarded rather than installed.
-
-Patching needs write access to `/Applications/WeChat.app`. On WeChat 4.1.13 and later the bundle
-is owned by you and no password is asked. On older ones the app asks for an administrator
-password at the moment you press the button, through the standard macOS dialog. There is no
-privileged helper installed and nothing left running as root afterwards.
-
-## When patching fails
-
-Include **app version, last engine log, and last write error** from the diagnostics report.
-After a failed write, Unrevoke checks WeChat's actual state and retains the error until the
-next write attempt; periodic checks do not dismiss it. `unprotected` / `pristine` means the
-patch is not applied. `writable: false` means administrator authorization is required;
-SIP being enabled is not itself a failure. `update block: n/a` means this check did not obtain
-the update patch state; use the engine error to identify the cause.
-
-If the error says `XAppUpdateManager not found` (for example, build `269136`), the older
-updater does not match the current blocking rules. The default operation stops before
-writing anti-recall. Choose **Apply anti-recall only…** and confirm the update risk to use
-the engine's `--no-block-update` option. This is never an automatic fallback, and missing
-update protection is not displayed as full protection. Check the patch again after WeChat updates.
-
-## Honest limitations
-
-- **Group chats show no recall tip**, even in "keep the tip" mode. The message is kept; the tip
-  is not. The `newmsgid` that controls "which message to delete" also controls where the group
-  tip gets inserted, so zeroing it saves the message and loses the tip. Fixing that needs a
-  dynamic (lldb) location of a virtually-dispatched delete call — a separate piece of work.
-- **This is not signed or notarized.** See [Install](#install).
-- **Anti-recall can only really be tested by receiving a recalled message.** The app tells you
-  the patch is applied; it cannot tell you WeChat behaves.
-- **WeChat updates roughly twice a month.** When a build isn't covered yet, the honest answer is
-  "not yet" — and that is what the app will say.
-
-## Publishing (maintainers)
-
-Finish the GUI test on a WeChat copy, update the version in `Info.plist` and notes in
-`docs/releases/<version>.md`, and commit the reviewed changes. Then run:
+Maintainers: validate GUI writes on a WeChat copy, update the version and release notes, commit, then run:
 
 ```bash
-python3 scripts/publish.py docs/releases/1.0.2.md
+python3 scripts/publish.py docs/releases/1.0.3.md
 ```
 
-This runs regression tests, builds and packages both architectures, pushes the commit,
-creates a draft release, downloads and verifies its SHA256, publishes it, updates the
-Homebrew cask, and reads back both results. It refuses to overwrite an existing release
-version. Inspect remote state before resuming a failed stage. It does not replace GUI
-validation or automatically post issue comments.
+This runs regression tests, builds, pushes, uploads a draft, verifies the downloaded archive, publishes and updates Homebrew. It does not replace GUI validation or post issue comments.
 
-## Credits & license
+## Credits and license
 
-Built on [sunnyyoung/WeChatTweak](https://github.com/sunnyyoung/WeChatTweak). The 4.x `keeptip`
-approach follows [fzlzjerry/wechat-antirecall](https://github.com/fzlzjerry/wechat-antirecall).
+Based on [sunnyyoung/WeChatTweak](https://github.com/sunnyyoung/WeChatTweak), with the engine maintained at [zengtianli/WeChatTweak](https://github.com/zengtianli/WeChatTweak). The 4.x keep-notice approach references [fzlzjerry/wechat-antirecall](https://github.com/fzlzjerry/wechat-antirecall).
 
-**AGPL-3.0**, inherited from upstream. That means the source of everything you run must stay
-available — including the engine binary embedded in the app, whose source is
-[here](https://github.com/zengtianli/WeChatTweak).
-
-This modifies a client you do not own, which is against WeChat's terms of service. It is
-published for people who want to keep messages sent to them on their own machine. Use it on
-your own computer and at your own risk.
+Code is licensed under [AGPL-3.0](LICENSE). The icon was generated with Seedream; see [provenance](icon/provenance.json).

@@ -109,8 +109,8 @@ enum L {
 
     // 错误
     static var err_cliMissing: String { t(
-        "App 内少了 wechattweak 引擎 —— 这份 Unrevoke 没构建完整，请重新下载。",
-        "The wechattweak engine is missing from this app bundle — this build is incomplete, please download Unrevoke again.") }
+        "App 内少了 wechattweak 引擎 —— 这份 WeChatUnrevoke 没构建完整，请重新下载。",
+        "The wechattweak engine is missing from this app bundle — this build is incomplete, please download WeChatUnrevoke again.") }
     static func err_launch(_ m: String) -> String { t("引擎启动失败：\(m)", "Failed to launch the engine: \(m)") }
     static func err_decode(_ m: String, _ raw: String) -> String { t(
         "读不懂引擎的输出（\(m)）。原始输出：\(raw)",
@@ -135,14 +135,14 @@ enum L {
     static var st_unprotectedSub: String { t(
         "点下面的按钮，撤回的消息就会留在聊天里。",
         "Hit the button below and recalled messages will stay in your chat.") }
-    static var st_partial: String { t("只装了一半", "Half applied") }
+    static var st_partial: String { t("部分保护已生效", "Partially protected") }
     static var st_partialSub: String { t(
         "防撤回和「拦住自动更新」这两件事没配齐 —— 缺了后者，微信下次更新会把补丁抹掉。",
         "Anti-recall and the update block are not both in place. Without the latter, WeChat's next update wipes the patch.") }
     static var st_unsupported: String { t("这个微信版本还没收录", "This WeChat build isn't covered yet") }
     static func st_unsupportedSub(_ build: String) -> String { t(
-        "build \(build) 的补丁点还没找出来。新版本发布后我会补进 config.json，Unrevoke 会自己拉到，不用更新 app。",
-        "The patch points for build \(build) haven't been located yet. They get appended to config.json after each release and Unrevoke picks them up on its own — no app update needed.") }
+        "补丁库尚未支持 build \(build)。配置会联网更新；如果需要新的引擎规则，请安装新版 WeChatUnrevoke。",
+        "The patch configuration does not yet support build \(build). Configuration updates arrive online; new engine rules may require a WeChatUnrevoke update.") }
     static var st_broken: String { t("微信的签名权限掉了", "WeChat lost its entitlements") }
     static var st_brokenSub: String { t(
         "曾经有工具用错误的方式重签过它。这种状态下微信在开着 SIP 的机器上根本起不来，只能从 mac.weixin.qq.com 重装一次，再来打补丁。",
@@ -192,15 +192,15 @@ enum L {
     // 守护
     static var guard_title: String { t("微信更新后自动打回补丁", "Re-apply automatically after a WeChat update") }
     static var guard_note: String { t(
-        "微信整包替换式的更新会把补丁抹掉（已经发生过四次）。开着这项，Unrevoke 发现补丁没了就自己打回去；需要输密码或微信正开着时，只提醒不动手。",
-        "A WeChat update replaces the whole bundle and wipes the patch — that has happened four times. With this on, Unrevoke re-applies it the moment it notices. If a password is needed or WeChat is open, it only notifies.") }
+        "微信更新可能清除补丁。曾成功开启完整保护、无需密码且微信已退出时，自动重新应用；条件不满足时只发提醒。",
+        "Updates can remove patches. Reapply only after full protection previously succeeded, with WeChat closed and no password needed. Otherwise, only notify.") }
     static var guard_launchAtLogin: String { t("开机自动运行", "Launch at login") }
     static func notif_repatched(_ build: String) -> String { t(
         "微信更新到 \(build)，防撤回补丁已经自动打回去了。",
         "WeChat updated to \(build); the anti-recall patch has been re-applied automatically.") }
     static func notif_needsYou(_ build: String) -> String { t(
-        "微信更新到 \(build)，补丁被抹掉了。打开 Unrevoke 点一下就能装回来。",
-        "WeChat updated to \(build) and the patch is gone. Open Unrevoke and click once to put it back.") }
+        "微信更新到 \(build)，补丁被抹掉了。打开 WeChatUnrevoke 点一下就能装回来。",
+        "WeChat updated to \(build) and the patch is gone. Open WeChatUnrevoke and click once to put it back.") }
 
     // 变体
     static var variant_title: String { t("防撤回方式", "Anti-recall style") }

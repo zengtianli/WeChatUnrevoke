@@ -16,6 +16,21 @@ struct ContentView: View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
+                    HStack(spacing: 10) {
+                        Image(nsImage: NSImage(named: NSImage.applicationIconName) ?? NSImage())
+                            .resizable().frame(width: 44, height: 44)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("WeChatUnrevoke").font(.headline)
+                            Text(L.t("撤回之后，消息仍在。", "Keep the message. Even after recall."))
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Link(destination: URL(string: "https://github.com/zengtianli/WeChatUnrevoke")!) {
+                            Image(systemName: "arrow.up.right.square")
+                        }
+                        .help(L.t("项目主页与使用帮助", "Project home and help"))
+                        .accessibilityLabel(L.t("项目主页与使用帮助", "Project home and help"))
+                    }
                     statusCard
                     if let error = model.errorMessage { errorBox(error) }
                     if showsVariantPicker { variantPicker }

@@ -8,8 +8,9 @@ DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$DIR"
 
 CONFIG=Release UNIVERSAL=1 ./build.sh
-APP="/Applications/Unrevoke.app"
-[ -d "$APP" ] || APP="$HOME/Applications/Unrevoke.app"
+NAME="$(plutil -extract CFBundleName raw "$DIR/Info.plist")"
+APP="/Applications/$NAME.app"
+[ -d "$APP" ] || APP="$HOME/Applications/$NAME.app"
 [ -d "$APP" ] || { echo "❌ 找不到已安装的 Unrevoke.app"; exit 1; }
 
 VERSION="$(plutil -extract CFBundleShortVersionString raw "$APP/Contents/Info.plist")"
@@ -21,19 +22,19 @@ OUT="$DIR/dist"
 mkdir -p "$OUT"
 # 文件名只带版本号，不带 build ——
 # Homebrew cask 的 url 是 "…/Unrevoke-#{version}.zip" 模板，多一段 build 号就套不上。
-ZIP="$OUT/Unrevoke-$VERSION.zip"
+ZIP="$OUT/$NAME-$VERSION.zip"
 rm -f "$ZIP"
 ditto -c -k --sequesterRsrc --keepParent "$APP" "$ZIP"
 
 # 自检：解出来的那份必须仍带得动引擎。压坏的包和没打包一样糟，且更难发现。
 TMP="$(mktemp -d)"
 ditto -x -k "$ZIP" "$TMP"
-codesign --verify --deep --strict "$TMP/Unrevoke.app"
-"$TMP/Unrevoke.app/Contents/Resources/wechattweak" versions \
-  -c "$TMP/Unrevoke.app/Contents/Resources/config.json" >/dev/null \
+codesign --verify --deep --strict "$TMP/$NAME.app"
+"$TMP/$NAME.app/Contents/Resources/wechattweak" versions \
+  -c "$TMP/$NAME.app/Contents/Resources/config.json" >/dev/null \
   || { echo "❌ 打出来的包里引擎跑不起来"; rm -rf "$TMP"; exit 1; }
 # 双架构门放在**解压出来的那份**上：要验的是别人下载到的东西，不是我这台机器上的构建产物。
-for BIN in "$TMP/Unrevoke.app/Contents/MacOS/Unrevoke" "$TMP/Unrevoke.app/Contents/Resources/wechattweak"; do
+for BIN in "$TMP/$NAME.app/Contents/MacOS/Unrevoke" "$TMP/$NAME.app/Contents/Resources/wechattweak"; do
   A="$(lipo -archs "$BIN")"
   case "$A" in
     *arm64*x86_64*|*x86_64*arm64*) ;;

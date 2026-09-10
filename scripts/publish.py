@@ -41,7 +41,9 @@ def main():
     if run("git", "-C", engine, "status", "--porcelain", capture=True):
         raise SystemExit("The embedded engine must have a clean working tree")
     with (ROOT / "Info.plist").open("rb") as f:
-        version = plistlib.load(f)["CFBundleShortVersionString"]
+        info = plistlib.load(f)
+        version = info["CFBundleShortVersionString"]
+        name = info["CFBundleName"]
     if not re.fullmatch(r"\d+\.\d+\.\d+", version):
         raise SystemExit("Expected a numeric major.minor.patch version")
     tag = "v" + version
@@ -53,7 +55,7 @@ def main():
     run("bash", "release.sh")
     if run("git", "rev-parse", "HEAD", capture=True) != head or run("git", "status", "--porcelain", capture=True):
         raise SystemExit("Source changed during packaging; refusing to publish")
-    archive = ROOT / "dist" / f"Unrevoke-{version}.zip"
+    archive = ROOT / "dist" / f"{name}-{version}.zip"
     digest = hashlib.sha256(archive.read_bytes()).hexdigest()
     # Fetch cask before publishing; its blob SHA protects concurrent edits at update time.
     cask = json.loads(run("gh", "api", TAP, capture=True))
@@ -62,6 +64,15 @@ def main():
     cask_text, hashes = re.subn(r'^  sha256 "[^"]+"$', f'  sha256 "{digest}"', cask_text, flags=re.M)
     if (versions, hashes) != (1, 1):
         raise SystemExit("Unexpected cask layout; refusing an ambiguous update")
+    cask_text = cask_text.replace('/Unrevoke-#{version}.zip', f'/{name}-#{{version}}.zip')
+    cask_text = re.sub(r'(?<!WeChat)Unrevoke\.app', f'{name}.app', cask_text)
+    if name == 'WeChatUnrevoke':
+        cask_text = cask_text.replace('  name "Unrevoke"\n', '')
+        cask_text = cask_text.replace('Unrevoke 改的是', 'WeChatUnrevoke 修改的是')
+        cask_text = cask_text.replace('打补丁那一步会要管理员密码。', '需要时会请求管理员密码。')
+        cask_text = re.sub(r'^  desc ".*"$', '  desc "Native app to manage WeChat anti-recall patches"', cask_text, flags=re.M)
+    if f'/{name}-#{{version}}.zip' not in cask_text or f'  app "{name}.app"' not in cask_text:
+        raise SystemExit("Cask archive or app name does not match the release")
     run("git", "push", "origin", f"HEAD:refs/heads/{branch}")
     run("gh", "release", "create", tag, archive, "--repo", REPO, "--target", head,
         "--draft", "--title", tag, "--notes-file", notes)

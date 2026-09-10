@@ -13,17 +13,17 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>Unrevoke</string>
+	<string>WeChatUnrevoke</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0.2</string>
+	<string>1.0.3</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>15.0</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>Unrevoke</string>
+	<string>WeChatUnrevoke · zengtianli · AGPL-3.0</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 </dict>

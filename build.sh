@@ -34,8 +34,8 @@ if [ -f "$_XCODE_ENV_SH" ]; then
   xcode_env_use macosx
 fi
 
-DISPLAY_NAME="$(grep '^display_name:' "$DIR/catalog.yaml" | head -1 | sed 's/^display_name:[[:space:]]*//; s/[[:space:]]*#.*//')"
-[ -n "$DISPLAY_NAME" ] || { echo "❌ catalog.yaml 缺 display_name"; exit 1; }
+DISPLAY_NAME="$(plutil -extract CFBundleName raw "$DIR/Info.plist")"
+[ -n "$DISPLAY_NAME" ] || { echo "❌ Info.plist 缺 CFBundleName"; exit 1; }
 
 # ── 1. 引擎：构建 wechattweak（universal），准备好待拷贝 ──────────────────
 ENGINE_REPO="${ENGINE_REPO:-$DIR/../../vendor/WeChatTweak}"
@@ -116,3 +116,13 @@ if ! rm -rf "$DEST" 2>/dev/null || ! cp -R "$APP" "$DEST" 2>/dev/null; then
   rm -rf "$DEST"; cp -R "$APP" "$DEST"
 fi
 echo "✅ 已安装 → $DEST"
+
+# Renamed display name; keep preferences/bundle ID, archive the old installation.
+LEGACY="$(dirname "$DEST")/Unrevoke.app"
+if [ "$DISPLAY_NAME" != "Unrevoke" ] && [ -d "$LEGACY" ] \
+  && [ "$(plutil -extract CFBundleIdentifier raw "$LEGACY/Contents/Info.plist")" = "io.github.zengtianli.unrevoke" ]; then
+  ARCHIVE="$HOME/.Trash/Unrevoke-$(date +%Y%m%d-%H%M%S)"
+  mkdir -p "$ARCHIVE"
+  mv "$LEGACY" "$ARCHIVE/Unrevoke.app"
+  echo "   旧安装已归档 → $ARCHIVE/Unrevoke.app"
+fi

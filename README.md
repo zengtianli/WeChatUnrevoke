@@ -1,158 +1,105 @@
-# WeChatUnrevoke
+<p align="center">
+  <img src="icon/AppIcon.png" width="128" height="128" alt="WeChatUnrevoke 应用图标">
+</p>
+<h1 align="center">WeChatUnrevoke</h1>
+<p align="center"><strong>撤回之后，消息仍在。</strong><br>为 Mac 微信保留被撤回的消息。原生 SwiftUI，一屏完成检查、开启与还原。</p>
+<p align="center">
+  <a href="https://github.com/zengtianli/WeChatUnrevoke/releases/latest">下载 Mac 版</a> ·
+  <a href="#三步开始">使用指南</a> ·
+  <a href="https://github.com/zengtianli/WeChatUnrevoke/issues">反馈问题</a> ·
+  <a href="README_EN.md">English</a>
+</p>
+<p align="center">
+  <a href="https://github.com/zengtianli/WeChatUnrevoke/releases/latest"><img src="https://img.shields.io/github/v/release/zengtianli/WeChatUnrevoke?style=flat-square&amp;color=648569" alt="最新版本"></a>
+  <img src="https://img.shields.io/badge/macOS-15%2B-252b26?style=flat-square&amp;logo=apple" alt="macOS 15 及以上">
+  <img src="https://img.shields.io/badge/Apple_Silicon_%2B_Intel-Universal-648569?style=flat-square" alt="支持 Apple Silicon 与 Intel">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-648569?style=flat-square" alt="AGPL-3.0"></a>
+</p>
 
-**中文** | [English](README_EN.md)
+<p align="center"><img src="docs/screenshots/main-zh.png" width="620" alt="WeChatUnrevoke 中文实机界面：保护状态、保留提示、自动重打与诊断"></p>
+<p align="center"><sub>真实应用截图：微信 build 269627 测试副本，防撤回与更新拦截均已生效。其他版本支持情况以检查结果为准。</sub></p>
 
-macOS 上给微信打防撤回补丁的图形界面：一个按钮，自己认版本，微信更新后自己打回去。
-（app 装好后在程序坞里显示的名字是 **Unrevoke**。）
+## 把命令行留给引擎
 
-[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-green?style=for-the-badge)](LICENSE)
-[![Platform](https://img.shields.io/badge/macOS-15%2B-black?style=for-the-badge&logo=apple)](#运行要求)
-[![WeChat](https://img.shields.io/badge/微信-4.x%20%E2%9C%93-brightgreen?style=for-the-badge&logo=wechat&logoColor=white)](#支持哪些版本)
+不用手动查构建号，也不用记住补丁命令。WeChatUnrevoke 读取你的微信状态，告诉你能做什么，再把操作交给内嵌的 [WeChatTweak 引擎](https://github.com/zengtianli/WeChatTweak)。适合希望保留聊天消息、又想用图形界面检查和管理补丁的 Mac 用户。
 
-![Unrevoke](docs/screenshots/main-zh.png)
-
----
-
-## 为什么会有这个东西
-
-这件事大家一直用的是 [`sunnyyoung/WeChatTweak`](https://github.com/sunnyyoung/WeChatTweak)
-（13.8k star、1.6k fork）。它**最后一次提交停在 2026 年 2 月**，而微信 4.x 把消息逻辑整个搬进了
-`Contents/Resources/wechat.dylib`，它知道的补丁点全部失效。
-
-[`zengtianli/WeChatTweak`](https://github.com/zengtianli/WeChatTweak) 接了下去：找出 4.x 的补丁点、
-写入前先校验原始字节、重签名时不把 entitlements 弄丢。**Unrevoke 就是它的图形界面。**
-
-命令行版对人的要求其实不低：自己去表里查构建号、自己判断该跑哪条子命令、微信每次更新后记得再跑一遍。
-这个 app 就是这三件事的答案——它自己读版本，只给你一个按钮，微信把补丁换掉时它自己打回去。
-
-## 它做什么
-
-| | |
+| 你想做的事 | 应用怎么帮你 |
 |---|---|
-| **自己认版本** | 不用查表。你这台机器上的微信构建号在不在收录范围内，它直接告诉你。 |
-| **只有一个按钮** | 按钮上写的字就是按下去会发生的事，没有第二个决定要做。 |
-| **扛得住微信更新** | 微信是整包替换式更新，补丁会被抹掉，已经发生过四次。Unrevoke 发现了就打回去。 |
-| **顺手拦住自动更新** | 两个补丁一起打，下一次更新没法把你悄悄还原回去。 |
-| **一键还原** | 把每个补丁点写回原始字节并重新签名，微信恢复原样，自动更新也一起恢复。 |
-| **出事说人话** | 版本没收录、字节对不上、签名权限掉了、微信还开着——每种都有一句解释和一条出路，不是一堆报错。 |
-| **新微信版本不用更新 app** | 补丁点存在从 GitHub 拉取的 `config.json` 里，新版本被收录后，你装着的这份自己就能拿到。 |
+| 保留消息，也知道对方撤回过 | 默认「保留提示」：私聊保留消息和撤回提示；群聊保留消息，暂不显示提示。 |
+| 安静地保留消息 | 切换「静默」，不显示撤回提示。 |
+| 看清是否已生效 | 状态由引擎统一判定，详情分别显示防撤回、更新拦截和签名权限。 |
+| 减少更新造成的补丁丢失 | 默认尝试拦截自动更新；满足无需密码、微信已退出、曾完整保护成功等条件时，自动重新打补丁。 |
+| 旧版本拦截更新失败 | 自行选择「仅开启防撤回…」，确认更新风险后继续，不会静默降低保护。 |
+| 撤销操作或报告问题 | 一键还原补丁字节；失败后保留日志，可复制完整诊断报告。 |
 
-### 两种防撤回方式
+**免费开源，无激活码。无需关闭 SIP，无内核扩展，无常驻 root helper。** 原生 SwiftUI 前端，内嵌 Swift CLI，没有 Python 运行环境。补丁库可联网更新；引擎规则或界面有变化时仍需更新应用。
 
-- **保留提示**（默认）——消息留着，**并且**私聊里仍然显示「对方撤回了一条消息」。
-  你既知道对方撤了什么，也知道对方撤过。群聊目前只保留消息、不出提示（[原因](https://github.com/zengtianli/WeChatTweak)）。
-- **静默**——消息留着，完全不显示撤回提示。
+## 三步开始
 
-## 安装
+### 1. 安装最新版
 
-### Homebrew
+**[下载最新 Release](https://github.com/zengtianli/WeChatUnrevoke/releases/latest)** 中的 `WeChatUnrevoke-<版本>.zip`，解压后将 **WeChatUnrevoke.app** 拖进「应用程序」。升级前退出旧版；从旧名 Unrevoke 升级时，把旧 app 移到废纸篓，避免出现两个入口。设置沿用原 bundle ID，不需要重新配置。
+
+也可以使用 Homebrew：
 
 ```bash
 brew install --cask zengtianli/tap/wechat-unrevoke
-xattr -dr com.apple.quarantine /Applications/Unrevoke.app
+# 已安装：brew update && brew upgrade --cask zengtianli/tap/wechat-unrevoke
 ```
 
-### 或者直接下 release
-
-**没有签名版本**。用 Apple 开发者 ID 签它，等于把一个真实开发者身份绑到「修改别家客户端」的工具上，
-所以这里不做。代价是 macOS 默认不让它打开——这是 Gatekeeper 在正常工作，不是 bug：
+发布物采用 ad-hoc 签名，**没有 Apple 开发者 ID 签名或公证**。确认来源是本仓库后，若 macOS 阻止打开，可按以下方式移除这份 app 的下载隔离标记：
 
 ```bash
-# 把 Unrevoke.app 拖进 /Applications 之后
-xattr -dr com.apple.quarantine /Applications/Unrevoke.app
+xattr -dr com.apple.quarantine /Applications/WeChatUnrevoke.app
 ```
 
-（Homebrew 6 已经删掉了 `--no-quarantine`，所以两条路都要跑一次 `xattr`。）
+### 2. 退出微信，点击开启
 
-或者右键点 app →**打开**→ 在弹出的对话框里再点一次**打开**。
+打开 WeChatUnrevoke，保持「保留提示（推荐）」，点击「开启防撤回」。系统要求时输入管理员密码，等待重签名结束。`⌘R` 可以重新检查状态。
 
-**更建议自己编译**（一共 1000 行左右 Swift，看得完）：
+若提示 `XAppUpdateManager not found`（例如 build `269136`），是旧微信的更新模块不符合当前拦截规则。点击 **「仅开启防撤回…」**，阅读并确认更新风险后继续。无需关闭 SIP。
+
+### 3. 检查结果，再打开微信
+
+展开「详情」，确认 **防撤回：已生效**、**签名权限：完整**。仅防撤回模式可能显示 **「部分保护已生效」**，这是更新未被拦截的状态，并不等于防撤回失败。自行打开微信，用一条真实被撤回的消息验证。
+
+微信更新可能清除补丁，更新后请重新检查。遇到问题，点击「复制诊断报告」，在 [Issues](https://github.com/zengtianli/WeChatUnrevoke/issues) 附上 app version、last engine log 和 last write error；发布前删去不想公开的个人路径。
+
+## 运行要求与边界
+
+- **macOS 15+，Apple Silicon / Intel。** 补丁支持按微信 build 和架构而异，以引擎实际检查结果为准；universal 安装包不代表所有微信版本均有双架构补丁。
+- **版本覆盖由补丁库决定。** 当前随包配置见 [config.json](https://github.com/zengtianli/WeChatTweak/blob/master/config.json)。没有收录的版本会明确提示，不猜地址写入。
+- **群聊暂不显示撤回提示。** 即使选「保留提示」，群聊也只保留消息。私聊提示位置也不保证紧贴原消息。
+- **仅防撤回不拦截自动更新。** 此模式不等于完整保护；更新后需要重新检查。
+- **不是微信官方产品，与腾讯无隶属关系。** 本工具修改本机微信客户端，请自行了解并承担客户端修改和使用风险。它不读取或上传聊天内容；补丁库更新请求访问 GitHub，点击帮助链接会打开项目主页。
+
+## 开源、反馈与传播
+
+由 [zengtianli](https://github.com/zengtianli) 维护。觉得有用，可以 **Star 本仓库**，把[下载页](https://github.com/zengtianli/WeChatUnrevoke/releases/latest)分享给同样使用 Mac 微信的朋友。版本适配、可复现问题和文档改进欢迎提交 issue 或 PR。
+
+介绍本项目可直接使用 [产品素材包](docs/press-kit.md)：统一名称、图标、中英简介、真实截图和下载链接。截图展示应用功能，不代表每个微信 build 都已验证。
+
+## 从源码构建
 
 ```bash
-git clone https://github.com/zengtianli/WeChatTweak     # 引擎
-git clone https://github.com/zengtianli/WeChatUnrevoke        # 本 app
+git clone https://github.com/zengtianli/WeChatTweak
+git clone https://github.com/zengtianli/WeChatUnrevoke
 cd WeChatUnrevoke
 ENGINE_REPO=../WeChatTweak ./build.sh
 ```
 
-`build.sh` 会把引擎编成 universal 二进制、嵌进 app、adhoc 签名、装到 `/Applications`。
-引擎不是双架构它拒绝打包，嵌进去的引擎跑不起来它拒绝收工。
+需要适用的 Xcode 工具链。`build.sh` 构建并嵌入 universal 引擎、打包配置、ad-hoc 签名并安装应用；双架构发布使用 `release.sh`。bundle ID 保持 `io.github.zengtianli.unrevoke`，显示名与发行包统一为 WeChatUnrevoke。
 
-## 运行要求
-
-- macOS 15 及以上，Apple Silicon 或 Intel 都行
-- Mac 版微信，见[支持哪些版本](#支持哪些版本)
-- **不用关 SIP、不装内核扩展、不留任何 root 常驻进程**
-
-## 支持哪些版本
-
-引擎按**构建号**（`CFBundleVersion`）匹配，不是营销版本号。目前 `config.json` 收录 37 个构建号，
-覆盖微信 4.x 的 `268575` 到 `269627`，外加老的 3.8.x 线。你的版本在不在里面，app 会直接写在界面上。
-
-还没收录的，它会明说「还没有」，而不是猜一个地址写下去。补新版本的方法见
-[引擎仓库的 README](https://github.com/zengtianli/WeChatTweak)。
-
-## 它怎么工作，以及它不会做什么
-
-Unrevoke 自己一个字节都不碰微信。所有读写都经内嵌的 `wechattweak` 二进制，它会：
-
-1. 拿你的构建号去 `config.json` 里匹配，认不出来就拒绝动手；
-2. **写入前先把当前字节和「预期的原始字节」对一遍**——版本不对、或者别的工具已经改过，
-   直接中止，而不是把二进制写坏；
-3. 重签名时**保住 entitlements**（沙盒、team identifier、app-group 授权）。
-   直接 `codesign --deep --sign -` 会把这些剥掉，而丢了 entitlements 的微信在开着 SIP 的机器上
-   **根本起不来**——这正是上游 issue #1038 里那批人遇到的事。
-
-**不往任何地方发送东西。** 全程唯一的网络请求是从本项目的 GitHub 仓库拉 `config.json`；
-拉回来解不成 JSON、或者收录的版本比你手上这份还少，就丢弃不用。
-
-打补丁需要对 `/Applications/WeChat.app` 的写权限。微信 4.1.13 起这个包归你所有，不用输密码；
-更老的版本会在你按下按钮的那一刻弹系统标准授权框要一次管理员密码。**不装特权 helper，
-事后不留任何 root 进程。**
-
-## 打补丁失败时
-
-请复制诊断报告中的 **app version、last engine log 和 last write error**。
-写入失败后，Unrevoke 会重新检查微信的实际状态，并保留错误直到下一次写入尝试；
-定时检查不会把失败提示清掉。`unprotected` / `pristine` 表示补丁尚未生效，
-`writable: false` 表示需要管理员授权，SIP 开启本身不是失败原因。
-`update block: n/a` 表示本次检查未获得更新拦截点的状态，需要结合引擎错误定位原因。
-
-如果错误是 `XAppUpdateManager not found`（例如 build `269136`），说明旧微信的更新模块
-不符合当前拦截规则，默认操作会在写入防撤回补丁前中止。可点击 **「仅开启防撤回…」**，
-阅读并确认更新风险后继续。此操作使用引擎的 `--no-block-update`；不会自动降级，
-也不会把缺少更新拦截的状态显示成完整保护。微信更新后请重新检查补丁。
-
-## 老实说的几条限制
-
-- **群聊不出撤回提示**，即便选了「保留提示」。消息保住了，提示没有。
-  根本矛盾是 `newmsgid` 同时控制「删哪条消息」和「群聊提示插在哪」，清零它保住了消息也丢了提示。
-  要修得动态（lldb）定位一个虚派发的删除调用，那是另一个工程。
-- **没有签名、没有公证**，见[安装](#安装)。
-- **防撤回唯一的真实验证方式是收到一条被撤回的消息。** app 只能告诉你补丁打上了，
-  没法替你验证微信的行为。
-- **微信大约每月更新两次。** 遇上还没收录的版本，诚实的回答就是「还没有」，
-  界面上写的也会是这句。
-
-## 发布流程（维护者）
-
-完成 GUI 副本验收、更新 `Info.plist` 版本和 `docs/releases/<版本>.md`，提交审核过的改动后运行：
+维护者发布前先做 GUI 副本验收，更新 `Info.plist` 版本和 `docs/releases/<版本>.md`，提交后运行：
 
 ```bash
-python3 scripts/publish.py docs/releases/1.0.2.md
+python3 scripts/publish.py docs/releases/1.0.3.md
 ```
 
-该入口执行回归测试、双架构构建与打包、推送当前提交、创建草稿 Release、下载比对 SHA256，
-校验通过后公开发布并更新 Homebrew cask，再回读核验。已有同版本 Release 时不会覆盖；
-中途失败会报出阶段，检查远端状态后再恢复。不会替代 GUI 验收或自动回复 issue。
+发布入口运行回归测试、构建、打包、推送、草稿上传、下载校验、公开发布及 Homebrew 同步。已有同版本 Release 不会覆盖；不替代实机验收，也不会自动发送 issue 评论。
 
 ## 致谢与许可
 
-基于 [sunnyyoung/WeChatTweak](https://github.com/sunnyyoung/WeChatTweak)。4.x 的 `keeptip`
-思路参考了 [fzlzjerry/wechat-antirecall](https://github.com/fzlzjerry/wechat-antirecall)。
+基于 [sunnyyoung/WeChatTweak](https://github.com/sunnyyoung/WeChatTweak)，引擎维护于 [zengtianli/WeChatTweak](https://github.com/zengtianli/WeChatTweak)。4.x 保留提示思路参考 [fzlzjerry/wechat-antirecall](https://github.com/fzlzjerry/wechat-antirecall)。感谢提供兼容性反馈与复现日志的使用者。
 
-**AGPL-3.0**，继承自上游。这意味着你运行的每一部分都必须能拿到源码——包括嵌在 app 里的引擎，
-它的源码在[这里](https://github.com/zengtianli/WeChatTweak)。
-
-这个工具修改的是不属于你的客户端，违反微信的服务条款。它是给那些想把别人发给自己的消息
-留在自己电脑上的人用的。在你自己的电脑上用，风险自负。
+代码采用 [AGPL-3.0](LICENSE)。图标由 Seedream 生成，来源记录见 [icon/provenance.json](icon/provenance.json)。
