@@ -40,6 +40,7 @@ final class AppModel: ObservableObject {
     private let defaults = UserDefaults.standard
     private let confirmAction: ((String, String, String) -> Bool)?
     private var lastWriteError: String?
+    private var writeGeneration = 0
     private var timer: Timer?
     private var observers: [NSObjectProtocol] = []
 
@@ -94,7 +95,11 @@ final class AppModel: ObservableObject {
 
     // MARK: - 只读检查
 
-    func refresh() async {
+    func refresh(duringWrite: Bool = false) async {
+        // Signing temporarily changes entitlements. Background checks must not
+        // publish an intermediate bundle state or overwrite the final write check.
+        guard !isBusy || duringWrite else { return }
+        let generation = writeGeneration
         guard FileManager.default.fileExists(atPath: Engine.weChatPath) else {
             status = nil
             errorMessage = L.err_noWeChat
@@ -102,11 +107,13 @@ final class AppModel: ObservableObject {
         }
         do {
             let fresh = try await engine.doctor()
+            guard generation == writeGeneration, !isBusy || duringWrite else { return }
             let previous = status
             status = fresh
             errorMessage = lastWriteError
             await reactToChange(from: previous, to: fresh)
         } catch {
+            guard generation == writeGeneration, !isBusy || duringWrite else { return }
             errorMessage = error.localizedDescription
         }
     }
@@ -203,6 +210,7 @@ final class AppModel: ObservableObject {
     private func write(message: String, _ body: @escaping (DoctorStatus) async throws -> String) async -> Bool {
         guard !isBusy else { return false }
         isBusy = true
+        writeGeneration += 1
         busyMessage = message
         lastWriteError = nil
         errorMessage = nil
@@ -220,7 +228,7 @@ final class AppModel: ObservableObject {
             lastWriteError = error.localizedDescription
             errorMessage = lastWriteError
         }
-        await refresh()
+        await refresh(duringWrite: true)
         return succeeded
     }
 

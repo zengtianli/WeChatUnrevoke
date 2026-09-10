@@ -1,0 +1,114 @@
+{
+  "enable": [
+    {
+      "source": "enable-1.0.4.mov",
+      "start": 0,
+      "duration": 10,
+      "title": "01 · 开启防撤回",
+      "line1": "退出微信，点击「开启防撤回」",
+      "line2": "保持「保留提示（推荐）」；需要时输入 Mac 管理员密码。"
+    },
+    {
+      "source": "enable-1.0.4.mov",
+      "start": 10,
+      "duration": 4,
+      "title": "01 · 开启防撤回",
+      "line1": "正在重新签名，请不要退出",
+      "line2": "接下来省略中间等待；真实耗时因电脑而异。"
+    },
+    {
+      "source": "enable-1.0.4.mov",
+      "start": 127,
+      "duration": 10,
+      "title": "01 · 开启防撤回",
+      "line1": "看到绿色「防撤回已生效」",
+      "line2": "已跳过等待；这是引擎完成检查后的真实结果。"
+    },
+    {
+      "source": "enable-1.0.4.mov",
+      "start": 199,
+      "duration": 13,
+      "title": "01 · 开启防撤回",
+      "line1": "展开「详情」，确认两项补丁与签名权限",
+      "line2": "然后打开微信，用一条真实撤回的消息验证效果。"
+    }
+  ],
+  "partial": [
+    {
+      "source": "partial-start.mov",
+      "start": 0,
+      "duration": 8,
+      "title": "02 · 仅开启防撤回",
+      "line1": "更新拦截失败时，选择「仅开启防撤回…」",
+      "line2": "这里演示操作流程，不是复现 build 269136 的原始报错。"
+    },
+    {
+      "source": "partial-confirm.mov",
+      "start": 0,
+      "duration": 7,
+      "dialog": true,
+      "title": "02 · 仅开启防撤回",
+      "line1": "阅读风险后，确认「仅开启防撤回…」",
+      "line2": "此模式不会拦截微信自动更新；更新可能清除补丁。"
+    },
+    {
+      "source": "partial-busy.mov",
+      "start": 0,
+      "duration": 4,
+      "title": "02 · 仅开启防撤回",
+      "line1": "等待重签名，请不要退出",
+      "line2": "接下来省略等待，直接看完成后的真实状态。"
+    },
+    {
+      "source": "partial-result.mov",
+      "start": 0,
+      "duration": 7,
+      "title": "02 · 仅开启防撤回",
+      "line1": "「部分保护已生效」不等于防撤回失败",
+      "line2": "展开「详情」，分别查看两项补丁。"
+    },
+    {
+      "source": "partial-details.mov",
+      "start": 1,
+      "duration": 10,
+      "title": "02 · 仅开启防撤回",
+      "line1": "确认防撤回已生效、签名权限完整",
+      "line2": "更新拦截显示「未打」；微信更新后请重新检查。"
+    }
+  ],
+  "restore": [
+    {
+      "source": "restore-1.0.4.mov",
+      "start": 0,
+      "duration": 7,
+      "title": "03 · 检查与还原微信",
+      "line1": "先检查详情，想撤销时点击右下角「还原微信」",
+      "line2": "还原会撤销补丁，不会找回过去已经被撤回的消息。"
+    },
+    {
+      "source": "restore-confirm.mov",
+      "start": 0,
+      "duration": 6,
+      "dialog": true,
+      "title": "03 · 检查与还原微信",
+      "line1": "在系统确认框里点击「还原微信」",
+      "line2": "确认后请等待重签名；不要退出应用。"
+    },
+    {
+      "source": "restore-1.0.4.mov",
+      "start": 72,
+      "duration": 5,
+      "title": "03 · 检查与还原微信",
+      "line1": "正在还原，请等待完成",
+      "line2": "接下来省略中间等待；真实耗时因电脑而异。"
+    },
+    {
+      "source": "partial-start.mov",
+      "start": 0,
+      "duration": 8,
+      "title": "03 · 检查与还原微信",
+      "line1": "状态回到「还没打补丁」",
+      "line2": "还原后状态补拍：防撤回已撤销，需要时可再次开启。"
+    }
+  ]
+}

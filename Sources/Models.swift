@@ -173,8 +173,8 @@ enum L {
     static var flow_working: String { t("正在处理…", "Working…") }
     static var flow_withoutUpdateTitle: String { t("不拦截微信自动更新？", "Leave WeChat auto-updates enabled?") }
     static var flow_withoutUpdateBody: String { t(
-        "本次只写入防撤回补丁，不拦截自动更新。适用于旧微信找不到更新拦截点的情况。\n\n微信下次更新可能清除补丁；界面仍可能显示「只装了一半」，不会显示完整保护。请更新后重新检查。要继续吗？",
-        "This attempt applies anti-recall without blocking auto-updates. Use it when an older WeChat build has no supported update patch points.\n\nA WeChat update may remove the patch. The status may remain Half applied rather than fully protected. Check again after updates. Continue?") }
+        "本次只写入防撤回补丁，不拦截自动更新。适用于旧微信找不到更新拦截点的情况。\n\n微信下次更新可能清除补丁；界面仍可能显示「部分保护已生效」，不会显示完整保护。请更新后重新检查。要继续吗？",
+        "This attempt applies anti-recall without blocking auto-updates. Use it when an older WeChat build has no supported update patch points.\n\nA WeChat update may remove the patch. The status may remain Partially protected rather than fully protected. Check again after updates. Continue?") }
     static var flow_withoutUpdateNote: String { t(
         "更新拦截失败时可选。微信更新可能清除补丁；不会自动跳过拦截。",
         "Use if update blocking fails. WeChat updates may remove the patch; skipping the update block requires your choice.") }

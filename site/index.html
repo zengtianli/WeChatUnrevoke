@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WeChatUnrevoke — Mac 微信防撤回，下载就能开始</title>
+  <meta name="description" content="免费的 Mac 微信防撤回工具。直接下载安装，跟着真实演示视频开启、检查或还原。原生 SwiftUI，无需关闭 SIP。">
+  <meta name="theme-color" content="#f6f8f3">
+  <link rel="canonical" href="https://unrevoke.tianli.cyou/">
+  <meta property="og:title" content="WeChatUnrevoke · 撤回之后，消息仍在。">
+  <meta property="og:description" content="免费的 Mac 微信防撤回工具。直接下载，跟着图解和真实视频一步一步操作。">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://unrevoke.tianli.cyou/">
+  <meta property="og:image" content="https://unrevoke.tianli.cyou/assets/icon.png">
+  <link rel="icon" type="image/png" href="assets/icon.png">
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<header class="topbar"><a class="brand" href="#"><img src="assets/icon.png" alt="" width="36" height="36"><span>WeChatUnrevoke</span></a><nav aria-label="主导航"><a href="#start">安装教程</a><a href="#watch">看演示</a><a href="#help">遇到问题</a></nav><a class="button small" href="downloads/WeChatUnrevoke-{{VERSION}}.zip" download>下载 Mac 版 <span aria-hidden="true">↓</span></a></header>
+<main id="main">
+<section class="hero wrap">
+  <div class="hero-copy"><p class="eyebrow"><span class="dot"></span> 为 Mac 微信做的一件小事</p><h1>撤回之后，<br><em>消息仍在。</em></h1><p class="lead">保留发给你的消息，也知道对方撤回过。<br>不用敲补丁命令，在一个清楚的界面里完成。</p><div class="hero-actions"><a class="button download" href="downloads/WeChatUnrevoke-{{VERSION}}.zip" download>免费下载 Mac 版 <span aria-hidden="true">↓</span></a><a class="text-link" href="#watch"><span aria-hidden="true">▶</span> 先看怎么用</a></div><p class="fine">v{{VERSION}} · {{SIZE}} MB · macOS 15 或更新版本<br>Apple Silicon 与 Intel 共用一个安装包</p><p class="device-note" id="device-note" hidden>你现在可能在手机或其他系统上。把这个网址发到 Mac，再下载安装。</p><div class="trust"><span>免费开源</span><span>无激活码</span><span>无需关闭 SIP</span></div></div>
+  <div class="hero-visual"><div class="visual-label"><span>真实应用界面</span><span>原生 SwiftUI</span></div><img class="appshot" src="assets/main-zh.png" alt="WeChatUnrevoke：防撤回已生效，可选择保留提示或静默，并检查详情或还原微信" width="620" height="640" fetchpriority="high"><p class="shot-note">截图使用微信 build 269627 测试副本，其他版本以应用检查结果为准。</p></div>
+</section>
+<section class="value-strip wrap" aria-label="主要功能"><article><span class="feature-symbol" aria-hidden="true">↶</span><h2>消息留下来</h2><p>保留被撤回的消息。私聊可保留撤回提示，也可选择静默。</p></article><article><span class="feature-symbol" aria-hidden="true">✓</span><h2>状态看得明白</h2><p>防撤回和更新拦截分别检查。未完整生效时，告诉你缺了什么。</p></article><article><span class="feature-symbol" aria-hidden="true">↺</span><h2>想还原，随时还原</h2><p>应用里点击「还原微信」，确认后撤销补丁。</p></article></section>
+
+<section id="start" class="section wrap"><div class="section-title"><p class="eyebrow">第一次用？从这里开始</p><h2>不用懂 GitHub。<br>照着这三步做就好。</h2><p>先确认你使用的是 Mac，并且已经安装微信。整个过程不需要注册账号。</p></div>
+<ol class="steps"><li><div class="step-number">01</div><div><h3>下载，解压，放进「应用程序」</h3><p>点击本站的「免费下载 Mac 版」。打开「下载」文件夹，双击 <code>WeChatUnrevoke-{{VERSION}}.zip</code> 解压，把出现的 <strong>WeChatUnrevoke.app</strong> 拖到访达左边的<strong>「应用程序」</strong>。</p><div class="install-flow" aria-label="安装顺序示意"><span>下载的 ZIP</span><b aria-hidden="true">→</b><span><img src="assets/icon.png" alt="" width="28" height="28">WeChatUnrevoke.app</span><b aria-hidden="true">→</b><span>📁 应用程序</span></div><p class="hint">升级旧版？先退出旧 app。旧名称是 Unrevoke 的，请把旧 app 移到废纸篓，再安装新版；原设置会保留。</p></div></li>
+<li><div class="step-number">02</div><div><h3>第一次打开，被 Mac 拦住了？</h3><p>这份免费发布的应用没有 Apple 开发者 ID 签名或公证。如果弹出<strong>「无法验证开发者」</strong>或<strong>「已损坏」</strong>，确认来自本页并已放入「应用程序」后，按下面做一次。</p><details class="open-guide" open><summary>展开：解除这份应用的下载隔离标记</summary><ol><li>按 <kbd>⌘</kbd> + <kbd>空格</kbd>，输入「终端」，按回车打开。</li><li>点击下面「复制命令」，粘贴到终端，按回车。</li><li>回到「应用程序」，再次双击 WeChatUnrevoke。</li></ol><div class="command"><code id="open-command">xattr -dr com.apple.quarantine /Applications/WeChatUnrevoke.app</code><button type="button" data-copy="open-command">复制命令</button></div><p class="hint">这条命令只移除 WeChatUnrevoke 的下载隔离标记，不关闭 SIP，也不关闭整个系统的安全检查。若提示找不到文件，先确认 app 已放到「应用程序」。</p></details></div></li>
+<li><div class="step-number">03</div><div><h3>退出微信，然后点击「开启防撤回」</h3><p>在微信菜单里选择「退出微信」（只关聊天窗口不等于退出）。打开 WeChatUnrevoke，保持<strong>「保留提示（推荐）」</strong>，点击<strong>「开启防撤回」</strong>。系统需要时会让你输入 <strong>Mac 管理员密码</strong>，不是微信密码。</p><p>看到「正在重新签名」时请等待，不要退出。完成后展开「详情」，确认<strong>防撤回：已生效</strong>、<strong>签名权限：完整</strong>，再打开微信。</p><a class="inline-watch" href="#watch">看下面的实机演示 <span aria-hidden="true">↓</span></a></div></li></ol>
+</section>
+
+<section id="watch" class="watch-section"><div class="wrap"><div class="section-title"><p class="eyebrow">看着做，比猜着做容易</p><h2>每一步都有真实演示。</h2><p>点击播放，可以暂停、拖动或全屏。录像使用 v1.0.4 与微信 build 269627 副本；三个独立场景分别录制，字幕会标注压缩过的等待过程，不代表你的电脑处理速度。</p></div>
+<div class="video-grid"><article class="video-card"><div class="video-heading"><span>01</span><div><h3>开启防撤回</h3><p>从未保护到已生效，确认真正的结果。</p></div></div><video controls playsinline preload="none" poster="assets/enable.png" aria-label="开启防撤回实机演示"><source src="media/enable.mp4" type="video/mp4"><track kind="captions" src="media/enable.vtt" srclang="zh" label="中文" default>你的浏览器不支持视频，请下载观看。</video><a href="media/enable.mp4" download>下载这段视频</a></article>
+<article class="video-card"><div class="video-heading"><span>02</span><div><h3>更新拦截失败？仅开启防撤回</h3><p>看清提示，主动确认，再检查「部分保护」。</p></div></div><video controls playsinline preload="none" poster="assets/partial.png" aria-label="仅开启防撤回实机演示"><source src="media/partial.mp4" type="video/mp4"><track kind="captions" src="media/partial.vtt" srclang="zh" label="中文" default>你的浏览器不支持视频，请下载观看。</video><a href="media/partial.mp4" download>下载这段视频</a></article>
+<article class="video-card"><div class="video-heading"><span>03</span><div><h3>检查状态与还原微信</h3><p>在哪里看详情，以及如何撤销补丁。</p></div></div><video controls playsinline preload="none" poster="assets/restore.png" aria-label="检查与还原微信实机演示"><source src="media/restore.mp4" type="video/mp4"><track kind="captions" src="media/restore.vtt" srclang="zh" label="中文" default>你的浏览器不支持视频，请下载观看。</video><a href="media/restore.mp4" download>下载这段视频</a></article></div>
+<p class="video-foot"><a href="media/tutorial.mp4" download>下载完整三段教程 ↓</a><span>不想下载？上面直接播放就可以。</span></p></div></section>
+
+<section class="section wrap results"><div class="section-title"><p class="eyebrow">操作完，看这里</p><h2>哪种状态算成功？</h2></div><div class="result-grid"><article class="result good"><span class="status-pill">防撤回已生效</span><h3>防撤回与更新拦截都已应用。</h3><p>展开详情检查签名权限完整。打开微信，请朋友发一条测试消息后撤回，确认消息仍然保留。</p></article><article class="result partial"><span class="status-pill">部分保护已生效</span><h3>先看「详情」，不要只看标题。</h3><p>如果防撤回是「已生效」、更新拦截是「未打」，表示消息保护已应用，但微信更新可能清除补丁，更新后需要再检查。</p></article></div><p class="hint">应用检查的是补丁和签名状态。实际聊天效果，请用一条真实撤回的消息验证；已经在使用前被撤回的消息不会被找回来。</p></section>
+
+<section id="help" class="section wrap faq"><div class="section-title"><p class="eyebrow">卡住了？找对应的情况</p><h2>把问题说清楚，<br>也把下一步写清楚。</h2></div><div class="faq-list">
+<details><summary>提示 XAppUpdateManager not found，怎么办？</summary><p>这是部分旧微信（例如 build 269136）的更新模块与当前拦截规则不匹配，不是让你关闭 SIP。回到应用点击<strong>「仅开启防撤回…」</strong>，确认更新风险后继续，再检查「详情」里的防撤回和签名权限。上面第二段视频演示这个操作；演示使用 269627 副本，没有伪造 269136 的报错。</p></details>
+<details><summary>应用说微信还在运行，但我已经关掉窗口了。</summary><p>点击屏幕顶部微信菜单，选择「退出微信」，或在微信里按 <kbd>⌘Q</kbd>。回到 WeChatUnrevoke 点「重新检查」。关闭聊天窗口不等于退出微信。</p></details>
+<details><summary>我的 Mac／微信版本支持吗？</summary><p>需要 macOS 15 或更新版本，安装包同时支持 Apple Silicon 和 Intel。微信补丁按具体构建号和架构适配，由应用自动检查。应用能运行，不代表每个微信版本都支持；看到「还没收录」时请等待适配，不要反复强行开启。</p><p>查询 macOS 版本：点屏幕左上角  →「关于本机」。</p></details>
+<details><summary>微信更新以后，还需要做什么？</summary><p>再打开本应用检查一次。自动重打只有在曾完整保护成功、不需要密码、微信已退出等条件满足时才执行；其余情况只提醒。仅防撤回模式不会阻止自动更新。</p></details>
+<details><summary>群聊会显示「对方撤回了一条消息」吗？</summary><p>目前群聊只保留消息，不显示撤回提示。私聊的「保留提示」模式会保留提示，但位置不保证紧贴原消息。「静默」模式则不显示提示。</p></details>
+<details><summary>怎样撤销？会上传我的聊天记录吗？</summary><p>在应用右下角点「还原微信」，确认后等待完成。还原会撤销补丁，不是帮你找回过去被撤回的消息。工具不读取或上传聊天内容；联网用于获取 GitHub 上的补丁配置。</p></details>
+<details><summary>还是不行，怎么把问题反馈给维护者？</summary><ol><li>在应用中点「复制诊断报告」。</li><li>先粘贴到备忘录，删掉不想公开的个人路径。</li><li>点击下面的「提交问题」，登录 GitHub 后填入现象、操作步骤和诊断报告。GitHub 是这里的源码与问题反馈平台；<strong>下载和使用不需要 GitHub 账号</strong>。</li></ol><a class="text-link" href="https://github.com/zengtianli/WeChatUnrevoke/issues/new">提交问题 ↗</a></details>
+</div></section>
+
+<section class="bottom-cta wrap"><img src="assets/icon.png" width="80" height="80" alt="WeChatUnrevoke 图标"><h2>准备好了，就从下载开始。</h2><p>一份 Mac 应用，一套清楚的步骤。免费使用。</p><a class="button download" href="downloads/WeChatUnrevoke-{{VERSION}}.zip" download>免费下载 v{{VERSION}} ↓</a><p class="fine"><a href="downloads/SHA256SUMS.txt">校验值</a> · <a href="#start">回到安装教程</a></p></section>
+</main>
+<footer class="wrap"><div><strong>WeChatUnrevoke</strong><p>由 <a href="https://github.com/zengtianli">zengtianli</a> 维护 · AGPL-3.0 开源</p></div><div class="footer-links"><a href="https://github.com/zengtianli/WeChatUnrevoke">源代码</a><a href="https://github.com/zengtianli/WeChatUnrevoke/releases">更新记录</a><a href="https://github.com/zengtianli/WeChatUnrevoke/blob/main/README_EN.md">English</a></div><p class="disclaimer">非微信官方产品，与腾讯无隶属关系。本工具修改本机微信客户端，请了解并承担客户端修改和使用风险。无需关闭 SIP；发布物使用 ad-hoc 签名，没有 Apple 开发者 ID 签名或公证。本页不使用分析追踪或第三方字体。</p></footer>
+<div id="copy-status" class="sr-only" role="status" aria-live="polite"></div>
+</body>
+</html>

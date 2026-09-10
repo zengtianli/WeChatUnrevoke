@@ -13,7 +13,9 @@
 | 1024px 图标 | [PNG](../icon/AppIcon.png) · [来源](../icon/provenance.json) |
 | 中文实机截图 | [PNG](screenshots/main-zh.png) |
 | English screenshot | [PNG](screenshots/main-en.png) |
-| 最新下载 / Download | [GitHub Releases](https://github.com/zengtianli/WeChatUnrevoke/releases/latest) |
+| 产品主页与直接下载 / Website | [WeChatUnrevoke](https://unrevoke.tianli.cyou/) |
+| 实机演示 / Tutorials | [在线播放](https://unrevoke.tianli.cyou/#watch) · [完整视频](https://unrevoke.tianli.cyou/media/tutorial.mp4) |
+| 版本记录 / Releases | [GitHub Releases](https://github.com/zengtianli/WeChatUnrevoke/releases/latest) |
 | 项目 / Project | [GitHub](https://github.com/zengtianli/WeChatUnrevoke) |
 | 维护者 / Maintainer | [zengtianli](https://github.com/zengtianli) |
 

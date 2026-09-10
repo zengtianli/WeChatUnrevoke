@@ -112,5 +112,27 @@ struct WriteFailureTests {
         precondition(canceled.status?.overall == .unprotected)
         precondition(canceled.lastLog.isEmpty)
         print("PASS: canceling the fallback confirmation does not run the patch")
+
+        // Periodic doctor must not publish the transient unsigned bundle while
+        // the engine is still signing; the final unconditional check must run.
+        let midWrite = resources.appendingPathComponent("signing.json")
+        let marker = resources.appendingPathComponent("signing-started")
+        try doctor("brokenBundle")
+        try fm.copyItem(at: fixture, to: midWrite)
+        try doctor()
+        try engine("/bin/cp \(Engine.shellQuote(midWrite.path)) \(Engine.shellQuote(fixture.path)); /usr/bin/touch \(Engine.shellQuote(marker.path)); /bin/sleep 2; /bin/cp \(Engine.shellQuote(protected.path)) \(Engine.shellQuote(fixture.path)); echo signed")
+        let signing = AppModel()
+        await signing.refresh()
+        let writing = Task { await signing.protectNow() }
+        for _ in 0..<100 {
+            if fm.fileExists(atPath: marker.path) { break }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        precondition(fm.fileExists(atPath: marker.path) && signing.isBusy)
+        await signing.refresh()
+        precondition(signing.status?.overall == .unprotected)
+        await writing.value
+        precondition(signing.status?.overall == .protected && !signing.isBusy)
+        print("PASS: periodic refresh skips intermediate signing state; final check still runs")
     }
 }

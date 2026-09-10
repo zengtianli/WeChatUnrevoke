@@ -1,12 +1,16 @@
 <p align="center"><img src="icon/AppIcon.png" width="128" height="128" alt="WeChatUnrevoke icon"></p>
 <h1 align="center">WeChatUnrevoke</h1>
 <p align="center"><strong>Keep the message. Even after recall.</strong><br>A native SwiftUI app to check, apply and restore WeChat anti-recall patches on Mac.</p>
-<p align="center"><a href="https://github.com/zengtianli/WeChatUnrevoke/releases/latest">Download for Mac</a> · <a href="#get-started">Get started</a> · <a href="https://github.com/zengtianli/WeChatUnrevoke/issues">Report an issue</a> · <a href="README.md">中文</a></p>
+<p align="center"><a href="https://unrevoke.tianli.cyou/">Product website · Direct download</a> · <a href="#get-started">Get started</a> · <a href="https://github.com/zengtianli/WeChatUnrevoke/issues">Report an issue</a> · <a href="README.md">中文</a></p>
 <p align="center">macOS 15+ · Apple Silicon + Intel · Free and open source · AGPL-3.0</p>
 <p align="center"><img src="docs/screenshots/main-en.png" width="620" alt="Actual WeChatUnrevoke interface"></p>
 <p align="center"><sub>Actual app screenshot using a WeChat build 269627 test copy, with anti-recall and update blocking active. Compatibility with other builds varies.</sub></p>
 
 ## Leave the commands to the engine
+
+**[Visit the product website](https://unrevoke.tianli.cyou/)** for direct downloads, illustrated installation instructions and playable tutorials. No GitHub account is needed to download or use the app. The website and video captions are in Chinese; English instructions follow below.
+
+Real recordings: [Enable anti-recall](https://unrevoke.tianli.cyou/media/enable.mp4) · [Anti-recall only](https://unrevoke.tianli.cyou/media/partial.mp4) · [Check and restore](https://unrevoke.tianli.cyou/media/restore.mp4) · [Complete tutorial](https://unrevoke.tianli.cyou/media/tutorial.mp4). Recorded with v1.0.4 and a WeChat build 269627 test copy. Independent scenes and shortened waits are labeled. See [recording notes](docs/demo/README.md).
 
 WeChatUnrevoke reads your WeChat build and lets you manage patches through a native interface. The embedded [WeChatTweak engine](https://github.com/zengtianli/WeChatTweak) performs the work and determines protection status.
 
@@ -71,10 +75,10 @@ An appropriate Xcode toolchain is required. The build embeds the universal engin
 Maintainers: validate GUI writes on a WeChat copy, update the version and release notes, commit, then run:
 
 ```bash
-python3 scripts/publish.py docs/releases/1.0.3.md
+python3 scripts/publish.py docs/releases/1.0.4.md
 ```
 
-This runs regression tests, builds, pushes, uploads a draft, verifies the downloaded archive, publishes and updates Homebrew. It does not replace GUI validation or post issue comments.
+This runs regression tests, builds, pushes, uploads a draft, verifies the downloaded archive, publishes, updates Homebrew and deploys the product site from the latest public release. A failed site deployment does not undo the published GitHub release; resume with `bash scripts/deploy-site.sh`. This does not replace GUI validation or post issue comments.
 
 ## Credits and license
 

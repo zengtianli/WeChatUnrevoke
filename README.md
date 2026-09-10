@@ -4,7 +4,7 @@
 <h1 align="center">WeChatUnrevoke</h1>
 <p align="center"><strong>撤回之后，消息仍在。</strong><br>为 Mac 微信保留被撤回的消息。原生 SwiftUI，一屏完成检查、开启与还原。</p>
 <p align="center">
-  <a href="https://github.com/zengtianli/WeChatUnrevoke/releases/latest">下载 Mac 版</a> ·
+  <a href="https://unrevoke.tianli.cyou/">产品主页 · 直接下载</a> ·
   <a href="#三步开始">使用指南</a> ·
   <a href="https://github.com/zengtianli/WeChatUnrevoke/issues">反馈问题</a> ·
   <a href="README_EN.md">English</a>
@@ -18,6 +18,20 @@
 
 <p align="center"><img src="docs/screenshots/main-zh.png" width="620" alt="WeChatUnrevoke 中文实机界面：保护状态、保留提示、自动重打与诊断"></p>
 <p align="center"><sub>真实应用截图：微信 build 269627 测试副本，防撤回与更新拦截均已生效。其他版本支持情况以检查结果为准。</sub></p>
+
+## 第一次用？看着视频一步一步做
+
+**[打开产品主页：直接下载、安装图解、播放演示](https://unrevoke.tianli.cyou/)**。不需要 GitHub 账号，安装包和视频直接从产品站获取。
+
+| 实机教程 | 点开就能看 |
+|---|---|
+| 开启防撤回 | [播放视频](https://unrevoke.tianli.cyou/media/enable.mp4) |
+| 更新拦截失败时，仅开启防撤回 | [播放视频](https://unrevoke.tianli.cyou/media/partial.mp4) |
+| 查看状态与还原微信 | [播放视频](https://unrevoke.tianli.cyou/media/restore.mp4) |
+
+[观看完整教程](https://unrevoke.tianli.cyou/media/tutorial.mp4) · [安装遇到拦截怎么办](https://unrevoke.tianli.cyou/#start) · [常见问题](https://unrevoke.tianli.cyou/#help)
+
+录像使用 v1.0.4 和 build 269627 测试副本，分场景录制；等待经过剪辑并标注。没有拍摄真实聊天或伪造 269136 报错。[录制与验证说明](docs/demo/README.md)。
 
 ## 把命令行留给引擎
 
@@ -38,7 +52,7 @@
 
 ### 1. 安装最新版
 
-**[下载最新 Release](https://github.com/zengtianli/WeChatUnrevoke/releases/latest)** 中的 `WeChatUnrevoke-<版本>.zip`，解压后将 **WeChatUnrevoke.app** 拖进「应用程序」。升级前退出旧版；从旧名 Unrevoke 升级时，把旧 app 移到废纸篓，避免出现两个入口。设置沿用原 bundle ID，不需要重新配置。
+**[在产品主页直接下载](https://unrevoke.tianli.cyou/)**，也可以从 [GitHub Release](https://github.com/zengtianli/WeChatUnrevoke/releases/latest) 获取 `WeChatUnrevoke-<版本>.zip`，解压后将 **WeChatUnrevoke.app** 拖进「应用程序」。升级前退出旧版；从旧名 Unrevoke 升级时，把旧 app 移到废纸篓，避免出现两个入口。设置沿用原 bundle ID，不需要重新配置。
 
 也可以使用 Homebrew：
 
@@ -93,10 +107,10 @@ ENGINE_REPO=../WeChatTweak ./build.sh
 维护者发布前先做 GUI 副本验收，更新 `Info.plist` 版本和 `docs/releases/<版本>.md`，提交后运行：
 
 ```bash
-python3 scripts/publish.py docs/releases/1.0.3.md
+python3 scripts/publish.py docs/releases/1.0.4.md
 ```
 
-发布入口运行回归测试、构建、打包、推送、草稿上传、下载校验、公开发布及 Homebrew 同步。已有同版本 Release 不会覆盖；不替代实机验收，也不会自动发送 issue 评论。
+发布入口运行回归测试、构建、打包、推送、草稿上传、下载校验、公开发布、Homebrew 同步及产品主页部署。网站下载版本和校验值读取最新公开 Release；已有同版本 Release 不会覆盖。站点部署失败时，已公开的 GitHub Release 不会撤销；修复后运行 `bash scripts/deploy-site.sh` 单独续接。实机验收仍需完成，不自动发送 issue 评论。
 
 ## 致谢与许可
 

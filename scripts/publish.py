@@ -91,6 +91,8 @@ def main():
     if release["isDraft"] or not any(a["name"] == archive.name for a in release["assets"]):
         raise SystemExit("Release read-back failed")
     print(f"Published: {release['url']}\nSHA256: {digest}\nHomebrew cask updated.")
+    if (ROOT / "site/index.html").is_file():
+        run("bash", "scripts/deploy-site.sh")
 
 
 if __name__ == "__main__":

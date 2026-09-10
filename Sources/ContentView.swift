@@ -25,11 +25,11 @@ struct ContentView: View {
                                 .font(.caption).foregroundStyle(.secondary)
                         }
                         Spacer()
-                        Link(destination: URL(string: "https://github.com/zengtianli/WeChatUnrevoke")!) {
+                        Link(destination: URL(string: "https://unrevoke.tianli.cyou/")!) {
                             Image(systemName: "arrow.up.right.square")
                         }
-                        .help(L.t("项目主页与使用帮助", "Project home and help"))
-                        .accessibilityLabel(L.t("项目主页与使用帮助", "Project home and help"))
+                        .help(L.t("安装教程与使用帮助", "Installation tutorials and help"))
+                        .accessibilityLabel(L.t("安装教程与使用帮助", "Installation tutorials and help"))
                     }
                     statusCard
                     if let error = model.errorMessage { errorBox(error) }
