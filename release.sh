@@ -14,6 +14,9 @@ APP="/Applications/Unrevoke.app"
 
 VERSION="$(plutil -extract CFBundleShortVersionString raw "$APP/Contents/Info.plist")"
 BUILD="$(plutil -extract CFBundleVersion raw "$APP/Contents/Info.plist")"
+[ "$VERSION" = "$(plutil -extract CFBundleShortVersionString raw "$DIR/Info.plist")" ] \
+  && [ "$BUILD" = "$(git rev-list --count HEAD)" ] \
+  || { echo "❌ 安装件版本与当前源码不一致，拒绝打包旧 app"; exit 1; }
 OUT="$DIR/dist"
 mkdir -p "$OUT"
 # 文件名只带版本号，不带 build ——
@@ -25,6 +28,7 @@ ditto -c -k --sequesterRsrc --keepParent "$APP" "$ZIP"
 # 自检：解出来的那份必须仍带得动引擎。压坏的包和没打包一样糟，且更难发现。
 TMP="$(mktemp -d)"
 ditto -x -k "$ZIP" "$TMP"
+codesign --verify --deep --strict "$TMP/Unrevoke.app"
 "$TMP/Unrevoke.app/Contents/Resources/wechattweak" versions \
   -c "$TMP/Unrevoke.app/Contents/Resources/config.json" >/dev/null \
   || { echo "❌ 打出来的包里引擎跑不起来"; rm -rf "$TMP"; exit 1; }

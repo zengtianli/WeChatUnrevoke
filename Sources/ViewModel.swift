@@ -38,6 +38,8 @@ final class AppModel: ObservableObject {
 
     private let engine = Engine()
     private let defaults = UserDefaults.standard
+    private let confirmAction: ((String, String, String) -> Bool)?
+    private var lastWriteError: String?
     private var timer: Timer?
     private var observers: [NSObjectProtocol] = []
 
@@ -49,7 +51,8 @@ final class AppModel: ObservableObject {
         static let everProtected = "everProtected"
     }
 
-    init() {
+    init(confirmAction: ((String, String, String) -> Bool)? = nil) {
+        self.confirmAction = confirmAction
         variant = PatchVariant(rawValue: defaults.string(forKey: Keys.variant) ?? "") ?? .keeptip
         autoRepatch = defaults.object(forKey: Keys.autoRepatch) as? Bool ?? true
         launchAtLogin = SMAppService.mainApp.status == .enabled
@@ -101,7 +104,7 @@ final class AppModel: ObservableObject {
             let fresh = try await engine.doctor()
             let previous = status
             status = fresh
-            errorMessage = nil
+            errorMessage = lastWriteError
             await reactToChange(from: previous, to: fresh)
         } catch {
             errorMessage = error.localizedDescription
@@ -125,13 +128,13 @@ final class AppModel: ObservableObject {
 
         // 够得着就自己打回去：不用密码、微信没开、补丁库认识这个版本。
         if !fresh.needsAdmin && !fresh.running && fresh.configKnown {
-            do {
-                lastLog = try await engine.patch(variant: variant, admin: false)
-                await refresh()
-                if status?.overall == .protected {
-                    notify(L.notif_repatched(fresh.build ?? "?"))
-                }
-            } catch {
+            let succeeded = await write(message: L.flow_resigning) { current in
+                guard !current.needsAdmin else { throw EngineError.launchFailed(L.det_admin) }
+                return try await self.engine.patch(variant: self.variant, admin: false)
+            }
+            if succeeded && status?.overall == .protected {
+                notify(L.notif_repatched(fresh.build ?? "?"))
+            } else {
                 notify(L.notif_needsYou(fresh.build ?? "?"))
             }
         } else if previous?.overall == .protected || knownBuild != fresh.build {
@@ -143,8 +146,13 @@ final class AppModel: ObservableObject {
     // MARK: - 写动作
 
     /// 打补丁。微信开着就先问再退，打完原样打开回去。
-    func protectNow() async {
+    func protectNow(blockUpdate: Bool = true) async {
+        guard !isBusy else { return }
         guard let current = status else { return }
+        if !blockUpdate {
+            guard confirm(title: L.flow_withoutUpdateTitle, body: L.flow_withoutUpdateBody,
+                          ok: L.btn_protectWithoutUpdate) else { return }
+        }
         if current.running {
             guard confirm(title: L.flow_wechatRunning, body: L.flow_wechatRunningBody,
                           ok: L.btn_quitWeChatAndGo) else { return }
@@ -154,17 +162,21 @@ final class AppModel: ObservableObject {
             }
         }
         let shouldReopen = current.running
-        await write(message: L.flow_resigning) {
-            try await self.engine.patch(variant: self.variant, admin: current.needsAdmin)
+        let succeeded = await write(message: L.flow_resigning) { fresh in
+            try await self.engine.patch(variant: self.variant, admin: fresh.needsAdmin, blockUpdate: blockUpdate)
         }
-        if status?.overall == .protected {
+        if succeeded && status?.overall == .protected {
             defaults.set(true, forKey: Keys.everProtected)
             if shouldReopen { reopenWeChat() }
             toast = shouldReopen ? L.flow_doneProtect : nil
+        } else if succeeded && !blockUpdate {
+            // Keep the engine's partial verdict. A successful command is not full protection.
+            toast = L.flow_withoutUpdateDone
         }
     }
 
     func restoreNow() async {
+        guard !isBusy else { return }
         guard let current = status else { return }
         guard confirm(title: L.flow_restoreConfirm, body: L.flow_restoreBody, ok: L.btn_restore) else { return }
         if current.running {
@@ -176,10 +188,10 @@ final class AppModel: ObservableObject {
             }
         }
         let shouldReopen = current.running
-        await write(message: L.flow_resigning) {
-            try await self.engine.restore(admin: current.needsAdmin)
+        let succeeded = await write(message: L.flow_resigning) { fresh in
+            try await self.engine.restore(admin: fresh.needsAdmin)
         }
-        if status?.overall == .unprotected {
+        if succeeded && status?.overall == .unprotected {
             defaults.set(false, forKey: Keys.everProtected)
             if shouldReopen { reopenWeChat() }
             toast = L.flow_doneRestore
@@ -188,18 +200,28 @@ final class AppModel: ObservableObject {
 
     /// 跑一个写动作：置忙 → 执行 → 无论成败都重新体检一次。
     /// 「重新体检」不能省：失败也可能已经写了一半，界面必须显示真实状态而不是我以为的状态。
-    private func write(message: String, _ body: @escaping () async throws -> String) async {
+    private func write(message: String, _ body: @escaping (DoctorStatus) async throws -> String) async -> Bool {
+        guard !isBusy else { return false }
         isBusy = true
         busyMessage = message
+        lastWriteError = nil
         errorMessage = nil
+        lastLog = ""
+        var succeeded = false
         defer { isBusy = false; busyMessage = "" }
         do {
-            lastLog = try await body()
+            let fresh = try await engine.doctor()
+            status = fresh
+            guard !fresh.running else { throw EngineError.launchFailed(L.err_wechatStillRunning) }
+            lastLog = try await body(fresh)
+            succeeded = true
         } catch {
-            lastLog = ""
-            errorMessage = error.localizedDescription
+            lastLog = error.localizedDescription
+            lastWriteError = error.localizedDescription
+            errorMessage = lastWriteError
         }
         await refresh()
+        return succeeded
     }
 
     // MARK: - 微信进程
@@ -230,6 +252,7 @@ final class AppModel: ObservableObject {
         guard let s = status else { return }
         let report = """
         Unrevoke diagnostics
+        app version    : \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown") (\(Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown"))
         overall        : \(s.overall.rawValue)
         build          : \(s.build ?? "unknown")
         config known   : \(s.configKnown)  targets: \(s.configTargets.joined(separator: ", "))
@@ -245,6 +268,9 @@ final class AppModel: ObservableObject {
 
         last engine log:
         \(lastLog.isEmpty ? "(none)" : lastLog)
+
+        last write error:
+        \(lastWriteError ?? "(none)")
         """
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(report, forType: .string)
@@ -252,6 +278,7 @@ final class AppModel: ObservableObject {
     }
 
     private func confirm(title: String, body: String, ok: String) -> Bool {
+        if let confirmAction { return confirmAction(title, body, ok) }
         let alert = NSAlert()
         alert.messageText = title
         alert.informativeText = body

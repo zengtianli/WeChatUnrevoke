@@ -145,8 +145,10 @@ actor Engine {
         }
     }
 
-    func patch(app: String = Engine.weChatPath, variant: PatchVariant, admin: Bool) async throws -> String {
-        try await run(["patch", "-a", app, "--variant", variant.rawValue, "--auto-locate"] + configArgs(),
+    func patch(app: String = Engine.weChatPath, variant: PatchVariant, admin: Bool,
+               blockUpdate: Bool = true) async throws -> String {
+        try await run(["patch", "-a", app, "--variant", variant.rawValue, "--auto-locate"]
+                      + (blockUpdate ? [] : ["--no-block-update"]) + configArgs(),
                       timeout: Engine.timeoutWrite, admin: admin)
     }
 

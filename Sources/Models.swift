@@ -154,6 +154,7 @@ enum L {
 
     // 按钮
     static var btn_protect: String { t("开启防撤回", "Turn on anti-recall") }
+    static var btn_protectWithoutUpdate: String { t("仅开启防撤回…", "Apply anti-recall only…") }
     static var btn_repair: String { t("补齐", "Complete the patch") }
     static var btn_restore: String { t("还原微信", "Restore WeChat") }
     static var btn_recheck: String { t("重新检查", "Check again") }
@@ -170,6 +171,16 @@ enum L {
         "改动微信的程序文件必须在它完全退出时进行，否则 macOS 会在中途把它杀掉，留下一个签名残破的微信。\n\n要现在退出微信吗？打完补丁我再帮你打开。",
         "WeChat's binary can only be modified while it is fully quit — otherwise macOS kills it mid-write and leaves a half-signed bundle.\n\nQuit WeChat now? It will be reopened once the patch is done.") }
     static var flow_working: String { t("正在处理…", "Working…") }
+    static var flow_withoutUpdateTitle: String { t("不拦截微信自动更新？", "Leave WeChat auto-updates enabled?") }
+    static var flow_withoutUpdateBody: String { t(
+        "本次只写入防撤回补丁，不拦截自动更新。适用于旧微信找不到更新拦截点的情况。\n\n微信下次更新可能清除补丁；界面仍可能显示「只装了一半」，不会显示完整保护。请更新后重新检查。要继续吗？",
+        "This attempt applies anti-recall without blocking auto-updates. Use it when an older WeChat build has no supported update patch points.\n\nA WeChat update may remove the patch. The status may remain Half applied rather than fully protected. Check again after updates. Continue?") }
+    static var flow_withoutUpdateNote: String { t(
+        "更新拦截失败时可选。微信更新可能清除补丁；不会自动跳过拦截。",
+        "Use if update blocking fails. WeChat updates may remove the patch; skipping the update block requires your choice.") }
+    static var flow_withoutUpdateDone: String { t(
+        "仅防撤回操作已完成，请查看详情确认状态，再打开微信。自动更新未被拦截。",
+        "The anti-recall-only operation finished. Check Details, then open WeChat. Auto-updates were not blocked.") }
     static var flow_resigning: String { t("正在重新签名微信（几十秒，别退出）…", "Re-signing WeChat (this takes a while, don't quit)…") }
     static var flow_doneProtect: String { t("打好了。微信已经重新打开。", "Done. WeChat has been reopened.") }
     static var flow_doneRestore: String { t("已还原成没动过的样子。微信的自动更新也恢复了。", "Restored to stock. WeChat's auto-updater is live again.") }

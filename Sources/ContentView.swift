@@ -146,6 +146,14 @@ struct ContentView: View {
             .pickerStyle(.segmented).labelsHidden()
             Text(model.variant == .keeptip ? L.variant_keeptipNote : L.variant_silentNote)
                 .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            if model.status?.overall == .unprotected || model.status?.overall == .partial {
+                Button(L.btn_protectWithoutUpdate) {
+                    Task { await model.protectNow(blockUpdate: false) }
+                }
+                .disabled(model.isBusy)
+                Text(L.flow_withoutUpdateNote)
+                    .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 

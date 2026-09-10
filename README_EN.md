@@ -121,6 +121,21 @@ is owned by you and no password is asked. On older ones the app asks for an admi
 password at the moment you press the button, through the standard macOS dialog. There is no
 privileged helper installed and nothing left running as root afterwards.
 
+## When patching fails
+
+Include **app version, last engine log, and last write error** from the diagnostics report.
+After a failed write, Unrevoke checks WeChat's actual state and retains the error until the
+next write attempt; periodic checks do not dismiss it. `unprotected` / `pristine` means the
+patch is not applied. `writable: false` means administrator authorization is required;
+SIP being enabled is not itself a failure. `update block: n/a` means this check did not obtain
+the update patch state; use the engine error to identify the cause.
+
+If the error says `XAppUpdateManager not found` (for example, build `269136`), the older
+updater does not match the current blocking rules. The default operation stops before
+writing anti-recall. Choose **Apply anti-recall only…** and confirm the update risk to use
+the engine's `--no-block-update` option. This is never an automatic fallback, and missing
+update protection is not displayed as full protection. Check the patch again after WeChat updates.
+
 ## Honest limitations
 
 - **Group chats show no recall tip**, even in "keep the tip" mode. The message is kept; the tip
@@ -132,6 +147,21 @@ privileged helper installed and nothing left running as root afterwards.
   the patch is applied; it cannot tell you WeChat behaves.
 - **WeChat updates roughly twice a month.** When a build isn't covered yet, the honest answer is
   "not yet" — and that is what the app will say.
+
+## Publishing (maintainers)
+
+Finish the GUI test on a WeChat copy, update the version in `Info.plist` and notes in
+`docs/releases/<version>.md`, and commit the reviewed changes. Then run:
+
+```bash
+python3 scripts/publish.py docs/releases/1.0.2.md
+```
+
+This runs regression tests, builds and packages both architectures, pushes the commit,
+creates a draft release, downloads and verifies its SHA256, publishes it, updates the
+Homebrew cask, and reads back both results. It refuses to overwrite an existing release
+version. Inspect remote state before resuming a failed stage. It does not replace GUI
+validation or automatically post issue comments.
 
 ## Credits & license
 
