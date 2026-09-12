@@ -50,7 +50,7 @@ For problems, copy diagnostics into an [issue](https://github.com/zengtianli/WeC
 ## Requirements and limits
 
 - **macOS 15+, Apple Silicon or Intel.** Patch coverage depends on the WeChat build and architecture. A universal app does not imply every WeChat build has patches for both architectures.
-- Supported builds come from the [patch configuration](https://github.com/zengtianli/WeChatTweak/blob/master/config.json). Unsupported builds are reported explicitly.
+- Compatibility work targets the latest stable release from WeChat's official website. Supported builds come from the [patch configuration](https://github.com/zengtianli/WeChatTweak/blob/master/config.json). If an older build is missing, update to the official stable build listed in the [support table](https://github.com/zengtianli/WeChatTweak#支持的版本); the App Store may distribute a different build. Reapply the patch after updating WeChat. Quit and reopen WeChatUnrevoke while online to refresh its patch configuration. Unsupported builds are reported explicitly.
 - Group chats preserve messages without recall notices. Private-chat notices may not appear immediately next to the original message.
 - Anti-recall-only mode leaves automatic updates enabled. Updates can remove patches.
 - This is an unofficial tool, unaffiliated with Tencent. It modifies your local WeChat client; understand and accept the associated risks. It does not read or upload chat content. Configuration updates connect to GitHub; help links open the project website.
@@ -70,7 +70,7 @@ cd WeChatUnrevoke
 ENGINE_REPO=../WeChatTweak ./build.sh
 ```
 
-An appropriate Xcode toolchain is required. The build embeds the universal engine and configuration, signs ad-hoc and installs the app. `release.sh` packages both architectures. The stable bundle ID is `io.github.zengtianli.unrevoke`; the display name and archive use WeChatUnrevoke.
+An appropriate Xcode toolchain and `python3` (for the included build check) are required. Select Xcode with `xcode-select` or `DEVELOPER_DIR`; no maintainer-only tools are needed. The build embeds the universal engine and configuration, signs ad-hoc and installs the app. Use `INSTALL_APP=0 ENGINE_REPO=../WeChatTweak ./build.sh` to build without installing, and `bash tests/run.sh` for regression checks. `release.sh` packages both architectures. The stable bundle ID is `io.github.zengtianli.unrevoke`; the display name and archive use WeChatUnrevoke.
 
 Maintainers: validate GUI writes on a WeChat copy, update the version and release notes, commit, then run:
 

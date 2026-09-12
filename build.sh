@@ -1,33 +1,26 @@
 #!/bin/bash
-# build.sh — 构建 Unrevoke.app（含内嵌引擎）并装到 /Applications。
+# build.sh — 构建 Unrevoke.app（含内嵌引擎）；INSTALL_APP=0 可只构建。
 #
 # 与普通 SwiftUI app 的唯一区别在「内嵌引擎」这一段：Unrevoke 自己不碰字节，
 # 全部改动由 WeChatTweak 的 `wechattweak` 命令行完成，构建期整个拷进
 # Contents/Resources/。所以这里必须能找到引擎仓库，找不到就硬失败——
 # 一个没有引擎的 Unrevoke 打开就是一句「引擎缺失」，不如构建时就拦住。
 #
-#   引擎仓库：默认 ../../vendor/WeChatTweak，可用 ENGINE_REPO=/path/to/WeChatTweak 覆盖
+#   引擎仓库：默认 ../vendor/WeChatTweak，可用 ENGINE_REPO=/path/to/WeChatTweak 覆盖
 #   引擎地址：https://github.com/zengtianli/WeChatTweak （AGPL-3.0）
 #
-# ── 舰队通用静态门:CodingKeys × .convertFromSnakeCase(2026-07-27 立)──────────
-# 2026-07-26 真事故:CodingKey 写成 snake_case,而 decoder 开着 .convertFromSnakeCase,
-# 于是那个字段永远解不出来 —— 编译不报错、运行不报错,界面上那块内容直接是空的。
-# 拦不住构建的守卫是装饰,所以这里**硬失败**。逃生开关:SKIP_FLEET_GATE=1 ./build.sh
-if [ "${SKIP_FLEET_GATE:-0}" != "1" ]; then
-  _GATE="$HOME/Dev/tools/dev/lib/tools/macapp/check_codingkeys.py"
-  if [ -f "$_GATE" ]; then
-    /opt/homebrew/bin/python3 "$_GATE" "$(cd "$(dirname "$0")" && pwd)" \
-      || { echo "❌ CodingKey 契约门未过,拒绝构建(临时绕过 SKIP_FLEET_GATE=1)"; exit 1; }
-  else
-    echo "❌ 找不到舰队门 $_GATE —— 拒绝静默跳过(守卫哑掉与它要防的 bug 同类)"; exit 1
-  fi
-fi
 set -euo pipefail
 DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$DIR"
 
+# 随仓检查，不依赖维护者的私有工具目录或 Homebrew 安装位置。
+# 保留旧的显式跳过开关，但正常构建仍必须通过 CodingKeys 契约检查。
+if [ "${SKIP_FLEET_GATE:-0}" != "1" ]; then
+  "${PYTHON:-python3}" "$DIR/scripts/check-codingkeys.py" "$DIR"
+fi
+
 # ── 挑 Xcode：走总部 SSOT，禁写死路径（铁律 #5）───────────────────────────
-_XCODE_ENV_SH="$HOME/Dev/tools/dev/lib/tools/macapp/xcode_env.sh"
+_XCODE_ENV_SH="${XCODE_ENV_SH:-$HOME/Dev/tools/dev/lib/tools/macapp/xcode_env.sh}"
 if [ -f "$_XCODE_ENV_SH" ]; then
   # shellcheck source=/dev/null
   source "$_XCODE_ENV_SH"
@@ -38,7 +31,7 @@ DISPLAY_NAME="$(plutil -extract CFBundleName raw "$DIR/Info.plist")"
 [ -n "$DISPLAY_NAME" ] || { echo "❌ Info.plist 缺 CFBundleName"; exit 1; }
 
 # ── 1. 引擎：构建 wechattweak（universal），准备好待拷贝 ──────────────────
-ENGINE_REPO="${ENGINE_REPO:-$DIR/../../vendor/WeChatTweak}"
+ENGINE_REPO="${ENGINE_REPO:-$DIR/../vendor/WeChatTweak}"
 if [ ! -f "$ENGINE_REPO/Package.swift" ]; then
   cat >&2 <<EOF
 ❌ 找不到引擎仓库：$ENGINE_REPO
@@ -108,6 +101,11 @@ if [ "${UNIVERSAL:-0}" = "1" ]; then
   esac
 fi
 echo "   引擎 OK（${ARCHS}）· app ${APP_ARCHS} · 补丁库收录 ${BUILDS} 个微信 build"
+
+if [ "${INSTALL_APP:-1}" = "0" ]; then
+  echo "✅ 构建完成 → $APP"
+  exit 0
+fi
 
 DEST="/Applications/$DISPLAY_NAME.app"
 if ! rm -rf "$DEST" 2>/dev/null || ! cp -R "$APP" "$DEST" 2>/dev/null; then

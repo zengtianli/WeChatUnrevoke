@@ -82,7 +82,7 @@ xattr -dr com.apple.quarantine /Applications/WeChatUnrevoke.app
 ## 运行要求与边界
 
 - **macOS 15+，Apple Silicon / Intel。** 补丁支持按微信 build 和架构而异，以引擎实际检查结果为准；universal 安装包不代表所有微信版本均有双架构补丁。
-- **版本覆盖由补丁库决定。** 当前随包配置见 [config.json](https://github.com/zengtianli/WeChatTweak/blob/master/config.json)。没有收录的版本会明确提示，不猜地址写入。
+- **适配以微信官网最新稳定版为准。** 版本覆盖由[补丁库](https://github.com/zengtianli/WeChatTweak/blob/master/config.json)决定；缺失的旧构建建议先更新到[支持表](https://github.com/zengtianli/WeChatTweak#支持的版本)列出的官网稳定版。App Store 版的 build 可能不同。微信更新后需要重新打补丁；联网退出并重开 WeChatUnrevoke 可刷新补丁库。没有收录的版本会明确提示，不猜地址写入。
 - **群聊暂不显示撤回提示。** 即使选「保留提示」，群聊也只保留消息。私聊提示位置也不保证紧贴原消息。
 - **仅防撤回不拦截自动更新。** 此模式不等于完整保护；更新后需要重新检查。
 - **不是微信官方产品，与腾讯无隶属关系。** 本工具修改本机微信客户端，请自行了解并承担客户端修改和使用风险。它不读取或上传聊天内容；补丁库更新请求访问 GitHub，点击帮助链接会打开项目主页。
@@ -102,7 +102,7 @@ cd WeChatUnrevoke
 ENGINE_REPO=../WeChatTweak ./build.sh
 ```
 
-需要适用的 Xcode 工具链。`build.sh` 构建并嵌入 universal 引擎、打包配置、ad-hoc 签名并安装应用；双架构发布使用 `release.sh`。bundle ID 保持 `io.github.zengtianli.unrevoke`，显示名与发行包统一为 WeChatUnrevoke。
+需要适用的 Xcode 工具链和 `python3`（用于随仓的构建检查）。使用 `xcode-select` 或 `DEVELOPER_DIR` 选择 Xcode，不需要维护者本机的工具目录。`build.sh` 构建并嵌入 universal 引擎、打包配置、ad-hoc 签名并安装应用；只构建可用 `INSTALL_APP=0 ENGINE_REPO=../WeChatTweak ./build.sh`，回归检查运行 `bash tests/run.sh`。双架构发布使用 `release.sh`。bundle ID 保持 `io.github.zengtianli.unrevoke`，显示名与发行包统一为 WeChatUnrevoke。
 
 维护者发布前先做 GUI 副本验收，更新 `Info.plist` 版本和 `docs/releases/<版本>.md`，提交后运行：
 

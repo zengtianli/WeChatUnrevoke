@@ -9,6 +9,7 @@ DerivedData/
 *.xccheckout
 .swiftpm/
 .build/
+__pycache__/
 
 # Xcode per-user state (track shared project, ignore user-specific)
 xcuserdata/

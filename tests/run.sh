@@ -1,8 +1,12 @@
 #!/bin/bash
 set -euo pipefail
 cd "$(dirname "$0")/.."
-source "$HOME/Dev/tools/dev/lib/tools/macapp/xcode_env.sh"
-xcode_env_use macosx
+_XCODE_ENV_SH="${XCODE_ENV_SH:-$HOME/Dev/tools/dev/lib/tools/macapp/xcode_env.sh}"
+if [ -f "$_XCODE_ENV_SH" ]; then
+  source "$_XCODE_ENV_SH"
+  xcode_env_use macosx
+fi
+"${PYTHON:-python3}" -m unittest discover -s tests -p 'test_*.py'
 TEST_DIR="$(mktemp -d /tmp/unrevoke-tests.XXXXXX)"
 APP="$TEST_DIR/UnrevokeTests.app"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
