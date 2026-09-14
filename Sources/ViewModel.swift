@@ -40,6 +40,7 @@ final class AppModel: ObservableObject {
     private let defaults = UserDefaults.standard
     private let confirmAction: ((String, String, String) -> Bool)?
     private var lastWriteError: String?
+    private var automaticWriteBlocked = false
     private var writeGeneration = 0
     private var timer: Timer?
     private var observers: [NSObjectProtocol] = []
@@ -131,7 +132,7 @@ final class AppModel: ObservableObject {
             defaults.set(true, forKey: Keys.everProtected)
         }
         guard fresh.overall == .unprotected || fresh.overall == .partial else { return }
-        guard autoRepatch, defaults.bool(forKey: Keys.everProtected), !isBusy else { return }
+        guard autoRepatch, defaults.bool(forKey: Keys.everProtected), !isBusy, !automaticWriteBlocked else { return }
 
         // 够得着就自己打回去：不用密码、微信没开、补丁库认识这个版本。
         if !fresh.needsAdmin && !fresh.running && fresh.configKnown {
@@ -213,6 +214,7 @@ final class AppModel: ObservableObject {
         writeGeneration += 1
         busyMessage = message
         lastWriteError = nil
+        automaticWriteBlocked = false
         errorMessage = nil
         lastLog = ""
         var succeeded = false
@@ -224,7 +226,12 @@ final class AppModel: ObservableObject {
             lastLog = try await body(fresh)
             succeeded = true
         } catch {
-            lastLog = error.localizedDescription
+            lastLog = (error as? EngineError)?.diagnosticOutput ?? error.localizedDescription
+            if case EngineError.writePermissionDenied = error {
+                // Do not retry a denied write on every background check. The
+                // user can retry explicitly after correcting permissions.
+                automaticWriteBlocked = true
+            }
             lastWriteError = error.localizedDescription
             errorMessage = lastWriteError
         }

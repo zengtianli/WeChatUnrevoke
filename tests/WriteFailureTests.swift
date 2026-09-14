@@ -31,7 +31,7 @@ struct WriteFailureTests {
             #!/bin/sh
             case "$1" in
               doctor) /bin/cat \(Engine.shellQuote(fixture.path));;
-              patch) \(patch);;
+              patch|restore) \(patch);;
               *) exit 99;;
             esac
             """
@@ -134,5 +134,74 @@ struct WriteFailureTests {
         await writing.value
         precondition(signing.status?.overall == .protected && !signing.isBusy)
         print("PASS: periodic refresh skips intermediate signing state; final check still runs")
+
+        // #1: exact administrator-wrapper output reported for build 269631.
+        // The fixture reproduces the output, not macOS's TCC authorization dialog.
+        let denied = """
+        0:269: execution error: Error: You don’t have permission to save the file “wechat.dylib” in the folder “Resources”.
+        ------ Version ------
+        WeChat version: 269631
+        ------ Config ------
+        Matched config: build 269631, targets: revoke, revoke-keeptip, update
+        ------ Patch ------
+        Variant: keeptip
+        Block auto-update: yes
+        ------ Target: revoke-keeptip (Contents/Resources/wechat.dylib) ------ (1)
+        """
+        try doctor()
+        try engine("printf '%s' \(Engine.shellQuote(denied)) >&2; exit 1")
+        let permissions = AppModel(confirmAction: { _, _, _ in true })
+        await permissions.refresh()
+        await permissions.protectNow()
+        precondition(permissions.status?.overall == .unprotected && !permissions.isBusy)
+        precondition(permissions.errorMessage == L.err_writePermissionDenied)
+        precondition(permissions.lastLog == denied)
+        await permissions.refresh()
+        precondition(permissions.errorMessage == L.err_writePermissionDenied)
+        print("PASS: reported 269631 permission error gives recovery steps and retains exact diagnostics")
+
+        // Restore has the same permission handling, including failure after a write.
+        try engine("/bin/cp \(Engine.shellQuote(partial.path)) \(Engine.shellQuote(fixture.path)); printf '%s' \(Engine.shellQuote(denied)) >&2; exit 1")
+        await permissions.restoreNow()
+        precondition(permissions.status?.overall == .partial)
+        precondition(permissions.errorMessage == L.err_writePermissionDenied)
+        precondition(permissions.lastLog == denied)
+        print("PASS: permission failure during restore still refreshes the actual partial state")
+
+        for output in ["Error: Permission denied", "codesign: Operation not permitted",
+                       "Error Domain=NSCocoaErrorDomain Code=513", "您没有权限将文件存储到文件夹中。",
+                       "您没有将文件“wechat.dylib”存储到文件夹“Resources”中的权限。",
+                       "您沒有將檔案儲存至檔案夾的權限。"] {
+            try engine("printf '%s' \(Engine.shellQuote(output)) >&2; exit 1")
+            await permissions.protectNow()
+            precondition(permissions.errorMessage == L.err_writePermissionDenied)
+            precondition(permissions.lastLog == output)
+        }
+        for output in ["Error: expected bytes mismatch", "Error: Unsupported version: 999999",
+                       "Error: No space left on device", "Error Domain=NSCocoaErrorDomain Code=5130"] {
+            try engine("printf '%s' \(Engine.shellQuote(output)) >&2; exit 1")
+            await permissions.protectNow()
+            precondition(permissions.errorMessage == output)
+        }
+        print("PASS: write-permission variants are recognized; unrelated errors stay unchanged")
+
+        // Permission denial must not cause another write every 60-second refresh.
+        let attempts = resources.appendingPathComponent("write-attempts")
+        try doctor()
+        try engine("echo attempt >> \(Engine.shellQuote(attempts.path)); printf '%s' \(Engine.shellQuote(denied)) >&2; exit 1")
+        defaults.set(true, forKey: "autoRepatch")
+        defaults.set(true, forKey: "everProtected")
+        let automatic = AppModel()
+        await automatic.refresh()
+        precondition(automatic.errorMessage == L.err_writePermissionDenied)
+        await automatic.refresh()
+        await automatic.refresh()
+        let recordedAttempts = try String(contentsOf: attempts, encoding: .utf8)
+        precondition(recordedAttempts == "attempt\n")
+        try engine("/bin/cp \(Engine.shellQuote(protected.path)) \(Engine.shellQuote(fixture.path)); echo patched")
+        await automatic.protectNow()
+        precondition(automatic.status?.overall == .protected && automatic.errorMessage == nil)
+        precondition(automatic.lastLog.contains("patched"))
+        print("PASS: permission denial pauses background writes; explicit successful retry clears the error")
     }
 }

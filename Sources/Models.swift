@@ -119,6 +119,9 @@ enum L {
         "引擎 \(s) 秒没跑完，已经掐掉了。微信包很大时重签名会慢，可以再试一次。",
         "The engine did not finish within \(s)s and was terminated. Re-signing a large WeChat bundle is slow — try again.") }
     static var err_authCanceled: String { t("你取消了授权，什么都没改。", "You canceled the authorization — nothing was changed.") }
+    static var err_writePermissionDenied: String { t(
+        "macOS 拒绝修改微信文件。请到「系统设置 → 隐私与安全性 → App 管理」允许 WeChatUnrevoke 修改其他 App；列表里没有时可用 + 添加当前使用的 WeChatUnrevoke.app。完全退出并重开本应用，再试一次。管理员密码不能代替这项授权。若仍失败，请检查微信文件的所有者、访问权限和锁定状态，并复制诊断报告反馈。",
+        "macOS denied changes to WeChat files. In System Settings → Privacy & Security → App Management, allow WeChatUnrevoke to modify other apps; use + to add the WeChatUnrevoke.app you are running if it is missing. Quit and reopen this app, then retry. An administrator password does not replace this permission. If it still fails, check WeChat file ownership, access permissions and locked status, then copy diagnostics when reporting the problem.") }
     static var err_wechatStillRunning: String { t(
         "微信还没完全退出。它的辅助进程会比主进程多活几秒，等一下再点一次就好。",
         "WeChat has not fully quit yet. Its helper processes linger a few seconds after the main one — wait a moment and try again.") }

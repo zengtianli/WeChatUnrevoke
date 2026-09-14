@@ -73,6 +73,10 @@ xattr -dr com.apple.quarantine /Applications/WeChatUnrevoke.app
 
 若提示 `XAppUpdateManager not found`（例如 build `269136`），是旧微信的更新模块不符合当前拦截规则。点击 **「仅开启防撤回…」**，阅读并确认更新风险后继续。无需关闭 SIP。
 
+若提示 **`You don’t have permission to save ... wechat.dylib`**、`Permission denied` 或 `Operation not permitted`，说明写文件被拒绝；即使日志已显示 `Matched config: build 269631`，也仍需处理写入权限。先到 **系统设置 → 隐私与安全性 → App 管理**，允许 **WeChatUnrevoke** 修改其他 App；没有条目时用 `+` 添加当前运行的 `WeChatUnrevoke.app`。完全退出并重开 WeChatUnrevoke，然后重试。使用 CLI 时应授权启动命令的终端应用。
+
+管理员密码不能代替 App 管理授权。[Apple 的说明](https://support.apple.com/guide/mac-help/change-privacy-security-settings-on-mac-mchl211c911f/mac)中，该权限用于允许修改其他应用。相同报错也可能来自文件所有者、ACL 或锁定状态；授权后仍失败，请附上完整诊断报告，继续排查。v1.0.5 起应用会显示此指引，保留原始日志，并在权限失败后暂停本次运行的后台重试，直到你手动重试或重开应用；失败后仍会检查补丁的真实状态。
+
 ### 3. 检查结果，再打开微信
 
 展开「详情」，确认 **防撤回：已生效**、**签名权限：完整**。仅防撤回模式可能显示 **「部分保护已生效」**，这是更新未被拦截的状态，并不等于防撤回失败。自行打开微信，用一条真实被撤回的消息验证。

@@ -19,6 +19,7 @@ enum EngineError: LocalizedError {
     case cliMissing
     case launchFailed(String)
     case failed(code: Int32, output: String)
+    case writePermissionDenied(output: String)
     case decodeFailed(String, raw: String)
     case timeout(TimeInterval)
     case authCanceled
@@ -32,6 +33,8 @@ enum EngineError: LocalizedError {
         case .failed(_, let output):
             // 引擎的错误信息本身就是写给人看的（含下一步命令），原样透出比包一层强。
             return output.trimmingCharacters(in: .whitespacesAndNewlines)
+        case .writePermissionDenied:
+            return L.err_writePermissionDenied
         case .decodeFailed(let m, let raw):
             return L.err_decode(m, String(raw.prefix(300)))
         case .timeout(let t):
@@ -39,6 +42,31 @@ enum EngineError: LocalizedError {
         case .authCanceled:
             return L.err_authCanceled
         }
+    }
+
+    /// Keep the original CLI/osascript output in diagnostics even when the UI
+    /// replaces it with recovery instructions.
+    var diagnosticOutput: String {
+        switch self {
+        case .failed(_, let output), .writePermissionDenied(let output):
+            return output
+        default:
+            return localizedDescription
+        }
+    }
+
+    static func writeFailure(code: Int32, output: String) -> EngineError {
+        // A permission error alone cannot distinguish App Management from file
+        // ownership, ACLs or locked files. Offer checks, not a claimed TCC verdict.
+        let text = output.lowercased().replacingOccurrences(of: "’", with: "'")
+        let denied = ["permission denied", "operation not permitted",
+                      "don't have permission to save", "do not have permission to save"]
+            .contains { text.contains($0) }
+            || text.range(of: #"nscocoaerrordomain\s+code\s*=\s*513\b"#,
+                          options: .regularExpression) != nil
+            || text.range(of: #"(?:没有|沒有)[^\n]*(?:权限|權限)[^\n]*(?:存储|儲存|保存)|(?:没有|沒有)[^\n]*(?:存储|儲存|保存)[^\n]*(?:权限|權限)"#,
+                          options: .regularExpression) != nil
+        return denied ? .writePermissionDenied(output: output) : .failed(code: code, output: output)
     }
 }
 
@@ -147,13 +175,21 @@ actor Engine {
 
     func patch(app: String = Engine.weChatPath, variant: PatchVariant, admin: Bool,
                blockUpdate: Bool = true) async throws -> String {
-        try await run(["patch", "-a", app, "--variant", variant.rawValue, "--auto-locate"]
+        try await runWrite(["patch", "-a", app, "--variant", variant.rawValue, "--auto-locate"]
                       + (blockUpdate ? [] : ["--no-block-update"]) + configArgs(),
-                      timeout: Engine.timeoutWrite, admin: admin)
+                      admin: admin)
     }
 
     func restore(app: String = Engine.weChatPath, admin: Bool) async throws -> String {
-        try await run(["restore", "-a", app] + configArgs(), timeout: Engine.timeoutWrite, admin: admin)
+        try await runWrite(["restore", "-a", app] + configArgs(), admin: admin)
+    }
+
+    private func runWrite(_ args: [String], admin: Bool) async throws -> String {
+        do {
+            return try await run(args, timeout: Engine.timeoutWrite, admin: admin)
+        } catch let EngineError.failed(code, output) {
+            throw EngineError.writeFailure(code: code, output: output)
+        }
     }
 
     private func configArgs() -> [String] {

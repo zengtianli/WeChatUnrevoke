@@ -45,6 +45,10 @@ xattr -dr com.apple.quarantine /Applications/WeChatUnrevoke.app
 
 If you encounter `XAppUpdateManager not found` (for example, build `269136`), the updater layout does not match the current blocking rules. Choose the **anti-recall-only** action and confirm the update risk. This can produce a **partial** status because updates remain unblocked; it does not mean anti-recall failed. SIP can stay enabled.
 
+If you see **`You don’t have permission to save ... wechat.dylib`**, `Permission denied`, or `Operation not permitted`, the file write was denied, even if the log already says `Matched config: build 269631`. In **System Settings → Privacy & Security → App Management**, allow **WeChatUnrevoke** to modify other apps. Use `+` to add the `WeChatUnrevoke.app` you are running if it is missing. Quit and reopen WeChatUnrevoke, then retry. CLI users should authorize the terminal application that launches the command.
+
+An administrator password does not replace App Management permission; [Apple describes this setting](https://support.apple.com/guide/mac-help/change-privacy-security-settings-on-mac-mchl211c911f/mac) as allowing changes to other apps. The same error can also result from file ownership, ACLs, or locked files. If authorization does not resolve it, include the full diagnostic report for further investigation. From v1.0.5, the app shows these steps, preserves the original log, and pauses background write retries for the current run after a permission denial until you retry manually or restart the app. Every failed write still ends with a check of the actual patch state.
+
 For problems, copy diagnostics into an [issue](https://github.com/zengtianli/WeChatUnrevoke/issues), including app version, last engine log and last write error. Remove personal paths you do not want to publish.
 
 ## Requirements and limits
