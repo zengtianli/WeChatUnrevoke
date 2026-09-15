@@ -1,3 +1,5 @@
+**中文** | [English](README_EN.md)
+
 <p align="center">
   <img src="icon/AppIcon.png" width="128" height="128" alt="WeChatUnrevoke 应用图标">
 </p>
