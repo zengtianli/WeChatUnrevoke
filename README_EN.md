@@ -76,12 +76,12 @@ cd WeChatUnrevoke
 ENGINE_REPO=../WeChatTweak ./build.sh
 ```
 
-An appropriate Xcode toolchain and `python3` (for the included build check) are required. Select Xcode with `xcode-select` or `DEVELOPER_DIR`; no maintainer-only tools are needed. The build embeds the universal engine and configuration, signs ad-hoc and installs the app. Use `INSTALL_APP=0 ENGINE_REPO=../WeChatTweak ./build.sh` to build without installing, and `bash tests/run.sh` for regression checks. `release.sh` packages both architectures. The stable bundle ID is `io.github.zengtianli.unrevoke`; the display name and archive use WeChatUnrevoke.
+An appropriate Xcode toolchain and `python3` (for the included build check) are required. Select Xcode with `xcode-select` or `DEVELOPER_DIR`; no maintainer-only tools are needed. The build embeds the universal engine and configuration, signs ad-hoc and installs the app. Use `INSTALL_APP=0 ENGINE_REPO=../WeChatTweak ./build.sh` to build without installing, and `bash tests/run.sh` for regression checks. `release.sh` packages both architectures straight from the build product; it does not install or replace the app on the build machine. The stable bundle ID is `io.github.zengtianli.unrevoke`; the display name and archive use WeChatUnrevoke.
 
 Maintainers: validate GUI writes on a WeChat copy, update the version and release notes, commit, then run:
 
 ```bash
-python3 scripts/publish.py docs/releases/1.0.4.md
+python3 scripts/publish.py docs/releases/1.0.5.md
 ```
 
 This runs regression tests, builds, pushes, uploads a draft, verifies the downloaded archive, publishes, updates Homebrew and deploys the product site from the latest public release. A failed site deployment does not undo the published GitHub release; resume with `bash scripts/deploy-site.sh`. This does not replace GUI validation or post issue comments.

@@ -168,7 +168,33 @@ struct WriteFailureTests {
         precondition(permissions.lastLog == denied)
         print("PASS: permission failure during restore still refreshes the actual partial state")
 
+        // Exact output of the real engine when its pre-write backup copy is denied
+        // (captured from a disposable WeChat copy whose Resources folder refused new files).
+        let copyDenied = """
+        ------ Version ------
+        WeChat version: 269579
+        ------ Config ------
+        Matched config: build 269579, targets: revoke, revoke-keeptip, update
+        ------ Patch ------
+        Variant: keeptip
+        Block auto-update: yes
+        ------ Target: revoke-keeptip (Contents/Resources/wechat.dylib) ------
+        ------ Target: update (Contents/Resources/wechat.dylib) ------
+
+        Error: “wechat.dylib” couldn’t be copied because you don’t have permission to access “Resources”.
+
+        """
+        try engine("printf '%s' \(Engine.shellQuote(copyDenied)) >&2; exit 1")
+        await permissions.protectNow()
+        precondition(permissions.errorMessage == L.err_writePermissionDenied)
+        precondition(permissions.lastLog == copyDenied)
+        print("PASS: real engine backup-copy denial gives recovery steps and retains exact diagnostics")
+
         for output in ["Error: Permission denied", "codesign: Operation not permitted",
+                       "Error: “wechat.dylib” couldn’t be moved because you don’t have permission to access “Resources”.",
+                       "Error: “wechat.dylib.269579.bak” couldn’t be removed because you don’t have permission to access it.",
+                       "Error: The file “wechat.dylib” couldn’t be opened because you don’t have permission to view it.",
+                       "Error Domain=NSCocoaErrorDomain Code=257", "未能拷贝“wechat.dylib”，因为您没有权限访问“Resources”。",
                        "Error Domain=NSCocoaErrorDomain Code=513", "您没有权限将文件存储到文件夹中。",
                        "您没有将文件“wechat.dylib”存储到文件夹“Resources”中的权限。",
                        "您沒有將檔案儲存至檔案夾的權限。"] {
@@ -188,7 +214,7 @@ struct WriteFailureTests {
         // Permission denial must not cause another write every 60-second refresh.
         let attempts = resources.appendingPathComponent("write-attempts")
         try doctor()
-        try engine("echo attempt >> \(Engine.shellQuote(attempts.path)); printf '%s' \(Engine.shellQuote(denied)) >&2; exit 1")
+        try engine("echo attempt >> \(Engine.shellQuote(attempts.path)); printf '%s' \(Engine.shellQuote(copyDenied)) >&2; exit 1")
         defaults.set(true, forKey: "autoRepatch")
         defaults.set(true, forKey: "everProtected")
         let automatic = AppModel()

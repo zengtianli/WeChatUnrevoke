@@ -108,12 +108,12 @@ cd WeChatUnrevoke
 ENGINE_REPO=../WeChatTweak ./build.sh
 ```
 
-需要适用的 Xcode 工具链和 `python3`（用于随仓的构建检查）。使用 `xcode-select` 或 `DEVELOPER_DIR` 选择 Xcode，不需要维护者本机的工具目录。`build.sh` 构建并嵌入 universal 引擎、打包配置、ad-hoc 签名并安装应用；只构建可用 `INSTALL_APP=0 ENGINE_REPO=../WeChatTweak ./build.sh`，回归检查运行 `bash tests/run.sh`。双架构发布使用 `release.sh`。bundle ID 保持 `io.github.zengtianli.unrevoke`，显示名与发行包统一为 WeChatUnrevoke。
+需要适用的 Xcode 工具链和 `python3`（用于随仓的构建检查）。使用 `xcode-select` 或 `DEVELOPER_DIR` 选择 Xcode，不需要维护者本机的工具目录。`build.sh` 构建并嵌入 universal 引擎、打包配置、ad-hoc 签名并安装应用；只构建可用 `INSTALL_APP=0 ENGINE_REPO=../WeChatTweak ./build.sh`，回归检查运行 `bash tests/run.sh`。双架构发布使用 `release.sh`，它从构建产物直接打包，不安装也不替换本机已装的应用。bundle ID 保持 `io.github.zengtianli.unrevoke`，显示名与发行包统一为 WeChatUnrevoke。
 
 维护者发布前先做 GUI 副本验收，更新 `Info.plist` 版本和 `docs/releases/<版本>.md`，提交后运行：
 
 ```bash
-python3 scripts/publish.py docs/releases/1.0.4.md
+python3 scripts/publish.py docs/releases/1.0.5.md
 ```
 
 发布入口运行回归测试、构建、打包、推送、草稿上传、下载校验、公开发布、Homebrew 同步及产品主页部署。网站下载版本和校验值读取最新公开 Release；已有同版本 Release 不会覆盖。站点部署失败时，已公开的 GitHub Release 不会撤销；修复后运行 `bash scripts/deploy-site.sh` 单独续接。实机验收仍需完成，不自动发送 issue 评论。

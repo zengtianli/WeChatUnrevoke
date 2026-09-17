@@ -59,12 +59,17 @@ enum EngineError: LocalizedError {
         // A permission error alone cannot distinguish App Management from file
         // ownership, ACLs or locked files. Offer checks, not a claimed TCC verdict.
         let text = output.lowercased().replacingOccurrences(of: "’", with: "'")
-        let denied = ["permission denied", "operation not permitted",
-                      "don't have permission to save", "do not have permission to save"]
-            .contains { text.contains($0) }
-            || text.range(of: #"nscocoaerrordomain\s+code\s*=\s*513\b"#,
-                          options: .regularExpression) != nil
-            || text.range(of: #"(?:没有|沒有)[^\n]*(?:权限|權限)[^\n]*(?:存储|儲存|保存)|(?:没有|沒有)[^\n]*(?:存储|儲存|保存)[^\n]*(?:权限|權限)"#,
+        // Error codes first: 513 = no write permission, 257 = no read permission.
+        // The engine prints only the localized description, so wording is the
+        // fallback. Foundation words the same 513 differently per operation:
+        // "permission to save" (write/create), "couldn't be copied/moved ...
+        // permission to access" (copy/move/remove), "permission to view" (read).
+        let denied = text.range(of: #"nscocoaerrordomain\s+code\s*=\s*(?:513|257)\b"#,
+                                options: .regularExpression) != nil
+            || ["permission denied", "operation not permitted",
+                "don't have permission", "do not have permission"]
+                .contains { text.contains($0) }
+            || text.range(of: #"(?:没有|沒有)[^\n]*(?:权限|權限)"#,
                           options: .regularExpression) != nil
         return denied ? .writePermissionDenied(output: output) : .failed(code: code, output: output)
     }
