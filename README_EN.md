@@ -1,3 +1,5 @@
+[中文](README.md) | **English**
+
 <p align="center"><img src="icon/AppIcon.png" width="128" height="128" alt="WeChatUnrevoke icon"></p>
 <h1 align="center">WeChatUnrevoke</h1>
 <p align="center"><strong>Keep the message. Even after recall.</strong><br>A native SwiftUI app to check, apply and restore WeChat anti-recall patches on Mac.</p>
