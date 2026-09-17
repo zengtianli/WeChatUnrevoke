@@ -18,6 +18,8 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[1]
 REPO = "zengtianli/WeChatUnrevoke"
 TAP = "repos/zengtianli/homebrew-tap/contents/Casks/wechat-unrevoke.rb"
+# Same default as build.sh ($DIR/../vendor/WeChatTweak): the engine sits beside this repo.
+DEFAULT_ENGINE = ROOT.parent / "vendor" / "WeChatTweak"
 
 
 def run(*args, capture=False, input=None):
@@ -37,7 +39,9 @@ def main():
     if not branch:
         raise SystemExit("Publish from a branch, not a detached HEAD")
     head = run("git", "rev-parse", "HEAD", capture=True)
-    engine = Path(os.environ.get("ENGINE_REPO", ROOT / "../../vendor/WeChatTweak")).resolve()
+    engine = Path(os.environ.get("ENGINE_REPO", DEFAULT_ENGINE)).resolve()
+    if not (engine / "Package.swift").is_file():
+        raise SystemExit(f"Engine repo not found: {engine} (set ENGINE_REPO)")
     if run("git", "-C", engine, "status", "--porcelain", capture=True):
         raise SystemExit("The embedded engine must have a clean working tree")
     with (ROOT / "Info.plist").open("rb") as f:
