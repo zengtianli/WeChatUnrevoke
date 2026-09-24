@@ -53,7 +53,7 @@ def main():
             "-c", "copy", "-movflags", "+faststart", "-y", OUT / f"{name}.mp4")
         (OUT / f"{name}.vtt").write_text("\n".join(cues))
         print(f"Rendered {name}: {elapsed}s")
-    names = ("enable", "partial", "restore")
+    names = ("enable", "restore")
     if all((OUT / f"{name}.mp4").is_file() for name in names):
         concat = WORK / "tutorial-concat.txt"
         concat.write_text("".join(f"file '{OUT / name}.mp4'\n" for name in names))

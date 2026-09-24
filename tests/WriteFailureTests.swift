@@ -78,40 +78,50 @@ struct WriteFailureTests {
         precondition(model.lastLog.contains("patched"))
         print("PASS: successful retry clears the prior write error")
 
-        // Reproduce #1038: the old updater class is absent. The default must fail;
-        // only explicit consent may send the CLI's existing --no-block-update option.
+        // Issues #1 / #3: this build's updater cannot be blocked. Anti-recall and the update
+        // block are independent, so the default action still applies anti-recall — no extra
+        // prompt, no error — and the fresh check reports antiRevokeOnly with the reason.
         let partial = resources.appendingPathComponent("partial.json")
         try doctor("partial")
         try fm.copyItem(at: fixture, to: partial)
+        let onlyRevoke = resources.appendingPathComponent("anti-revoke-only.json")
+        let object: [String: Any] = [
+            "overall": "antiRevokeOnly", "build": "269602", "app_path": app.path,
+            "config_known": true, "running": false, "writable": true,
+            "entitlements_ok": true, "entitlement_key_count": 15,
+            "anti_revoke_keeptip": "patched", "update_block": "notApplicable",
+            "update_source": "App Store install"
+        ]
+        try JSONSerialization.data(withJSONObject: object).write(to: onlyRevoke)
         try doctor()
         try engine("""
         case " $* " in
-          *" --no-block-update "*) /bin/cp \(Engine.shellQuote(partial.path)) \(Engine.shellQuote(fixture.path)); echo 'Block auto-update: no';;
-          *) echo 'auto-locate(update): Objective-C class XAppUpdateManager not found' >&2; exit 1;;
+          *" --no-block-update "*) echo 'MUST NOT PASS --no-block-update'; exit 1;;
+          *) /bin/cp \(Engine.shellQuote(onlyRevoke.path)) \(Engine.shellQuote(fixture.path)); echo 'Update block: NOT applied — App Store install';;
         esac
         """)
         var confirmations = 0
-        let fallback = AppModel(confirmAction: { _, _, _ in confirmations += 1; return true })
-        await fallback.refresh()
-        await fallback.protectNow()
+        let independent = AppModel(confirmAction: { _, _, _ in confirmations += 1; return true })
+        await independent.refresh()
+        await independent.protectNow()
         precondition(confirmations == 0)
-        precondition(fallback.status?.overall == .unprotected)
-        precondition(fallback.errorMessage?.contains("XAppUpdateManager not found") == true)
-        await fallback.protectNow(blockUpdate: false)
-        precondition(confirmations == 1)
-        precondition(fallback.status?.overall == .partial)
-        precondition(fallback.errorMessage == nil)
-        precondition(fallback.lastLog.contains("Block auto-update: no"))
-        precondition(fallback.toast == L.flow_withoutUpdateDone)
-        print("PASS: default fails closed; explicit consent applies anti-recall only and retains partial verdict")
+        precondition(independent.status?.overall == .antiRevokeOnly)
+        precondition(independent.status?.updateBlock == "notApplicable")
+        precondition(independent.errorMessage == nil)
+        precondition(independent.lastLog.contains("Update block: NOT applied"))
+        precondition(defaults.bool(forKey: "everProtected"))
+        print("PASS: anti-recall applies on its own when the update block is impossible")
 
-        try doctor()
-        let canceled = AppModel(confirmAction: { _, _, _ in false })
-        await canceled.refresh()
-        await canceled.protectNow(blockUpdate: false)
-        precondition(canceled.status?.overall == .unprotected)
-        precondition(canceled.lastLog.isEmpty)
-        print("PASS: canceling the fallback confirmation does not run the patch")
+        // Background checks must treat antiRevokeOnly as done, not re-patch it forever.
+        defaults.set(true, forKey: "autoRepatch")
+        let repatchMarker = resources.appendingPathComponent("auto-repatch-ran")
+        try engine("/usr/bin/touch \(Engine.shellQuote(repatchMarker.path)); exit 0")
+        let background = AppModel()
+        await background.refresh()
+        precondition(background.status?.overall == .antiRevokeOnly)
+        precondition(!fm.fileExists(atPath: repatchMarker.path))
+        defaults.set(false, forKey: "autoRepatch")
+        print("PASS: antiRevokeOnly does not trigger automatic re-patching")
 
         // Periodic doctor must not publish the transient unsigned bundle while
         // the engine is still signing; the final unconditional check must run.

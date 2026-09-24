@@ -178,10 +178,10 @@ actor Engine {
         }
     }
 
-    func patch(app: String = Engine.weChatPath, variant: PatchVariant, admin: Bool,
-               blockUpdate: Bool = true) async throws -> String {
-        try await runWrite(["patch", "-a", app, "--variant", variant.rawValue, "--auto-locate"]
-                      + (blockUpdate ? [] : ["--no-block-update"]) + configArgs(),
+    /// The engine applies anti-recall and the update block independently and exits 0 when
+    /// either went in; the fresh doctor afterwards says exactly which.
+    func patch(app: String = Engine.weChatPath, variant: PatchVariant, admin: Bool) async throws -> String {
+        try await runWrite(["patch", "-a", app, "--variant", variant.rawValue, "--auto-locate"] + configArgs(),
                       admin: admin)
     }
 

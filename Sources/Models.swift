@@ -20,6 +20,9 @@ struct DoctorStatus: Decodable, Equatable {
         case unsupportedBuild
         /// 防撤回 + 更新拦截都在
         case protected
+        /// 防撤回在；这个版本拦不了自动更新（App Store 版 / 更新器未定位），原因见 updateBlock、updateSource。
+        /// 两者是独立功能：拦不了更新不影响防撤回，也不需要用户再做什么。
+        case antiRevokeOnly
         /// 只装了一半
         case partial
         /// 都没装，且没有任何阻碍
@@ -140,8 +143,14 @@ enum L {
         "Hit the button below and recalled messages will stay in your chat.") }
     static var st_partial: String { t("部分保护已生效", "Partially protected") }
     static var st_partialSub: String { t(
-        "防撤回和「拦住自动更新」这两件事没配齐 —— 缺了后者，微信下次更新会把补丁抹掉。",
-        "Anti-recall and the update block are not both in place. Without the latter, WeChat's next update wipes the patch.") }
+        "防撤回和拦截自动更新还差一项没打上，点下面的按钮补上。",
+        "One of anti-recall and the update block is still missing. Use the button below to add it.") }
+    static var st_antiRevokeOnlySubAppStore: String { t(
+        "这是 App Store 版微信，由 App Store 负责更新，没有可拦截的内置更新器。想保住补丁，请在 App Store 设置里关闭自动更新。",
+        "This is the App Store edition: the App Store updates it, so there is no in-app updater to block. Turn off App Store automatic updates to keep the patch.") }
+    static var st_antiRevokeOnlySubUnavailable: String { t(
+        "这个微信版本暂时拦不住自动更新（更新器的补丁点还没收录）。防撤回不受影响；微信更新后补丁会失效，本 app 会提醒你重新开启。",
+        "This WeChat build's auto-updater can't be blocked yet (its patch points aren't covered). Anti-recall is unaffected; after a WeChat update the patch is gone and this app will remind you to turn it on again.") }
     static var st_unsupported: String { t("这个微信版本还没收录", "This WeChat build isn't covered yet") }
     static func st_unsupportedSub(_ build: String) -> String { t(
         "补丁库尚未支持 build \(build)。配置会联网更新；如果需要新的引擎规则，请安装新版 WeChatUnrevoke。",
@@ -157,7 +166,6 @@ enum L {
 
     // 按钮
     static var btn_protect: String { t("开启防撤回", "Turn on anti-recall") }
-    static var btn_protectWithoutUpdate: String { t("仅开启防撤回…", "Apply anti-recall only…") }
     static var btn_repair: String { t("补齐", "Complete the patch") }
     static var btn_restore: String { t("还原微信", "Restore WeChat") }
     static var btn_recheck: String { t("重新检查", "Check again") }
@@ -174,16 +182,6 @@ enum L {
         "改动微信的程序文件必须在它完全退出时进行，否则 macOS 会在中途把它杀掉，留下一个签名残破的微信。\n\n要现在退出微信吗？打完补丁我再帮你打开。",
         "WeChat's binary can only be modified while it is fully quit — otherwise macOS kills it mid-write and leaves a half-signed bundle.\n\nQuit WeChat now? It will be reopened once the patch is done.") }
     static var flow_working: String { t("正在处理…", "Working…") }
-    static var flow_withoutUpdateTitle: String { t("不拦截微信自动更新？", "Leave WeChat auto-updates enabled?") }
-    static var flow_withoutUpdateBody: String { t(
-        "本次只写入防撤回补丁，不拦截自动更新。适用于旧微信找不到更新拦截点的情况。\n\n微信下次更新可能清除补丁；界面仍可能显示「部分保护已生效」，不会显示完整保护。请更新后重新检查。要继续吗？",
-        "This attempt applies anti-recall without blocking auto-updates. Use it when an older WeChat build has no supported update patch points.\n\nA WeChat update may remove the patch. The status may remain Partially protected rather than fully protected. Check again after updates. Continue?") }
-    static var flow_withoutUpdateNote: String { t(
-        "更新拦截失败时可选。微信更新可能清除补丁；不会自动跳过拦截。",
-        "Use if update blocking fails. WeChat updates may remove the patch; skipping the update block requires your choice.") }
-    static var flow_withoutUpdateDone: String { t(
-        "仅防撤回操作已完成，请查看详情确认状态，再打开微信。自动更新未被拦截。",
-        "The anti-recall-only operation finished. Check Details, then open WeChat. Auto-updates were not blocked.") }
     static var flow_resigning: String { t("正在重新签名微信（几十秒，别退出）…", "Re-signing WeChat (this takes a while, don't quit)…") }
     static var flow_doneProtect: String { t("打好了。微信已经重新打开。", "Done. WeChat has been reopened.") }
     static var flow_doneRestore: String { t("已还原成没动过的样子。微信的自动更新也恢复了。", "Restored to stock. WeChat's auto-updater is live again.") }
@@ -230,6 +228,7 @@ enum L {
     static var det_off: String { t("未打", "Not applied") }
     static var det_weird: String { t("对不上", "Unrecognized") }
     static var det_na: String { t("不适用", "n/a") }
+    static var det_unavailable: String { t("暂不支持", "Not available") }
     static var det_intact: String { t("完整", "Intact") }
     static var det_lost: String { t("已丢失", "Lost") }
 

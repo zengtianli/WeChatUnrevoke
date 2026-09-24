@@ -90,7 +90,7 @@ struct ContentView: View {
                 case .partial:
                     Button(L.btn_repair) { Task { await model.protectNow() } }
                         .buttonStyle(.borderedProminent).controlSize(.large)
-                case .protected:
+                case .protected, .antiRevokeOnly:
                     Button(L.btn_recheck) { Task { await model.refresh() } }.controlSize(.large)
                 case .brokenBundle, .mixed:
                     Button(L.btn_reinstall) {
@@ -116,6 +116,9 @@ struct ContentView: View {
         switch model.status?.overall {
         case .protected:
             return Look(symbol: "checkmark.shield.fill", tint: .green, title: L.st_protected, subtitle: L.st_protectedSub)
+        case .antiRevokeOnly:
+            let sub = model.status?.updateBlock == "notApplicable" ? L.st_antiRevokeOnlySubAppStore : L.st_antiRevokeOnlySubUnavailable
+            return Look(symbol: "checkmark.shield", tint: .green, title: L.st_protected, subtitle: sub)
         case .partial:
             return Look(symbol: "exclamationmark.shield.fill", tint: .orange, title: L.st_partial, subtitle: L.st_partialSub)
         case .unprotected:
@@ -146,7 +149,7 @@ struct ContentView: View {
 
     private var showsVariantPicker: Bool {
         switch model.status?.overall {
-        case .unprotected, .partial, .protected: return true
+        case .unprotected, .partial, .protected, .antiRevokeOnly: return true
         default: return false
         }
     }
@@ -161,14 +164,6 @@ struct ContentView: View {
             .pickerStyle(.segmented).labelsHidden()
             Text(model.variant == .keeptip ? L.variant_keeptipNote : L.variant_silentNote)
                 .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-            if model.status?.overall == .unprotected || model.status?.overall == .partial {
-                Button(L.btn_protectWithoutUpdate) {
-                    Task { await model.protectNow(blockUpdate: false) }
-                }
-                .disabled(model.isBusy)
-                Text(L.flow_withoutUpdateNote)
-                    .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-            }
         }
     }
 
@@ -201,6 +196,7 @@ struct ContentView: View {
             case "patched": return L.det_on
             case "pristine": return L.det_off
             case "unknown": return L.det_weird
+            case "unavailable": return L.det_unavailable
             default: return L.det_na
             }
         }
@@ -236,7 +232,7 @@ struct ContentView: View {
         HStack(spacing: 12) {
             Button(L.btn_copyReport) { model.copyReport() }
             Spacer()
-            if model.status?.overall == .protected || model.status?.overall == .partial {
+            if [.protected, .antiRevokeOnly, .partial].contains(model.status?.overall) {
                 Button(L.btn_restore, role: .destructive) { Task { await model.restoreNow() } }
             }
         }

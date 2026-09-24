@@ -28,12 +28,11 @@
 | 实机教程 | 点开就能看 |
 |---|---|
 | 开启防撤回 | [播放视频](https://unrevoke.tianli.cyou/media/enable.mp4) |
-| 更新拦截失败时，仅开启防撤回 | [播放视频](https://unrevoke.tianli.cyou/media/partial.mp4) |
 | 查看状态与还原微信 | [播放视频](https://unrevoke.tianli.cyou/media/restore.mp4) |
 
 [观看完整教程](https://unrevoke.tianli.cyou/media/tutorial.mp4) · [安装遇到拦截怎么办](https://unrevoke.tianli.cyou/#start) · [常见问题](https://unrevoke.tianli.cyou/#help)
 
-录像使用 v1.0.4 和 build 269627 测试副本，分场景录制；等待经过剪辑并标注。没有拍摄真实聊天或伪造 269136 报错。[录制与验证说明](docs/demo/README.md)。
+录像使用 v1.0.4 和 build 269627 测试副本，分场景录制；等待经过剪辑并标注。没有拍摄真实聊天。[录制与验证说明](docs/demo/README.md)。
 
 ## 把命令行留给引擎
 
@@ -45,7 +44,7 @@
 | 安静地保留消息 | 切换「静默」，不显示撤回提示。 |
 | 看清是否已生效 | 状态由引擎统一判定，详情分别显示防撤回、更新拦截和签名权限。 |
 | 减少更新造成的补丁丢失 | 默认尝试拦截自动更新；满足无需密码、微信已退出、曾完整保护成功等条件时，自动重新打补丁。 |
-| 旧版本拦截更新失败 | 自行选择「仅开启防撤回…」，确认更新风险后继续，不会静默降低保护。 |
+| 拦不住自动更新的版本 | 防撤回与拦截自动更新各自独立执行：拦不住更新（App Store 版由 App Store 负责更新，或更新器尚未收录）时照常开启防撤回，并写明原因。 |
 | 撤销操作或报告问题 | 一键还原补丁字节；失败后保留日志，可复制完整诊断报告。 |
 
 **免费开源，无激活码。无需关闭 SIP，无内核扩展，无常驻 root helper。** 原生 SwiftUI 前端，内嵌 Swift CLI，没有 Python 运行环境。补丁库可联网更新；引擎规则或界面有变化时仍需更新应用。
@@ -73,7 +72,7 @@ xattr -dr com.apple.quarantine /Applications/WeChatUnrevoke.app
 
 打开 WeChatUnrevoke，保持「保留提示（推荐）」，点击「开启防撤回」。系统要求时输入管理员密码，等待重签名结束。`⌘R` 可以重新检查状态。
 
-若提示 `XAppUpdateManager not found`（例如 build `269136`），是旧微信的更新模块不符合当前拦截规则。点击 **「仅开启防撤回…」**，阅读并确认更新风险后继续。无需关闭 SIP。
+防撤回与拦截自动更新是两个独立功能，一个做不了不影响另一个。App Store 版微信由 App Store 负责更新，没有可拦截的内置更新器；有些版本的更新器暂未收录。这时状态显示「防撤回已生效」，下方写明拦不住更新的原因：App Store 版请在 App Store 设置里关闭自动更新；其他版本在微信更新后按提醒重新开启即可。
 
 若提示 **`You don’t have permission to save ... wechat.dylib`**、`Permission denied` 或 `Operation not permitted`，说明写文件被拒绝；即使日志已显示 `Matched config: build 269631`，也仍需处理写入权限。先到 **系统设置 → 隐私与安全性 → App 管理**，允许 **WeChatUnrevoke** 修改其他 App；没有条目时用 `+` 添加当前运行的 `WeChatUnrevoke.app`。完全退出并重开 WeChatUnrevoke，然后重试。使用 CLI 时应授权启动命令的终端应用。
 

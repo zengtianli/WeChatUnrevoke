@@ -42,7 +42,7 @@ def main():
     (OUT / "index.html").write_text(page)
     shutil.copy2(ROOT / "icon/AppIcon.png", OUT / "assets/icon.png")
     shutil.copy2(ROOT / "docs/screenshots/main-zh.png", OUT / "assets/main-zh.png")
-    for clip in ("enable", "partial", "restore"):
+    for clip in ("enable", "restore"):
         for suffix in ("mp4", "vtt"):
             shutil.copy2(ROOT / f"docs/demo/{clip}.{suffix}", OUT / f"media/{clip}.{suffix}")
         shutil.copy2(ROOT / f"docs/demo/{clip}.png", OUT / f"assets/{clip}.png")

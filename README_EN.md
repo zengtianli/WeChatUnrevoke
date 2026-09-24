@@ -12,7 +12,7 @@
 
 **[Visit the product website](https://unrevoke.tianli.cyou/)** for direct downloads, illustrated installation instructions and playable tutorials. No GitHub account is needed to download or use the app. The website and video captions are in Chinese; English instructions follow below.
 
-Real recordings: [Enable anti-recall](https://unrevoke.tianli.cyou/media/enable.mp4) · [Anti-recall only](https://unrevoke.tianli.cyou/media/partial.mp4) · [Check and restore](https://unrevoke.tianli.cyou/media/restore.mp4) · [Complete tutorial](https://unrevoke.tianli.cyou/media/tutorial.mp4). Recorded with v1.0.4 and a WeChat build 269627 test copy. Independent scenes and shortened waits are labeled. See [recording notes](docs/demo/README.md).
+Real recordings: [Enable anti-recall](https://unrevoke.tianli.cyou/media/enable.mp4) · [Check and restore](https://unrevoke.tianli.cyou/media/restore.mp4) · [Complete tutorial](https://unrevoke.tianli.cyou/media/tutorial.mp4). Recorded with v1.0.4 and a WeChat build 269627 test copy. Independent scenes and shortened waits are labeled. See [recording notes](docs/demo/README.md).
 
 WeChatUnrevoke reads your WeChat build and lets you manage patches through a native interface. The embedded [WeChatTweak engine](https://github.com/zengtianli/WeChatTweak) performs the work and determines protection status.
 
@@ -21,7 +21,7 @@ WeChatUnrevoke reads your WeChat build and lets you manage patches through a nat
 | Preserve recalled messages | Keep notice mode retains messages and notices in private chats. Group chats preserve messages without notices. Silent mode suppresses notices. |
 | Understand protection | Separate anti-recall, update-blocking and entitlement details. |
 | Recover after updates | Automatic reapplication only when WeChat is closed, no password is needed, and full protection previously succeeded. |
-| Work around an unsupported updater | Explicit anti-recall-only action with confirmation. |
+| Builds whose updater cannot be blocked | Anti-recall and the update block run independently: anti-recall is still applied, and the reason the update block is missing is shown. |
 | Restore or troubleshoot | Restore patch bytes or copy diagnostics with retained engine output and write errors. |
 
 **No activation codes, no need to disable SIP, no kernel extension or persistent root helper.** Native SwiftUI with an embedded Swift CLI; no Python runtime. Patch configuration can update online; engine and interface changes still require app updates.
@@ -45,7 +45,7 @@ Releases are ad-hoc signed, **without Apple Developer ID signing or notarization
 xattr -dr com.apple.quarantine /Applications/WeChatUnrevoke.app
 ```
 
-If you encounter `XAppUpdateManager not found` (for example, build `269136`), the updater layout does not match the current blocking rules. Choose the **anti-recall-only** action and confirm the update risk. This can produce a **partial** status because updates remain unblocked; it does not mean anti-recall failed. SIP can stay enabled.
+Anti-recall and the update block are independent: if one cannot be applied, the other still is. The App Store edition is updated by the App Store and has no in-app updater to block, and some builds' updaters are not covered yet. The status then reads **Anti-recall is on**, with the reason the update block is missing below it: for the App Store edition, turn off App Store automatic updates; for other builds, turn protection on again after a WeChat update when reminded.
 
 If you see **`You don’t have permission to save ... wechat.dylib`**, `Permission denied`, or `Operation not permitted`, the file write was denied, even if the log already says `Matched config: build 269631`. In **System Settings → Privacy & Security → App Management**, allow **WeChatUnrevoke** to modify other apps. Use `+` to add the `WeChatUnrevoke.app` you are running if it is missing. Quit and reopen WeChatUnrevoke, then retry. CLI users should authorize the terminal application that launches the command.
 

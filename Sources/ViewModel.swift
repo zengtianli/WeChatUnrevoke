@@ -128,7 +128,7 @@ final class AppModel: ObservableObject {
         // 已经打上了 = 这人要这个功能，不管是谁打的。
         // 少了这一句，用命令行打过补丁再来装 GUI 的人（这个 fork 的现有用户基本都是）
         // everProtected 永远是 false，自动重打永远不触发，而且**一点声音都没有**。
-        if fresh.overall == .protected {
+        if fresh.overall == .protected || fresh.overall == .antiRevokeOnly {
             defaults.set(true, forKey: Keys.everProtected)
         }
         guard fresh.overall == .unprotected || fresh.overall == .partial else { return }
@@ -140,12 +140,12 @@ final class AppModel: ObservableObject {
                 guard !current.needsAdmin else { throw EngineError.launchFailed(L.det_admin) }
                 return try await self.engine.patch(variant: self.variant, admin: false)
             }
-            if succeeded && status?.overall == .protected {
+            if succeeded && (status?.overall == .protected || status?.overall == .antiRevokeOnly) {
                 notify(L.notif_repatched(fresh.build ?? "?"))
             } else {
                 notify(L.notif_needsYou(fresh.build ?? "?"))
             }
-        } else if previous?.overall == .protected || knownBuild != fresh.build {
+        } else if previous?.overall == .protected || previous?.overall == .antiRevokeOnly || knownBuild != fresh.build {
             // 够不着 —— 只说一声，绝不背着人弹授权框或强退微信。
             notify(L.notif_needsYou(fresh.build ?? "?"))
         }
@@ -154,13 +154,10 @@ final class AppModel: ObservableObject {
     // MARK: - 写动作
 
     /// 打补丁。微信开着就先问再退，打完原样打开回去。
-    func protectNow(blockUpdate: Bool = true) async {
+    /// 防撤回与拦截自动更新由引擎各自独立执行：拦不了更新不影响防撤回，结果看体检。
+    func protectNow() async {
         guard !isBusy else { return }
         guard let current = status else { return }
-        if !blockUpdate {
-            guard confirm(title: L.flow_withoutUpdateTitle, body: L.flow_withoutUpdateBody,
-                          ok: L.btn_protectWithoutUpdate) else { return }
-        }
         if current.running {
             guard confirm(title: L.flow_wechatRunning, body: L.flow_wechatRunningBody,
                           ok: L.btn_quitWeChatAndGo) else { return }
@@ -171,15 +168,12 @@ final class AppModel: ObservableObject {
         }
         let shouldReopen = current.running
         let succeeded = await write(message: L.flow_resigning) { fresh in
-            try await self.engine.patch(variant: self.variant, admin: fresh.needsAdmin, blockUpdate: blockUpdate)
+            try await self.engine.patch(variant: self.variant, admin: fresh.needsAdmin)
         }
-        if succeeded && status?.overall == .protected {
+        if succeeded && (status?.overall == .protected || status?.overall == .antiRevokeOnly) {
             defaults.set(true, forKey: Keys.everProtected)
             if shouldReopen { reopenWeChat() }
             toast = shouldReopen ? L.flow_doneProtect : nil
-        } else if succeeded && !blockUpdate {
-            // Keep the engine's partial verdict. A successful command is not full protection.
-            toast = L.flow_withoutUpdateDone
         }
     }
 
