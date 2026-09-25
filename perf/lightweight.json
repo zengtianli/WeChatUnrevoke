@@ -42,7 +42,8 @@
         1847
       ],
       "runs": 3,
-      "raw": "perf/raw/launch-1.0.8-run*.json"
+      "raw": "perf/raw/launch-1.0.8-run*.json",
+      "label_en": "Background open (open -g -j) until the first status-check subprocess exits and the UI has the status"
     }
   ],
   "speed_cli": [
@@ -50,7 +51,11 @@
       "key": "doctor",
       "cmd": "wechattweak doctor -a /Applications/WeChat.app --json",
       "median_ms": 1430,
-      "runs": 5
+      "runs": 5,
+      "label_en": "Status check (wechattweak doctor --json)"
     }
-  ]
+  ],
+  "why": "原生 SwiftUI 界面，无 Python 运行时；读写微信交给包内的 Swift 命令行引擎，窗口打开时每 60 秒起一次状态检查子进程、做完即退出，关窗即停；无常驻后台服务。",
+  "why_en": "Native SwiftUI with no Python runtime. Reading and patching WeChat is handed to the bundled Swift command-line engine; while the window is open a status-check subprocess runs every 60 seconds and exits when done, stopping when the window closes. No resident background service.",
+  "data_en": "WeChat build 269602 (App Store edition), window open, no interaction"
 }
