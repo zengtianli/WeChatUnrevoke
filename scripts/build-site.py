@@ -14,6 +14,33 @@ OUT = ROOT / "dist/site"
 REPO = "zengtianli/WeChatUnrevoke"
 
 
+def perf_fields(version, download_bytes):
+    """Lightweight numbers come only from perf/lightweight.json, measured on this release."""
+    perf = json.loads((ROOT / "perf/lightweight.json").read_text())
+    if perf.get("version") != version:
+        raise SystemExit(f"perf/lightweight.json measures v{perf.get('version')}, release is v{version}: "
+                         "re-measure before publishing")
+    if perf["size"].get("download_bytes") != download_bytes:
+        raise SystemExit("perf/lightweight.json download size is not this release's ZIP")
+    start = next(x for x in perf["speed_gui"] if x["key"] == "cold_start_to_status")
+    check = next(x for x in perf["background"] if x["key"] == "status_check")
+    return {
+        # measure.py records MiB; the page uses decimal MB like the download size and Finder.
+        "PERF_INSTALLED": f"{perf['size']['installed_mb'] * 1024 * 1024 / 1_000_000:.1f}",
+        "PERF_MEM": f"{perf['idle']['footprint_mb']:.0f}",
+        "PERF_CPU": f"{perf['idle']['cpu_pct_with_checks']:.1f}",
+        "PERF_CPU_UI": f"{perf['idle']['cpu_pct']:.2f}",
+        "PERF_START": f"{start['median_ms'] / 1000:.1f}",
+        "PERF_CHECK": f"{check['per_run_s']:.1f}",
+        "PERF_CHECK_CPU": f"{check['cpu_s_per_run']:.2f}",
+        "PERF_WINDOW": str(perf["idle"]["window_s"]),
+        "PERF_RUNS": str(start["runs"]),
+        "PERF_DEVICE": perf["device"],
+        "PERF_DATA": perf["data"],
+        "PERF_DATE": perf["measured_at"],
+    }
+
+
 def main():
     release = json.loads(subprocess.check_output(
         ["gh", "api", f"repos/{REPO}/releases/latest"], text=True))
@@ -39,6 +66,19 @@ def main():
         shutil.copy2(ROOT / "site" / file, OUT / file)
     page = (ROOT / "site/index.html").read_text()
     page = page.replace("{{VERSION}}", version).replace("{{SIZE}}", f"{asset['size'] / 1_000_000:.1f}")
+    perf = perf_fields(version, asset["size"])
+    for key, value in perf.items():
+        page = page.replace("{{" + key + "}}", value)
+    # README carries the same numbers by hand; refuse a page that disagrees with it.
+    size = f"{asset['size'] / 1_000_000:.1f}"
+    for readme in ("README.md", "README_EN.md"):
+        text = (ROOT / readme).read_text()
+        for needed in (f"**{size} MB**", f"**{perf['PERF_MEM']} MB**", f"**{perf['PERF_CPU']}%**",
+                       f"v{version}", perf["PERF_DATE"]):
+            if needed not in text:
+                raise SystemExit(f"{readme} lightweight numbers are stale: missing {needed}")
+    if "{{" in page:
+        raise SystemExit("Unfilled placeholder in site/index.html")
     (OUT / "index.html").write_text(page)
     shutil.copy2(ROOT / "icon/AppIcon.png", OUT / "assets/icon.png")
     shutil.copy2(ROOT / "docs/screenshots/main-zh.png", OUT / "assets/main-zh.png")

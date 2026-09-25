@@ -43,6 +43,8 @@ final class AppModel: ObservableObject {
     private var automaticWriteBlocked = false
     private var writeGeneration = 0
     private var timer: Timer?
+    private var checkedFingerprint: String?
+    private var lastFullCheck = Date.distantPast
     private var observers: [NSObjectProtocol] = []
 
     private enum Keys {
@@ -83,9 +85,46 @@ final class AppModel: ObservableObject {
         }
         // 微信的更新是整包替换，没有事件可听，只能定时看。60s 足够——
         // 更新后用户总要重开微信，那一下也会触发上面的事件。
+        // 每一跳只 stat 几个文件；包没变就不起引擎（见 periodicCheck）。
         timer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
-            Task { @MainActor in await self?.refresh() }
+            Task { @MainActor in await self?.periodicCheck() }
         }
+        timer?.tolerance = 15
+    }
+
+    /// 定时检查：微信包的文件指纹与上次完整体检时一样，就跳过这一次。
+    /// 一次 `doctor` 要起 codesign/csrutil 等子进程，实测约 1.4 秒、0.25 秒 CPU；
+    /// stat 五个路径不到 1 毫秒。更新（整包替换）、打补丁/还原（改 dylib、重签）、
+    /// 改属主或权限都会改变指纹；指纹覆盖不到的变化（系统授权、微信偏好）
+    /// 靠每 30 分钟一次的完整体检兜底，用户也可以随时 ⌘R。
+    func periodicCheck() async {
+        if let current = AppModel.bundleFingerprint(Engine.weChatPath), current == checkedFingerprint,
+           Date().timeIntervalSince(lastFullCheck) < AppModel.fullCheckInterval {
+            return
+        }
+        await refresh()
+    }
+
+    static let fullCheckInterval: TimeInterval = 30 * 60
+
+    /// 会随「更新 / 打补丁 / 还原 / 重签 / 改权限」变化的几个路径的 inode、大小、
+    /// 修改与状态变更时间。包不存在返回 nil（交给 refresh 报「找不到微信」）。
+    static func bundleFingerprint(_ appPath: String) -> String? {
+        let parts = ["", "/Contents/Info.plist", "/Contents/MacOS/WeChat",
+                     "/Contents/Resources/wechat.dylib", "/Contents/_CodeSignature/CodeResources"]
+        var out: [String] = []
+        for (index, part) in parts.enumerated() {
+            var st = stat()
+            guard stat(appPath + part, &st) == 0 else {
+                if index == 0 { return nil }
+                out.append("-")
+                continue
+            }
+            out.append("\(st.st_ino):\(st.st_size):\(st.st_mode):\(st.st_uid):"
+                + "\(st.st_mtimespec.tv_sec).\(st.st_mtimespec.tv_nsec):"
+                + "\(st.st_ctimespec.tv_sec).\(st.st_ctimespec.tv_nsec)")
+        }
+        return out.joined(separator: "|")
     }
 
     func stop() {
@@ -106,9 +145,13 @@ final class AppModel: ObservableObject {
             errorMessage = L.err_noWeChat
             return
         }
+        // 指纹取在体检之前：体检期间包若又变了，下一跳会看到不同的指纹再查一次。
+        let fingerprint = AppModel.bundleFingerprint(Engine.weChatPath)
         do {
             let fresh = try await engine.doctor()
             guard generation == writeGeneration, !isBusy || duringWrite else { return }
+            checkedFingerprint = fingerprint
+            lastFullCheck = Date()
             let previous = status
             status = fresh
             errorMessage = lastWriteError

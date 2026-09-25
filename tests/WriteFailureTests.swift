@@ -239,5 +239,37 @@ struct WriteFailureTests {
         precondition(automatic.status?.overall == .protected && automatic.errorMessage == nil)
         precondition(automatic.lastLog.contains("patched"))
         print("PASS: permission denial pauses background writes; explicit successful retry clears the error")
+
+        // Periodic checks run the engine only when the WeChat bundle changed on disk.
+        defaults.set(false, forKey: "autoRepatch")
+        let doctorRuns = resources.appendingPathComponent("doctor-runs")
+        let counting = """
+        #!/bin/sh
+        case "$1" in
+          doctor) echo run >> \(Engine.shellQuote(doctorRuns.path)); /bin/cat \(Engine.shellQuote(fixture.path));;
+          *) exit 99;;
+        esac
+        """
+        try counting.write(to: cli, atomically: true, encoding: .utf8)
+        try fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: cli.path)
+        func runs() -> Int {
+            ((try? String(contentsOf: doctorRuns, encoding: .utf8)) ?? "").split(separator: "\n").count
+        }
+        try doctor("protected")
+        let idle = AppModel()
+        await idle.refresh()
+        precondition(runs() == 1)
+        await idle.periodicCheck()
+        await idle.periodicCheck()
+        precondition(runs() == 1 && idle.status?.overall == .protected)
+        let dylib = app.appendingPathComponent("Contents/Resources/wechat.dylib")
+        try fm.createDirectory(at: dylib.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data("replaced".utf8).write(to: dylib)
+        try doctor()
+        await idle.periodicCheck()
+        precondition(runs() == 2 && idle.status?.overall == .unprotected)
+        await idle.periodicCheck()
+        precondition(runs() == 2)
+        print("PASS: periodic check skips the engine until the WeChat bundle changes")
     }
 }

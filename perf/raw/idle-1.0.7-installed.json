@@ -1,0 +1,13 @@
+{
+  "product": "WeChatUnrevoke",
+  "version": "1.0.7",
+  "measured_at": "2026-09-25",
+  "device": "Mac16,12 / Apple M4 / macOS 27.2",
+  "idle": {
+    "process": "68860",
+    "footprint_mb": 34.0,
+    "cpu_pct": 0.05,
+    "window_s": 180
+  },
+  "compare": []
+}

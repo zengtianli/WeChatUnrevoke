@@ -1,0 +1,56 @@
+{
+  "product": "WeChatUnrevoke",
+  "version": "1.0.8",
+  "measured_at": "2026-09-25",
+  "device": "Mac16,12 / Apple M4 / macOS 27.2",
+  "size": {
+    "download_mb": 2.69,
+    "installed_mb": 6.67,
+    "download_bytes": 2817589,
+    "download_file": "WeChatUnrevoke-1.0.8.zip（GitHub Release 资产，SHA256 d8308bbc…）"
+  },
+  "compare": [],
+  "idle": {
+    "process": "Unrevoke 界面进程（不含引擎子进程）",
+    "footprint_mb": 35.0,
+    "cpu_pct": 0.04,
+    "window_s": 180,
+    "cpu_pct_with_checks": 0.46,
+    "note": "界面进程 180 秒采样；cpu_pct_with_checks = 界面 + 每 60 秒一次 doctor 子进程（0.25 s CPU/次）"
+  },
+  "background": [
+    {
+      "key": "status_check",
+      "job": "窗口打开时每 60 秒一次状态检查（wechattweak doctor）",
+      "per_run_s": 1.43,
+      "interval_s": 60.0,
+      "busy_min_per_day": 34.3,
+      "cpu_s_per_run": 0.25,
+      "cpu_min_per_day": 6.0,
+      "note": "per_run_s 与 cpu_s_per_run 为 5 次 /usr/bin/time 中位（含 codesign 等子进程），见 perf/raw/doctor-1.0.8-time.txt；关窗后停止，按全天开着窗口折算"
+    }
+  ],
+  "data": "微信 build 269602（App Store 版），窗口打开、无操作",
+  "speed_gui": [
+    {
+      "key": "cold_start_to_status",
+      "label": "后台打开（open -g -j）到首个状态检查子进程退出、界面拿到状态",
+      "median_ms": 1847,
+      "samples_ms": [
+        1913,
+        1722,
+        1847
+      ],
+      "runs": 3,
+      "raw": "perf/raw/launch-1.0.8-run*.json"
+    }
+  ],
+  "speed_cli": [
+    {
+      "key": "doctor",
+      "cmd": "wechattweak doctor -a /Applications/WeChat.app --json",
+      "median_ms": 1430,
+      "runs": 5
+    }
+  ]
+}

@@ -26,6 +26,16 @@ WeChatUnrevoke reads your WeChat build and lets you manage patches through a nat
 
 **No activation codes, no need to disable SIP, no kernel extension or persistent root helper.** Native SwiftUI with an embedded Swift CLI; no Python runtime. Patch configuration can update online; engine and interface changes still require app updates.
 
+## Lightweight: measured numbers
+
+| Download | Idle memory | Idle CPU | Open to status |
+|---|---|---|---|
+| **2.8 MB** (ZIP; 7.0 MB installed) | **35 MB** | **0.5%** (the interface itself 0.04%; the rest is a status check once a minute) | **1.8 s** |
+
+The interface only displays state. All reading and writing of WeChat is done by the bundled command-line engine, which starts for each check and exits when done. There is no background service, and checks stop when the window is closed.
+
+<sub>Measured on v1.0.8 · Mac16,12 / Apple M4 / macOS 27.2 · WeChat build 269602 (App Store edition), window open and idle · 2026-09-25. Memory is phys_footprint (same as the Memory column in Activity Monitor). CPU is CPU time ÷ wall time over a 180 s idle window; each status check takes about 1.4 s and 0.25 s of CPU, counted once a minute. Launch time is the median of 3 background launches. Raw data: [perf/lightweight.json](perf/lightweight.json).</sub>
+
 ## Get started
 
 1. Download `WeChatUnrevoke-<version>.zip` from the **[latest release](https://github.com/zengtianli/WeChatUnrevoke/releases/latest)** and move **WeChatUnrevoke.app** into Applications. Quit the old version first. When upgrading from Unrevoke, move the old app to Trash to avoid duplicate launchers. Preferences and bundle ID remain unchanged.

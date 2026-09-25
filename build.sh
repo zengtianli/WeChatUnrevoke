@@ -84,6 +84,13 @@ cp "$DIR/icon/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
 cp "$ENGINE_BIN" "$APP/Contents/Resources/wechattweak"
 cp "$ENGINE_REPO/config.json" "$APP/Contents/Resources/config.json"
 chmod +x "$APP/Contents/Resources/wechattweak"
+# 发布构建剥离本地符号与调试信息（崩溃符号化看 dSYM，运行不需要）：
+# 实测 1.0.8 主程序 1.33→0.63 MB、引擎 4.33→2.32 MB，安装后体积约减半。
+# 只动拷进包里的副本，不改引擎仓的产物；strip 让原签名失效，下面统一重签。
+if [ "$CONFIG" = "Release" ]; then
+  strip -x -S "$APP/Contents/MacOS/Unrevoke" 2>/dev/null
+  strip -x -S "$APP/Contents/Resources/wechattweak" 2>/dev/null
+fi
 # 内嵌的可执行文件要单独签，再签整包（否则整包签名把它算作未签名资源而失败）
 codesign --force -s - "$APP/Contents/Resources/wechattweak"
 codesign --force -s - "$APP"

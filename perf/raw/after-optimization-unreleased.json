@@ -1,0 +1,29 @@
+{
+  "build": "未发布：本工作树 + 引擎 111e3d4，CONFIG=Release UNIVERSAL=1（build.sh strip + 指纹跳过）",
+  "measured_at": "2026-09-25",
+  "device": "Mac16,12 / Apple M4 / macOS 27.2",
+  "size": {
+    "download_bytes": 2392500,
+    "installed_mib": 4.1,
+    "main_binary_bytes": 645760,
+    "engine_bytes": 2320960
+  },
+  "idle": {
+    "process": "Unrevoke 界面进程",
+    "footprint_mb": 35.0,
+    "cpu_pct": 0.03,
+    "window_s": 180
+  },
+  "doctor_runs_in_200s_idle": 0,
+  "doctor_per_run": {
+    "median_ms": 1446,
+    "note": "hyperfine 5 次，引擎未改，与 1.0.8 相同"
+  },
+  "launch_to_status_ms": 1843,
+  "background": {
+    "full_checks_per_day": 48,
+    "cpu_min_per_day": 0.2,
+    "busy_min_per_day": 1.1
+  },
+  "baseline_1_0_8": "perf/lightweight.json"
+}
