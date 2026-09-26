@@ -1,0 +1,61 @@
+{
+  "note": "1.0.8 与 1.0.9 发布包隔离副本同时 open -n -g -j，静置 45 秒后同一 180 秒窗口并排测（measure.py idle --with-helpers）",
+  "load_start": "22.27 46.75 63.36",
+  "load_end": "28.91 37.67 56.07",
+  "doctor_starts_in_window": {
+    "1.0.8": 3,
+    "1.0.9": 0
+  },
+  "1.0.8": {
+    "process": "79678",
+    "footprint_mb": 30.0,
+    "main_footprint_mb": 30.0,
+    "cpu_pct": 0.59,
+    "main_cpu_pct": 0.12,
+    "processes": [
+      {
+        "pid": 79678,
+        "name": "main",
+        "cpu_pct": 0.122,
+        "footprint_peak_mb": 30.0
+      },
+      {
+        "pid": 82331,
+        "name": "wechattweak",
+        "cpu_pct": 0.139,
+        "footprint_peak_mb": 0.0
+      },
+      {
+        "pid": 84955,
+        "name": "wechattweak",
+        "cpu_pct": 0.167,
+        "footprint_peak_mb": 0.0
+      },
+      {
+        "pid": 87669,
+        "name": "wechattweak",
+        "cpu_pct": 0.161,
+        "footprint_peak_mb": 0.0
+      }
+    ],
+    "window_s": 180,
+    "scope": "主进程 + XPC 辅助进程 + 子进程合计"
+  },
+  "1.0.9": {
+    "process": "79695",
+    "footprint_mb": 29.0,
+    "main_footprint_mb": 29.0,
+    "cpu_pct": 0.06,
+    "main_cpu_pct": 0.06,
+    "processes": [
+      {
+        "pid": 79695,
+        "name": "main",
+        "cpu_pct": 0.055,
+        "footprint_peak_mb": 29.0
+      }
+    ],
+    "window_s": 180,
+    "scope": "主进程 + XPC 辅助进程 + 子进程合计"
+  }
+}

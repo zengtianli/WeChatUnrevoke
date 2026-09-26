@@ -28,12 +28,14 @@ def perf_fields(version, download_bytes):
         # measure.py records MiB; the page uses decimal MB like the download size and Finder.
         "PERF_INSTALLED": f"{perf['size']['installed_mb'] * 1024 * 1024 / 1_000_000:.1f}",
         "PERF_MEM": f"{perf['idle']['footprint_mb']:.0f}",
-        "PERF_CPU": f"{perf['idle']['cpu_pct_with_checks']:.1f}",
+        # Below 1% one decimal would round a real 0.1x% to 0.1 or 0.0; keep two.
+        "PERF_CPU": f"{cpu:.2f}" if (cpu := perf['idle']['cpu_pct_with_checks']) < 1 else f"{cpu:.1f}",
         "PERF_CPU_UI": f"{perf['idle']['cpu_pct']:.2f}",
         "PERF_START": f"{start['median_ms'] / 1000:.1f}",
         "PERF_CHECK": f"{check['per_run_s']:.1f}",
         "PERF_CHECK_CPU": f"{check['cpu_s_per_run']:.2f}",
         "PERF_WINDOW": str(perf["idle"]["window_s"]),
+        "PERF_WINDOWS": str(perf["idle"].get("windows", 1)),
         "PERF_RUNS": str(start["runs"]),
         "PERF_DEVICE": perf["device"],
         "PERF_DATA": perf["data"],

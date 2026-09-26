@@ -1,61 +1,193 @@
 {
   "product": "WeChatUnrevoke",
-  "version": "1.0.8",
-  "measured_at": "2026-09-25",
+  "version": "1.0.9",
+  "measured_at": "2026-09-26",
   "device": "Mac16,12 / Apple M4 / macOS 27.2",
   "size": {
-    "download_mb": 2.69,
-    "installed_mb": 6.67,
-    "download_bytes": 2817589,
-    "download_file": "WeChatUnrevoke-1.0.8.zip（GitHub Release 资产，SHA256 d8308bbc…）"
+    "download_mb": 2.28,
+    "installed_mb": 4.1,
+    "download_bytes": 2392417,
+    "installed_bytes": 4300800,
+    "download_file": "WeChatUnrevoke-1.0.9.zip（GitHub Release 资产，SHA256 6a1774c0…）"
   },
   "compare": [],
   "idle": {
-    "process": "Unrevoke 界面进程（不含引擎子进程）",
-    "footprint_mb": 35.0,
-    "cpu_pct": 0.04,
+    "process": "Unrevoke 界面进程 + 子进程合计（measure.py idle --with-helpers）",
+    "footprint_mb": 30.0,
+    "cpu_pct": 0.08,
     "window_s": 180,
-    "cpu_pct_with_checks": 0.46,
-    "note": "界面进程 180 秒采样；cpu_pct_with_checks = 界面 + 每 60 秒一次 doctor 子进程（0.25 s CPU/次）"
+    "windows": 3,
+    "samples": [
+      {
+        "cpu_pct": 0.1,
+        "footprint_mb": 32.0
+      },
+      {
+        "cpu_pct": 0.07,
+        "footprint_mb": 30.0
+      },
+      {
+        "cpu_pct": 0.06,
+        "footprint_mb": 29.0
+      }
+    ],
+    "cpu_pct_with_checks": 0.12,
+    "note": "发布包隔离副本 open -n -g -j，静置 45 秒后 3 个 180 秒窗口（raw: idle-1.0.9-window1/2.json、ab-idle-1.0.8-vs-1.0.9.json）；窗口内检查引擎启动 0 次，CPU 全在界面进程；cpu_pct 为 3 窗口平均，footprint_mb 为中位；cpu_pct_with_checks = cpu_pct + 每 30 分钟一次完整检查按单次 CPU 折算"
   },
   "background": [
     {
       "key": "status_check",
-      "job": "窗口打开时每 60 秒一次状态检查（wechattweak doctor）",
-      "per_run_s": 1.43,
-      "interval_s": 60.0,
-      "busy_min_per_day": 34.3,
-      "cpu_s_per_run": 0.25,
-      "cpu_min_per_day": 6.0,
-      "note": "per_run_s 与 cpu_s_per_run 为 5 次 /usr/bin/time 中位（含 codesign 等子进程），见 perf/raw/doctor-1.0.8-time.txt；关窗后停止，按全天开着窗口折算"
+      "job": "窗口打开时每 60 秒比对微信包 5 个路径的文件指纹；指纹变了或距上次完整检查满 30 分钟才起 wechattweak doctor",
+      "per_run_s": 2.76,
+      "interval_s": 1800.0,
+      "busy_min_per_day": 2.2,
+      "cpu_s_per_run": 0.7,
+      "cpu_min_per_day": 0.6,
+      "note": "per_run_s 与 cpu_s_per_run 为 1.0.9 发布包引擎 5 次 /usr/bin/time 中位（含 codesign 等子进程），测于整机负载约 27 时，见 perf/raw/ab-launch-1.0.8-vs-1.0.9.txt；同条件交替测 1.0.8 引擎为 2.49 s / 0.67 s CPU。指纹比对不起进程，每次不到 1 毫秒，未计。关窗后停止，按全天开着窗口折算"
     }
   ],
-  "data": "微信 build 269602（App Store 版），窗口打开、无操作",
+  "data": "微信 build 269627（官网版，已打补丁、运行中），窗口打开、无操作；测量时整机负载较高（1 分钟负载均值约 27），同条件并排实测 1.0.8：空闲 CPU 0.59%、打开到出结果 3.5 秒",
+  "data_en": "WeChat build 269627 (direct-download edition, patched and running), window open, no interaction; the Mac was under heavy load (1-minute load average about 27), and 1.0.8 measured side by side under the same conditions idled at 0.59% CPU and took 3.5 s from open to status",
   "speed_gui": [
     {
       "key": "cold_start_to_status",
-      "label": "后台打开（open -g -j）到首个状态检查子进程退出、界面拿到状态",
-      "median_ms": 1847,
+      "label": "后台打开（open -n -g -j）到首个状态检查子进程退出、界面拿到状态",
+      "label_en": "Background open (open -n -g -j) until the first status-check subprocess exits and the UI has the status",
+      "median_ms": 2750,
       "samples_ms": [
-        1913,
-        1722,
-        1847
+        2648,
+        2750,
+        3223,
+        2749,
+        2873
       ],
-      "runs": 3,
-      "raw": "perf/raw/launch-1.0.8-run*.json",
-      "label_en": "Background open (open -g -j) until the first status-check subprocess exits and the UI has the status"
+      "runs": 5,
+      "load": "整机 1 分钟负载均值约 27（本机其他应用占用）；与 1.0.8 发布包交替测，1.0.8 中位 3457 ms",
+      "raw": "perf/raw/ab-launch-1.0.8-vs-1.0.9.txt"
+    },
+    {
+      "key": "cold_start_to_window",
+      "label": "后台打开到窗口出现（launchtime，5 次）",
+      "label_en": "Background open until the window exists (launchtime, 5 runs)",
+      "median_ms": 1052,
+      "samples_ms": [
+        1933,
+        642,
+        1052,
+        619,
+        1545
+      ],
+      "runs": 5,
+      "load": "负载均值 33–66；同条件 1.0.8 中位 1530 ms",
+      "raw": "perf/raw/ab-launch-1.0.8-vs-1.0.9.txt"
     }
   ],
   "speed_cli": [
     {
       "key": "doctor",
       "cmd": "wechattweak doctor -a /Applications/WeChat.app --json",
-      "median_ms": 1430,
+      "median_ms": 2760,
       "runs": 5,
       "label_en": "Status check (wechattweak doctor --json)"
     }
   ],
-  "why": "原生 SwiftUI 界面，无 Python 运行时；读写微信交给包内的 Swift 命令行引擎，窗口打开时每 60 秒起一次状态检查子进程、做完即退出，关窗即停；无常驻后台服务。",
-  "why_en": "Native SwiftUI with no Python runtime. Reading and patching WeChat is handed to the bundled Swift command-line engine; while the window is open a status-check subprocess runs every 60 seconds and exits when done, stopping when the window closes. No resident background service.",
-  "data_en": "WeChat build 269602 (App Store edition), window open, no interaction"
+  "why": "原生 SwiftUI 界面，无 Python 运行时；读写微信交给包内的 Swift 命令行引擎。窗口打开时每 60 秒只比对一次微信安装包里 5 个路径的文件指纹（不到 1 毫秒），微信没被更新、打补丁或还原就不启动引擎，另每 30 分钟完整检查一次兜底；关窗即停，无常驻后台服务。发布包剥离调试符号。",
+  "why_en": "Native SwiftUI with no Python runtime. Reading and patching WeChat is handed to the bundled Swift command-line engine. While the window is open, it compares a file fingerprint of 5 paths in the WeChat bundle once a minute (under a millisecond) and starts the engine only when WeChat was updated, patched or restored, plus a full check every 30 minutes as a backstop; checks stop when the window closes. No resident background service. Release builds are stripped of debug symbols.",
+  "comparison_1_0_8": {
+    "note": "同设备同日、同一微信（269627）下 1.0.8 与 1.0.9 发布包并排/交替实测，整机负载约 22–66（本机其他应用占用），两版同受影响",
+    "idle_cpu_pct_total": {
+      "1.0.8": 0.59,
+      "1.0.9": 0.06
+    },
+    "engine_starts_per_180s_idle": {
+      "1.0.8": 3,
+      "1.0.9": 0
+    },
+    "idle_footprint_mb": {
+      "1.0.8": 30.0,
+      "1.0.9": 29.0
+    },
+    "download_bytes": {
+      "1.0.8": 2817589,
+      "1.0.9": 2392417
+    },
+    "installed_mb_mib": {
+      "1.0.8": 6.67,
+      "1.0.9": 4.1
+    },
+    "raw": [
+      "perf/raw/ab-idle-1.0.8-vs-1.0.9.json",
+      "perf/raw/ab-launch-1.0.8-vs-1.0.9.txt"
+    ]
+  },
+  "history": [
+    {
+      "product": "WeChatUnrevoke",
+      "version": "1.0.8",
+      "measured_at": "2026-09-25",
+      "device": "Mac16,12 / Apple M4 / macOS 27.2",
+      "size": {
+        "download_mb": 2.69,
+        "installed_mb": 6.67,
+        "download_bytes": 2817589,
+        "download_file": "WeChatUnrevoke-1.0.8.zip（GitHub Release 资产，SHA256 d8308bbc…）"
+      },
+      "compare": [],
+      "idle": {
+        "process": "Unrevoke 界面进程（不含引擎子进程）",
+        "footprint_mb": 35.0,
+        "cpu_pct": 0.04,
+        "window_s": 180,
+        "cpu_pct_with_checks": 0.46,
+        "note": "界面进程 180 秒采样；cpu_pct_with_checks = 界面 + 每 60 秒一次 doctor 子进程（0.25 s CPU/次）"
+      },
+      "background": [
+        {
+          "key": "status_check",
+          "job": "窗口打开时每 60 秒一次状态检查（wechattweak doctor）",
+          "per_run_s": 1.43,
+          "interval_s": 60.0,
+          "busy_min_per_day": 34.3,
+          "cpu_s_per_run": 0.25,
+          "cpu_min_per_day": 6.0,
+          "note": "per_run_s 与 cpu_s_per_run 为 5 次 /usr/bin/time 中位（含 codesign 等子进程），见 perf/raw/doctor-1.0.8-time.txt；关窗后停止，按全天开着窗口折算"
+        }
+      ],
+      "data": "微信 build 269602（App Store 版），窗口打开、无操作",
+      "speed_gui": [
+        {
+          "key": "cold_start_to_status",
+          "label": "后台打开（open -g -j）到首个状态检查子进程退出、界面拿到状态",
+          "median_ms": 1847,
+          "samples_ms": [
+            1913,
+            1722,
+            1847
+          ],
+          "runs": 3,
+          "raw": "perf/raw/launch-1.0.8-run*.json",
+          "label_en": "Background open (open -g -j) until the first status-check subprocess exits and the UI has the status"
+        }
+      ],
+      "speed_cli": [
+        {
+          "key": "doctor",
+          "cmd": "wechattweak doctor -a /Applications/WeChat.app --json",
+          "median_ms": 1430,
+          "runs": 5,
+          "label_en": "Status check (wechattweak doctor --json)"
+        }
+      ],
+      "why": "原生 SwiftUI 界面，无 Python 运行时；读写微信交给包内的 Swift 命令行引擎，窗口打开时每 60 秒起一次状态检查子进程、做完即退出，关窗即停；无常驻后台服务。",
+      "why_en": "Native SwiftUI with no Python runtime. Reading and patching WeChat is handed to the bundled Swift command-line engine; while the window is open a status-check subprocess runs every 60 seconds and exits when done, stopping when the window closes. No resident background service.",
+      "data_en": "WeChat build 269602 (App Store edition), window open, no interaction",
+      "superseded_reason": "2026-09-26 发布 1.0.9（包未变不启动引擎、发布构建 strip），顶层换为 1.0.9 发布包实测；本条为 1.0.8 发布包 2026-09-25 实测（当时微信为 App Store 版 build 269602、整机负载未记录）"
+    },
+    {
+      "version": "1.0.9 源码构建（未发布）",
+      "measured_at": "2026-09-25",
+      "raw": "perf/raw/after-optimization-unreleased.json",
+      "superseded_reason": "发布前的源码实测，已由 1.0.9 发布包实测取代"
+    }
+  ]
 }

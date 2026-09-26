@@ -1,0 +1,26 @@
+# 1.0.8 / 1.0.9 发布包隔离副本交替测量：tostatus（open -n -g -j 到首个 doctor 子进程退出）与 wechattweak doctor 的 /usr/bin/time，各 5 次
+start load={ 27.56 37.01 55.51 }
+108 run1 {"pid": 90555, "process_ms": 109, "first_check_start_ms": 1517, "first_status_ms": 3700}
+109 run1 {"pid": 90724, "process_ms": 77, "first_check_start_ms": 548, "first_status_ms": 2648}
+108 run2 {"pid": 90930, "process_ms": 88, "first_check_start_ms": 1862, "first_status_ms": 4342}
+109 run2 {"pid": 91087, "process_ms": 93, "first_check_start_ms": 808, "first_status_ms": 2750}
+108 run3 {"pid": 91219, "process_ms": 62, "first_check_start_ms": 730, "first_status_ms": 3457}
+109 run3 {"pid": 91379, "process_ms": 75, "first_check_start_ms": 657, "first_status_ms": 3223}
+108 run4 {"pid": 91675, "process_ms": 155, "first_check_start_ms": 627, "first_status_ms": 3008}
+109 run4 {"pid": 91820, "process_ms": 63, "first_check_start_ms": 553, "first_status_ms": 2749}
+108 run5 {"pid": 91979, "process_ms": 106, "first_check_start_ms": 626, "first_status_ms": 2724}
+109 run5 {"pid": 92125, "process_ms": 66, "first_check_start_ms": 608, "first_status_ms": 2873}
+108 doctor1 real 2.44 user 0.33 sys 0.32 
+109 doctor1 real 2.63 user 0.36 sys 0.34 
+108 doctor2 real 2.15 user 0.33 sys 0.31 
+109 doctor2 real 2.76 user 0.35 sys 0.35 
+108 doctor3 real 2.77 user 0.35 sys 0.36 
+109 doctor3 real 2.45 user 0.35 sys 0.35 
+108 doctor4 real 2.49 user 0.33 sys 0.32 
+109 doctor4 real 3.05 user 0.36 sys 0.36 
+108 doctor5 real 2.64 user 0.34 sys 0.34 
+109 doctor5 real 2.95 user 0.35 sys 0.34 
+end load={ 27.28 34.08 52.59 }
+# 窗口出现（launchtime, LAUNCH_NEW=1, 5 次）
+1.0.9 runs_ms=[1933, 642, 1052, 619, 1545] median_ms=1052
+1.0.8 runs_ms=[1626, 1140, 1679, 1530, 1070] median_ms=1530

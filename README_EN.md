@@ -30,11 +30,11 @@ WeChatUnrevoke reads your WeChat build and lets you manage patches through a nat
 
 | Download | Idle memory | Idle CPU | Open to status |
 |---|---|---|---|
-| **2.8 MB** (ZIP; 7.0 MB installed) | **35 MB** | **0.5%** (the interface itself 0.04%; the rest is a status check once a minute) | **1.8 s** |
+| **2.4 MB** (ZIP; 4.3 MB installed) | **30 MB** | **0.12%** (the check engine does not start while WeChat is unchanged; a full check every 30 minutes is included) | **2.8 s** |
 
-The interface only displays state. All reading and writing of WeChat is done by the bundled command-line engine, which starts for each check and exits when done. There is no background service, and checks stop when the window is closed.
+The interface only displays state. All reading and writing of WeChat is done by the bundled command-line engine, which exits when done. While the window is open, it compares a file fingerprint of the WeChat bundle once a minute and starts the engine only when WeChat was updated, patched or restored, plus a full check every 30 minutes as a backstop. There is no background service, and checks stop when the window is closed.
 
-<sub>Measured on v1.0.8 · Mac16,12 / Apple M4 / macOS 27.2 · WeChat build 269602 (App Store edition), window open and idle · 2026-09-25. Memory is phys_footprint (same as the Memory column in Activity Monitor). CPU is CPU time ÷ wall time over a 180 s idle window; each status check takes about 1.4 s and 0.25 s of CPU, counted once a minute. Launch time is the median of 3 background launches. Raw data: [perf/lightweight.json](perf/lightweight.json).</sub>
+<sub>Measured on v1.0.9 · Mac16,12 / Apple M4 / macOS 27.2 · WeChat build 269627 (direct-download edition), window open and idle · 2026-09-26. Memory is phys_footprint (same as the Memory column in Activity Monitor), median of 3 windows. CPU is CPU time of the interface and its subprocesses ÷ wall time over a 180 s idle window, averaged over 3 windows; a full check takes about 2.8 s and 0.70 s of CPU, counted once every 30 minutes. Launch time is the median of 5 background launches. The Mac was under heavy load while measuring (1-minute load average about 27); 1.0.8 measured side by side under the same conditions idled at 0.59% CPU and took 3.5 s from open to status. Raw data: [perf/lightweight.json](perf/lightweight.json).</sub>
 
 ## Get started
 
