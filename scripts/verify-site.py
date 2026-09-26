@@ -18,11 +18,14 @@ def main():
     remote = json.loads(fetch("release.json"))
     assert local == remote, "Published release metadata mismatch"
     assert hashlib.sha256(fetch(remote["download"])).hexdigest() == remote["sha256"], "Download checksum mismatch"
-    for clip in ("enable", "restore", "tutorial"):
+    for clip in ("current-guide", "enable", "restore", "tutorial"):
         result = fetch(f"media/{clip}.mp4", "--range", "0-1023", "--dump-header", "-")
         assert b" 206 " in result, f"Video range request failed: {clip}"
         assert b"content-range:" in result.lower(), f"Video seek unsupported: {clip}"
-    print(f"Public site verified: {BASE}; v{remote['version']}; zip SHA256 and 3 seekable videos OK")
+    guide = json.loads(fetch('media/current-guide.json'))
+    assert guide['version'] == remote['version'], 'Current UI guide version differs'
+    assert hashlib.sha256(fetch('media/current-guide.mp4')).hexdigest() == guide['files']['current-guide.mp4'], 'Current UI guide checksum mismatch'
+    print(f"Public site verified: {BASE}; v{remote['version']}; ZIP and current guide SHA256, 4 seekable videos OK")
 
 
 if __name__ == "__main__":
