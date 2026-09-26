@@ -26,15 +26,23 @@ WeChatUnrevoke reads your WeChat build and lets you manage patches through a nat
 
 **No activation codes, no need to disable SIP, no kernel extension or persistent root helper.** Native SwiftUI with an embedded Swift CLI; no Python runtime. Patch configuration can update online; engine and interface changes still require app updates.
 
-## Lightweight: measured numbers
+<!-- lightweight:start -->
+## Resource use
 
-| Download | Idle memory | Idle CPU | Open to status |
+| Download | Idle memory | Idle CPU | Background open (open -n -g -j) until the first status-check subprocess exits and the UI has the status |
 |---|---|---|---|
-| **2.4 MB** (ZIP; 4.3 MB installed) | **30 MB** | **0.12%** (the check engine does not start while WeChat is unchanged; a full check every 30 minutes is included) | **2.8 s** |
+| **2.4 MB** (installed 4.3 MB) | **32 MB** | **0.07%** | **2.8 s** |
 
-The interface only displays state. All reading and writing of WeChat is done by the bundled command-line engine, which exits when done. While the window is open, it compares a file fingerprint of the WeChat bundle once a minute and starts the engine only when WeChat was updated, patched or restored, plus a full check every 30 minutes as a backstop. There is no background service, and checks stop when the window is closed.
+Native SwiftUI with no Python runtime. Reading and patching WeChat is handed to the bundled Swift command-line engine. While the window is open, it compares a file fingerprint of 5 paths in the WeChat bundle once a minute (under a millisecond) and starts the engine only when WeChat was updated, patched or restored, plus a full check every 30 minutes as a backstop; checks stop when the window closes. No resident background service. Release builds are stripped of debug symbols.
 
-<sub>Measured on v1.0.9 · Mac16,12 / Apple M4 / macOS 27.2 · WeChat build 269627 (direct-download edition), window open and idle · 2026-09-26. Memory is phys_footprint (same as the Memory column in Activity Monitor), median of 3 windows. CPU is CPU time of the interface and its subprocesses ÷ wall time over a 180 s idle window, averaged over 3 windows; a full check takes about 2.8 s and 0.70 s of CPU, counted once every 30 minutes. Launch time is the median of 5 background launches. The Mac was under heavy load while measuring (1-minute load average about 27); 1.0.8 measured side by side under the same conditions idled at 0.59% CPU and took 3.5 s from open to status. Raw data: [perf/lightweight.json](perf/lightweight.json).</sub>
+CPU conditions: The 60-second idle window measured 0.03% CPU for the app and helpers; including a full check every 30 minutes gives about 0.07%. Launch and full-check timings retain five measurements of the identical 1.0.9 binary at a system load average near 27.
+
+Background tasks:
+
+- With the window open, compare five WeChat bundle fingerprints every minute; run the full status check on change or every 30 minutes.: Wall time per run 2.76 s; Interval 1800.0 s; Busy wall time per day 2.2 min; CPU time per run 0.7 s; CPU time per day 0.6 min; per_run_s 与 cpu_s_per_run 为 1.0.9 发布包引擎 5 次 /usr/bin/time 中位（含 codesign 等子进程），测于整机负载约 27 时，见 perf/raw/ab-launch-1.0.8-vs-1.0.9.txt；同条件交替测 1.0.8 引擎为 2.49 s / 0.67 s CPU。指纹比对不起进程，每次不到 1 毫秒，未计。关窗后停止，按全天开着窗口折算
+
+<sub>v1.0.9 · Mac16,12 / Apple M4 / macOS 27.2 · Official installed app reading the real WeChat bundle; automatic writes disabled for this measurement process, with no patch or message operation. · measured 2026-09-26. Measured on the listed device; re-measured for each version. Memory uses phys_footprint; CPU is CPU time ÷ wall time over a 60-second sampling window; sizes in decimal MB. Raw data: [perf/lightweight.json](perf/lightweight.json).</sub>
+<!-- lightweight:end -->
 
 ## Get started
 

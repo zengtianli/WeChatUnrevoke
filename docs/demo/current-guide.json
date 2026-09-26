@@ -1,0 +1,22 @@
+{
+  "version": "1.0.9",
+  "method": "Current production ContentView rendered offscreen with fictional DoctorStatus fixtures; start task disabled in temporary harness, no Engine operation, no system clipboard, input synthesis or foreground window. Not a performance measurement or real patch demonstration.",
+  "source_sha256": {
+    "Engine.swift": "b31b8345e5f6f2fa4791342eaa7a25502c837d1c316a76184687e9f09ef44ec2",
+    "ViewModel.swift": "99547baab4f87b525383805d6330f0e9fbf2d3e718023aa7a3034e9c97dc8fe0",
+    "Models.swift": "3c99d58322afb702dac548317c7f26fb1250201cfe13447aad0864fb883df2b2",
+    "ContentView.swift": "4fff25e4ed3fbdc66b7de02651a51ffb0a3899b6727904e65ba531aed9892fba",
+    "UnrevokeApp.swift": "ecf0992c9acd1148bd6e5b56df15fd20021cc54a02b1d72f2e2a2abdb6d89010"
+  },
+  "duration_seconds": 21,
+  "files": {
+    "current-guide.mp4": "0d881416b13103af5ea3c6c9e0318d9a7b2d9e6891e23ef7fc3ae462c400cc43",
+    "current-unprotected.png": "b4a7bfc0de688e39b1ef2fc5c7ecab0e0c8515a27f6b4c3f3c3519f2e9708ff8",
+    "current-protected.png": "be1253b13639c7982b94f3b38c88a738cef6a46c4e715dde4751498c5700a32a",
+    "current-guide.vtt": "1947757cb374d9fbf5c79be8a28a345fab0d8229683c83fd579acafe8eb09a98",
+    "current-antiRevokeOnly.png": "f66c4167df23d9edd9bb1d41f432378593e8375b09776d7988a240c36e71a693"
+  },
+  "source_commit": "41858f5b54cb0e80832cd79e9756a88770e29753",
+  "final_visual_review": "passed",
+  "review_note": "Reviewed all three production-view PNGs at final dimensions; current states and Chinese labels are legible. Fictional status fixtures and offscreen-only method are visible in the video captions and page."
+}

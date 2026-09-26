@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "provenance": "existing GitHub release target, not a newly reconstructed build receipt",
+  "release_url": "https://github.com/zengtianli/WeChatUnrevoke/releases/tag/v1.0.9",
+  "published_at": "2026-09-26T01:52:52Z",
+  "source_commit": "3f2b0a873276bd81ae6b4aed107d5fc5760adb5e",
+  "archive_sha256": "6a1774c06efa832c70bb8e7feb8ef4c7a752096170829b1ebdeb3a3d77ed1f47",
+  "artifact": {
+    "version": "1.0.9",
+    "build": "26",
+    "executable_sha256": "b71ea01d89bf7f97596a096a27a6688a8fb8b8a9da9624cc19d7b1d38e337f35"
+  },
+  "installed_verified_at": "2026-09-26T19:47:47"
+}

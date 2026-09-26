@@ -1,0 +1,23 @@
+{
+  "version": "1.0.9 (26)",
+  "idle": {
+    "footprint_mb": 32.0,
+    "main_footprint_mb": 32.0,
+    "cpu_pct": 0.03,
+    "main_cpu_pct": 0.03,
+    "processes": [
+      {
+        "pid": 51320,
+        "name": "main",
+        "cpu_pct": 0.033,
+        "footprint_peak_mb": 32.0
+      }
+    ],
+    "process": "WeChatUnrevoke.app：主进程、辅助进程与子进程合计",
+    "window_s": 60,
+    "settle_s": 45,
+    "scope": "主进程 + XPC 辅助进程 + 子进程合计",
+    "method": "正式1.0.9安装版，open -n -g -j；NSUserDefaults参数覆盖autoRepatch/everProtected为NO，只读检查，不改真实偏好或微信。45秒静置，60秒CPU窗口，之后3次phys_footprint合计峰值。"
+  },
+  "executable_sha256": "b71ea01d89bf7f97596a096a27a6688a8fb8b8a9da9624cc19d7b1d38e337f35"
+}

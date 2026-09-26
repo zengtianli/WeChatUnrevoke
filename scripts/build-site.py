@@ -8,6 +8,12 @@ import re
 import shutil
 import subprocess
 import urllib.parse
+import plistlib
+import sys
+import zipfile
+
+sys.path.insert(0, str(Path.home() / "Apps/apps-portal/site"))
+import perf_block
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "dist/site"
@@ -60,6 +66,14 @@ def main():
                         "--pattern", name, "--dir", str(archive.parent)], check=True)
     if hashlib.sha256(archive.read_bytes()).hexdigest() != expected:
         raise SystemExit("Release archive checksum mismatch")
+    with zipfile.ZipFile(archive) as package:
+        info_path = next(n for n in package.namelist() if n.endswith('.app/Contents/Info.plist') and not n.startswith('__MACOSX/'))
+        info = plistlib.loads(package.read(info_path))
+        executable = info_path.removesuffix('Info.plist') + 'MacOS/' + info['CFBundleExecutable']
+        executable_sha256 = hashlib.sha256(package.read(executable)).hexdigest()
+    if info['CFBundleShortVersionString'] != version:
+        raise SystemExit('Release version differs from packaged application')
+    source_commit = subprocess.check_output(['gh', 'api', f"repos/{REPO}/commits/{release['target_commitish']}", '--jq', '.sha'], text=True).strip()
 
     OUT.mkdir(parents=True, exist_ok=True)
     for folder in ("assets", "media", "downloads"):
@@ -68,10 +82,11 @@ def main():
         shutil.copy2(ROOT / "site" / file, OUT / file)
     page = (ROOT / "site/index.html").read_text()
     page = page.replace("{{VERSION}}", version).replace("{{SIZE}}", f"{asset['size'] / 1_000_000:.1f}")
+    page = page.replace('{{LIGHTWEIGHT}}', perf_block.standalone_section(ROOT / 'perf/lightweight.json', version, '#50723c'))
     perf = perf_fields(version, asset["size"])
     for key, value in perf.items():
         page = page.replace("{{" + key + "}}", value)
-    # README carries the same numbers by hand; refuse a page that disagrees with it.
+    # README consumes the same evidence through the shared renderer.
     size = f"{asset['size'] / 1_000_000:.1f}"
     for readme in ("README.md", "README_EN.md"):
         text = (ROOT / readme).read_text()
@@ -83,7 +98,9 @@ def main():
         raise SystemExit("Unfilled placeholder in site/index.html")
     (OUT / "index.html").write_text(page)
     shutil.copy2(ROOT / "icon/AppIcon.png", OUT / "assets/icon.png")
-    shutil.copy2(ROOT / "docs/screenshots/main-zh.png", OUT / "assets/main-zh.png")
+    shutil.copy2(ROOT / "docs/demo/current-protected.png", OUT / "assets/main-zh.png")
+    for suffix in ('mp4', 'vtt', 'json'):
+        shutil.copy2(ROOT / f'docs/demo/current-guide.{suffix}', OUT / f'media/current-guide.{suffix}')
     for clip in ("enable", "restore"):
         for suffix in ("mp4", "vtt"):
             shutil.copy2(ROOT / f"docs/demo/{clip}.{suffix}", OUT / f"media/{clip}.{suffix}")
@@ -91,7 +108,8 @@ def main():
     shutil.copy2(ROOT / "docs/demo/tutorial.mp4", OUT / "media/tutorial.mp4")
     shutil.copy2(archive, OUT / "downloads" / name)
     (OUT / "downloads/SHA256SUMS.txt").write_text(f"{expected}  {name}\n")
-    (OUT / "release.json").write_text(json.dumps({"version": version, "sha256": expected,
+    (OUT / "release.json").write_text(json.dumps({"version": version, "build": info['CFBundleVersion'],
+        "source_commit": source_commit, "executable_sha256": executable_sha256, "sha256": expected,
         "download": f"downloads/{name}", "source": release["html_url"]}, indent=2) + "\n")
     (OUT / "robots.txt").write_text("User-agent: *\nAllow: /\nSitemap: https://unrevoke.tianli.cyou/sitemap.xml\n")
     (OUT / "sitemap.xml").write_text('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://unrevoke.tianli.cyou/</loc></url></urlset>\n')

@@ -12,27 +12,26 @@
   },
   "compare": [],
   "idle": {
-    "process": "Unrevoke 界面进程 + 子进程合计（measure.py idle --with-helpers）",
-    "footprint_mb": 30.0,
-    "cpu_pct": 0.08,
-    "window_s": 180,
-    "windows": 3,
-    "samples": [
+    "footprint_mb": 32.0,
+    "main_footprint_mb": 32.0,
+    "cpu_pct": 0.03,
+    "main_cpu_pct": 0.03,
+    "processes": [
       {
-        "cpu_pct": 0.1,
-        "footprint_mb": 32.0
-      },
-      {
-        "cpu_pct": 0.07,
-        "footprint_mb": 30.0
-      },
-      {
-        "cpu_pct": 0.06,
-        "footprint_mb": 29.0
+        "pid": 51320,
+        "name": "main",
+        "cpu_pct": 0.033,
+        "footprint_peak_mb": 32.0
       }
     ],
-    "cpu_pct_with_checks": 0.12,
-    "note": "发布包隔离副本 open -n -g -j，静置 45 秒后 3 个 180 秒窗口（raw: idle-1.0.9-window1/2.json、ab-idle-1.0.8-vs-1.0.9.json）；窗口内检查引擎启动 0 次，CPU 全在界面进程；cpu_pct 为 3 窗口平均，footprint_mb 为中位；cpu_pct_with_checks = cpu_pct + 每 30 分钟一次完整检查按单次 CPU 折算"
+    "process": "WeChatUnrevoke.app：主进程、辅助进程与子进程合计",
+    "window_s": 60,
+    "settle_s": 45,
+    "scope": "主进程 + XPC 辅助进程 + 子进程合计",
+    "method": "正式 1.0.9 安装版，open -n -g -j；NSUserDefaults 参数域 everProtected=NO 阻止自动写入；只读状态检查，不执行补丁或消息操作。45 秒静置，60 秒 CPU 窗口，之后 3 次 phys_footprint 合计峰值。",
+    "cpu_pct_with_checks": 0.07,
+    "cpu_note": "60 秒实测界面及辅助进程 CPU 0.03%；另加同一 1.0.9 发布包每 30 分钟完整检查的 CPU 时间折算，总计约 0.07%。启动速度和完整检查数据沿用同一二进制的 5 次实测，原记录整机负载约 27。",
+    "cpu_note_en": "The 60-second idle window measured 0.03% CPU for the app and helpers; including a full check every 30 minutes gives about 0.07%. Launch and full-check timings retain five measurements of the identical 1.0.9 binary at a system load average near 27."
   },
   "background": [
     {
@@ -43,11 +42,12 @@
       "busy_min_per_day": 2.2,
       "cpu_s_per_run": 0.7,
       "cpu_min_per_day": 0.6,
-      "note": "per_run_s 与 cpu_s_per_run 为 1.0.9 发布包引擎 5 次 /usr/bin/time 中位（含 codesign 等子进程），测于整机负载约 27 时，见 perf/raw/ab-launch-1.0.8-vs-1.0.9.txt；同条件交替测 1.0.8 引擎为 2.49 s / 0.67 s CPU。指纹比对不起进程，每次不到 1 毫秒，未计。关窗后停止，按全天开着窗口折算"
+      "note": "per_run_s 与 cpu_s_per_run 为 1.0.9 发布包引擎 5 次 /usr/bin/time 中位（含 codesign 等子进程），测于整机负载约 27 时，见 perf/raw/ab-launch-1.0.8-vs-1.0.9.txt；同条件交替测 1.0.8 引擎为 2.49 s / 0.67 s CPU。指纹比对不起进程，每次不到 1 毫秒，未计。关窗后停止，按全天开着窗口折算",
+      "job_en": "With the window open, compare five WeChat bundle fingerprints every minute; run the full status check on change or every 30 minutes."
     }
   ],
-  "data": "微信 build 269627（官网版，已打补丁、运行中），窗口打开、无操作；测量时整机负载较高（1 分钟负载均值约 27），同条件并排实测 1.0.8：空闲 CPU 0.59%、打开到出结果 3.5 秒",
-  "data_en": "WeChat build 269627 (direct-download edition, patched and running), window open, no interaction; the Mac was under heavy load (1-minute load average about 27), and 1.0.8 measured side by side under the same conditions idled at 0.59% CPU and took 3.5 s from open to status",
+  "data": "正式安装版，真实微信包的只读状态；自动写入在本次测量进程禁用，未执行补丁或消息操作。",
+  "data_en": "Official installed app reading the real WeChat bundle; automatic writes disabled for this measurement process, with no patch or message operation.",
   "speed_gui": [
     {
       "key": "cold_start_to_status",
@@ -188,6 +188,37 @@
       "measured_at": "2026-09-25",
       "raw": "perf/raw/after-optimization-unreleased.json",
       "superseded_reason": "发布前的源码实测，已由 1.0.9 发布包实测取代"
+    },
+    {
+      "idle": {
+        "process": "Unrevoke 界面进程 + 子进程合计（measure.py idle --with-helpers）",
+        "footprint_mb": 30.0,
+        "cpu_pct": 0.08,
+        "window_s": 180,
+        "windows": 3,
+        "samples": [
+          {
+            "cpu_pct": 0.1,
+            "footprint_mb": 32.0
+          },
+          {
+            "cpu_pct": 0.07,
+            "footprint_mb": 30.0
+          },
+          {
+            "cpu_pct": 0.06,
+            "footprint_mb": 29.0
+          }
+        ],
+        "cpu_pct_with_checks": 0.12,
+        "note": "发布包隔离副本 open -n -g -j，静置 45 秒后 3 个 180 秒窗口（raw: idle-1.0.9-window1/2.json、ab-idle-1.0.8-vs-1.0.9.json）；窗口内检查引擎启动 0 次，CPU 全在界面进程；cpu_pct 为 3 窗口平均，footprint_mb 为中位；cpu_pct_with_checks = cpu_pct + 每 30 分钟一次完整检查按单次 CPU 折算"
+      },
+      "data": "微信 build 269627（官网版，已打补丁、运行中），窗口打开、无操作；测量时整机负载较高（1 分钟负载均值约 27），同条件并排实测 1.0.8：空闲 CPU 0.59%、打开到出结果 3.5 秒"
     }
-  ]
+  ],
+  "measured_artifact": {
+    "version": "1.0.9",
+    "build": "26",
+    "executable_sha256": "b71ea01d89bf7f97596a096a27a6688a8fb8b8a9da9624cc19d7b1d38e337f35"
+  }
 }
