@@ -30,10 +30,11 @@ def perf_fields(version, download_bytes):
         raise SystemExit("perf/lightweight.json download size is not this release's ZIP")
     start = next(x for x in perf["speed_gui"] if x["key"] == "cold_start_to_status")
     check = next(x for x in perf["background"] if x["key"] == "status_check")
+    display = perf_block.summarize(perf, ROOT / "perf/lightweight.json")
     return {
         # measure.py records MiB; the page uses decimal MB like the download size and Finder.
         "PERF_INSTALLED": f"{perf['size']['installed_mb'] * 1024 * 1024 / 1_000_000:.1f}",
-        "PERF_MEM": f"{perf['idle']['footprint_mb']:.0f}",
+        "PERF_MEM": display["memory"],
         # Below 1% one decimal would round a real 0.1x% to 0.1 or 0.0; keep two.
         "PERF_CPU": f"{cpu:.2f}" if (cpu := perf['idle']['cpu_pct_with_checks']) < 1 else f"{cpu:.1f}",
         "PERF_CPU_UI": f"{perf['idle']['cpu_pct']:.2f}",
