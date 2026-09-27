@@ -13,6 +13,17 @@ extension Notification.Name {
 }
 
 @main
+@MainActor
+enum UnrevokeEntry {
+    static func main() {
+        if CommandLine.arguments.contains("--ui-self-test") {
+            NativeUISelfTest.launch()
+        } else {
+            UnrevokeApp.main()
+        }
+    }
+}
+
 struct UnrevokeApp: App {
     var body: some Scene {
         WindowGroup {

@@ -9,8 +9,24 @@ import SwiftUI
 // =============================================================================
 
 struct ContentView: View {
-    @StateObject private var model = AppModel()
+    @StateObject private var model: AppModel
     @State private var showDetails = false
+    private let automaticallyStart: Bool
+
+    init() {
+        _model = StateObject(wrappedValue: AppModel())
+        automaticallyStart = true
+    }
+
+    /// Use the same native view in the isolated, offscreen acceptance app.
+    init(model: AppModel, automaticallyStart: Bool, showDetails: Bool = false) {
+        _model = StateObject(wrappedValue: model)
+        self.automaticallyStart = automaticallyStart
+        _showDetails = State(initialValue: showDetails)
+    }
+
+    func refresh() async { await model.refresh() }
+    func close() { model.stop() }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -44,10 +60,10 @@ struct ContentView: View {
             footer
         }
         .frame(minWidth: 560, minHeight: 520)
-        .task { model.start() }
-        .onDisappear { model.stop() }
+        .task { if automaticallyStart { model.start() } }
+        .onDisappear { close() }
         .onReceive(NotificationCenter.default.publisher(for: .consoleRefresh)) { _ in
-            Task { await model.refresh() }
+            Task { await refresh() }
         }
         .overlay(alignment: .bottom) { toastView }
         .animation(.easeInOut(duration: 0.18), value: model.status)
@@ -91,15 +107,15 @@ struct ContentView: View {
                     Button(L.btn_repair) { Task { await model.protectNow() } }
                         .buttonStyle(.borderedProminent).controlSize(.large)
                 case .protected, .antiRevokeOnly:
-                    Button(L.btn_recheck) { Task { await model.refresh() } }.controlSize(.large)
+                    Button(L.btn_recheck) { Task { await refresh() } }.controlSize(.large)
                 case .brokenBundle, .mixed:
                     Button(L.btn_reinstall) {
                         NSWorkspace.shared.open(URL(string: "https://mac.weixin.qq.com")!)
                     }
                     .buttonStyle(.borderedProminent).controlSize(.large)
-                    Button(L.btn_recheck) { Task { await model.refresh() } }.controlSize(.large)
+                    Button(L.btn_recheck) { Task { await refresh() } }.controlSize(.large)
                 case .unsupportedBuild, .none:
-                    Button(L.btn_recheck) { Task { await model.refresh() } }
+                    Button(L.btn_recheck) { Task { await refresh() } }
                         .buttonStyle(.borderedProminent).controlSize(.large)
                 }
                 if model.status?.needsAdmin == true {
@@ -255,5 +271,132 @@ struct ContentView: View {
                     model.toast = nil
                 }
         }
+    }
+}
+
+/// In-process native UI acceptance. The runner provides a disposable app bundle
+/// and a doctor-only fixture executable; this never operates on installed WeChat.
+@MainActor
+enum NativeUISelfTest {
+    static func launch() {
+        let app = NSApplication.shared
+        app.setActivationPolicy(.prohibited)
+        Task { @MainActor in
+            do {
+                try await run()
+                exit(0)
+            } catch {
+                fputs("native_ui failed: \(error)\n", stderr)
+                exit(1)
+            }
+        }
+        app.run()
+    }
+
+    private static func require(_ condition: Bool, _ message: String) throws {
+        if !condition { throw NSError(domain: "NativeUISelfTest", code: 1,
+                                      userInfo: [NSLocalizedDescriptionKey: message]) }
+    }
+
+    private static func run() async throws {
+        let env = ProcessInfo.processInfo.environment
+        guard let bundleID = Bundle.main.bundleIdentifier,
+              bundleID.hasPrefix("io.github.zengtianli.unrevoke.accept.nativeui."),
+              let root = env["UNREVOKE_UI_FIXTURE"], let output = env["UNREVOKE_UI_OUTPUT"] else {
+            throw NSError(domain: "NativeUISelfTest", code: 2,
+                          userInfo: [NSLocalizedDescriptionKey: "Run scripts/accept/native_ui.py with an isolated bundle."])
+        }
+        let fixture = URL(fileURLWithPath: root)
+        let expectedPath = fixture.appendingPathComponent("WeChat.app").path
+        try require(Engine.weChatPath == expectedPath, "The test target must be the disposable fixture")
+        try require(!UserDefaults.standard.bool(forKey: "autoRepatch"), "Automatic writes must be disabled")
+        defer { UserDefaults.standard.removePersistentDomain(forName: bundleID) }
+        let model = AppModel(confirmAction: { _, _, _ in false })
+        model.autoRepatch = false
+        let view = ContentView(model: model, automaticallyStart: false, showDetails: true)
+        let hosting = NSHostingView(rootView: view
+            .transaction { $0.animation = nil; $0.disablesAnimations = true }
+            .background(Color(nsColor: .windowBackgroundColor)))
+        let window = NSWindow(contentRect: NSRect(x: -20000, y: -20000, width: 620, height: 820),
+                              styleMask: [.titled, .closable], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.appearance = NSAppearance(named: .aqua)
+        window.contentView = hosting
+        defer { model.stop(); window.close() }
+        var checks: [String: Bool] = [:]
+        checks["automatic_writes_disabled"] = !model.autoRepatch
+        var captures: [[String: Any]] = []
+
+        func state(_ name: String) throws {
+            try name.write(to: fixture.appendingPathComponent("state"), atomically: true, encoding: .utf8)
+        }
+        func capture(_ name: String, width: CGFloat = 620, height: CGFloat = 820) throws {
+            window.setContentSize(NSSize(width: width, height: height))
+            hosting.layoutSubtreeIfNeeded()
+            hosting.displayIfNeeded()
+            guard let bitmap = hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds) else {
+                throw NSError(domain: "NativeUISelfTest", code: 3)
+            }
+            hosting.cacheDisplay(in: hosting.bounds, to: bitmap)
+            guard let png = bitmap.representation(using: .png, properties: [:]) else {
+                throw NSError(domain: "NativeUISelfTest", code: 4)
+            }
+            try require(bitmap.pixelsWide >= Int(width) && bitmap.pixelsHigh >= Int(height), "Incorrect native render dimensions")
+            try require(png.count > 12000, "Native view rendered an empty image")
+            let path = URL(fileURLWithPath: output).appendingPathComponent(name + ".png")
+            try png.write(to: path)
+            captures.append(["file": name + ".png", "width": bitmap.pixelsWide,
+                             "height": bitmap.pixelsHigh, "bytes": png.count])
+        }
+
+        try state("protected")
+        await view.refresh() // The same asynchronous action used by the recheck button.
+        try await Task.sleep(for: .milliseconds(250))
+        checks["refresh_decodes_build_and_entitlements"] = model.status?.overall == .protected
+            && model.status?.build == "90001" && model.status?.entitlementKeyCount == 3
+            && model.status?.entitlementsOK == true && model.errorMessage == nil
+        try capture("protected")
+
+        try state("antiRevokeOnly")
+        // Exercise the real menu/notification refresh handler without keyboard events.
+        NotificationCenter.default.post(name: .consoleRefresh, object: nil)
+        for _ in 0..<40 {
+            if model.status?.overall == .antiRevokeOnly { break }
+            try await Task.sleep(for: .milliseconds(25))
+        }
+        checks["refresh_action_accepts_independent_update_result"] = model.status?.overall == .antiRevokeOnly
+            && model.status?.updateBlock == "notApplicable" && model.errorMessage == nil
+        try await Task.sleep(for: .milliseconds(200))
+        try capture("anti-revoke-only")
+
+        model.variant = .silent
+        checks["variant_binding_persists_in_isolated_domain"] = UserDefaults.standard.string(forKey: "variant") == "silent"
+        try state("failure")
+        await view.refresh()
+        try await Task.sleep(for: .milliseconds(100))
+        checks["engine_error_visible_without_losing_previous_state"] = model.errorMessage?.contains("UI fixture read failed") == true
+            && model.status?.overall == .antiRevokeOnly && !model.isBusy
+        try capture("error")
+
+        try state("unprotected")
+        await view.refresh()
+        try await Task.sleep(for: .milliseconds(200))
+        checks["refresh_recovers_error_and_shows_unprotected"] = model.status?.overall == .unprotected
+            && model.errorMessage == nil && !model.isBusy
+        try capture("unprotected")
+        try capture("minimum-size", width: 560, height: 520)
+        checks["native_view_minimum_size"] = hosting.bounds.width >= 560 && hosting.bounds.height >= 520
+        checks["no_visible_or_key_windows"] = !window.isVisible && !window.isKeyWindow
+            && NSApplication.shared.windows.allSatisfy { !$0.isVisible && !$0.isKeyWindow }
+        view.close() // The same cleanup path used by ContentView.onDisappear.
+        window.close()
+        checks["close_action"] = !window.isVisible && !model.isBusy
+        let result: [String: Any] = ["checks": checks, "captures": captures,
+            "scope": "real ContentView and AppModel; isolated doctor subprocess fixtures; no installed app, input, clipboard or network actions"]
+        let json = try JSONSerialization.data(withJSONObject: result, options: [.prettyPrinted, .sortedKeys])
+        try json.write(to: URL(fileURLWithPath: output).appendingPathComponent("result.json"))
+        let failed = checks.filter { !$0.value }.map(\.key).sorted()
+        try require(failed.isEmpty, "Failed checks: \(failed.joined(separator: ", "))")
+        print("native_ui: \(checks.count) checks passed; \(captures.count) offscreen native renders")
     }
 }
