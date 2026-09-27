@@ -31,7 +31,7 @@ WeChatUnrevoke reads your WeChat build and lets you manage patches through a nat
 
 | Download | Idle memory | Idle CPU | Background open (open -n -g -j) until the first status-check subprocess exits and the UI has the status |
 |---|---|---|---|
-| **2.4 MB** (installed 4.3 MB) | **32 MB** | **0.07%** | **2.8 s** |
+| **2.4 MB** (installed 4.3 MB) | **33.6 MB** | **0.07%** | **2.8 s** |
 
 Native SwiftUI with no Python runtime. Reading and patching WeChat is handed to the bundled Swift command-line engine. While the window is open, it compares a file fingerprint of 5 paths in the WeChat bundle once a minute (under a millisecond) and starts the engine only when WeChat was updated, patched or restored, plus a full check every 30 minutes as a backstop; checks stop when the window closes. No resident background service. Release builds are stripped of debug symbols.
 
