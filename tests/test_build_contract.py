@@ -95,12 +95,37 @@ class SiteResourceContractTests(unittest.TestCase):
         current, historical = html.split("id='historical-performance'", 1)
         self.assertIn("当前 v99.0.0：运行性能待测", current)
         self.assertIn("<strong>9.0</strong>", current)
-        self.assertIn("15.0 MB", current)
+        self.assertIn("15 MB", current)
         self.assertEqual(current.count("<strong>未测</strong>"), 3)
         self.assertNotIn("<strong>33.6</strong>", current)
         self.assertIn(f"历史实测 · v{data['version']}，{data['measured_at']}", historical)
         self.assertIn("历史实测记录，不代表当前发行版", historical)
         self.assertEqual((self.root / "perf/lightweight.json").read_bytes(), before)
+
+    def test_release_file_sizes_and_historical_installed_size_stay_distinct(self):
+        html = self.site.lightweight_section("1.0.10", 2_449_790, 4_402_604)
+        current, historical = html.split("id='historical-performance'", 1)
+        self.assertIn("当前 v1.0.10", current)
+        self.assertIn("<h3>当前发行 ZIP</h3>", current)
+        self.assertIn("包内展开文件合计 <span data-release-metric='unpacked-file-size'>4.402604 MB</span>", current)
+        self.assertIn("4,402,604 字节，不含文件系统分配开销", current)
+        self.assertNotIn("data-perf-metric='installed'", current)
+        self.assertNotIn("装好后", current)
+        self.assertIn("历史实测 · v1.0.9，2026-09-26", historical)
+        self.assertIn("装好后 <span data-perf-metric='installed'>4.3008 MB</span>", historical)
+
+    def test_chapter_matches_historical_metrics_without_confusing_archive_lengths(self):
+        # Read-only integration with Chapter's actual page parser, not a copy.
+        checker_path = Path.home() / "Apps/chapter/engine/app_sop.py"
+        if not checker_path.is_file():
+            self.skipTest("Chapter page checker is not installed")
+        spec = importlib.util.spec_from_file_location("chapter_page_contract", checker_path)
+        sop = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(sop)
+        raw = json.loads((self.root / "perf/lightweight.json").read_text())
+        html = self.site.lightweight_section("1.0.10", 2_449_790, 4_402_604)
+        self.assertEqual(sop.measured_fields(raw, html)["安装后占用"], ["4.3008 MB"])
+        self.assertEqual(sop.numbers_on_page(raw, html), [])
 
     def test_bilingual_readmes_identify_historical_runtime(self):
         # The shared renderer replaces everything between lightweight markers.

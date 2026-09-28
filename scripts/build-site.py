@@ -66,16 +66,29 @@ def lightweight_section(version, download_bytes, installed_bytes):
     current = {
         "version": version, "measured_at": datetime.now().date().isoformat(),
         "device": "已校验 SHA256 的发行 ZIP", "size": {
-            "download_bytes": download_bytes, "installed_bytes": installed_bytes},
+            "download_bytes": download_bytes},
         "data": "仅核对安装包及包内展开文件总字节数（不含文件系统分配开销）；内存、CPU 与速度待测。",
     }
+    expanded_mb = f"{installed_bytes / 1_000_000:.6f}".rstrip("0").rstrip(".")
     current_html = perf_block.section(perf_block.summarize(current, source)).replace(
         "class='section wrap perf'", "class='lw-perf'").replace(
-        "资源占用与响应速度。", f"当前 v{escape(version)}：运行性能待测。")
+        "资源占用与响应速度。", f"当前 v{escape(version)}：运行性能待测。").replace(
+        "data-perf-metric='download'", "data-release-metric='download'").replace(
+        "<h3>安装包</h3>", "<h3>当前发行 ZIP</h3>").replace(
+        "下载文件大小。",
+        f"发行 ZIP；包内展开文件合计 <span data-release-metric='unpacked-file-size'>{expanded_mb} MB</span>"
+        f"（{installed_bytes:,} 字节，不含文件系统分配开销）。")
     historical = perf_block.standalone_section(source, recorded["version"], '#50723c')
     historical = historical.replace("id='light'", "id='historical-performance'").replace(
         "资源占用与响应速度。", f"历史实测 · v{escape(recorded['version'])}，{escape(fields['PERF_DATE'])}。")
     historical = historical.replace("数字来自所列设备实测，版本更新后重新测量。", "历史实测记录，不代表当前发行版。")
+    # The historical installed measurement and the current ZIP's sum of file
+    # lengths have different versions and methods; never label both "installed".
+    measured_installed = recorded.get("size", {}).get("installed_bytes")
+    if measured_installed:
+        measured_mb = f"{measured_installed / 1_000_000:.6f}".rstrip("0").rstrip(".")
+        historical = re.sub(r"(<span data-perf-metric='installed'>)[^<]+(</span>)",
+                            lambda match: match[1] + measured_mb + " MB" + match[2], historical)
     css, _, historical_body = historical.partition("</style>")
     return css + "</style>" + current_html + historical_body
 

@@ -1,6 +1,20 @@
-# Chapter 发布与素材交接（2026-09-28）
+# Chapter 页面口径修复交接（2026-09-28）
 
-本轮按 2026-09-28 起的长期授权，完成本产品的素材更新、1.0.10 (34) 发版、推送、本机装机和官网部署。三个子 agent 分别负责素材、发版前置检查、页面资源口径；主 agent 集成、执行发布/装机/部署、复核截图并统一验收。前一轮的四个固定验收入口已随本版发布。
+## 最新一轮：安装占用缺项与性能补测
+
+- 两个子 agent 并行负责页面小修与性能入口只读核查，复用已有 `scripts/accept/_common.py`；主 agent 集成、执行完整测试和既有部署入口，未修改共享模块。
+- 页面缺项根因是“当前发行 ZIP 展开文件长度总和”与“历史已装占用”共用 `installed` 指标标记；现在可见地分别注明当前 **1.0.10 / 4.402604 MB** 与历史 **1.0.9 / 2026-09-26 / 4.3008 MB**。两项对象、版本和方法不同，不隐藏数值、不修改历史证据或共享检查器。
+- 主 agent `bash tests/run.sh`：**18 项 Python + 13 项 Swift 检查通过**，日志 `build/accept/page-fix-tests.log`。新增回归检查直接调用 Chapter 的页面解析器，避免复制另一套判定。
+- 已按 `bash scripts/deploy-site.sh` 重建并部署；线上 HTTP 200、ZIP/教程 SHA256、4 段视频 Range 请求核验通过，日志 `build/accept/page-fix-deploy.log`；主 agent 回读线上 HTML 并调用 Chapter `numbers_on_page` 返回空缺项列表，页面快照 `build/accept/page-fix-online.html`。
+- 受影响的桌面/手机固定验收均于 14:36 通过（1440px / 390px，无溢出、4 张图片均加载），主 agent 复核截图及回执/日志哈希；结果见 `build/accept/page-fix-acceptance.json`，证据只由 app_sop 写入 `perf/delivery-evidence.json`。App 源码、图标、视频和业务输入未变化，不重复此前其他通过项。
+- 线上发行、本机安装和 build-receipt 回读仍一致为 **1.0.10 (34)**，没有重复发版或装机；本轮只推送页面生成器、回归测试和交接。仓库无 GitHub Actions、ci_scripts 或 Xcode Cloud 配置，推送本身不触发 CI；既有 app_sop 后台监听保留。
+- 性能空闲门实测未通过（用户 0 秒前有操作），依本轮要求直接跳过长采样；当前没有完整测量脚本或 `sop.measure`，仅有候选 idle 入口，不能把旧版资源值改成当前通过。
+- Chapter 的 test-only 登记返回 **75 / busy**；没有终止其他作业或重复抢锁，独立测试通过结果保留，锁释放后的登记命令在下方“受阻与 CLI 接手”。
+- 管理员免密摘要和本人装机图标确认仍属范围外，原有前置材料保留；`memory/` 未变化，跳过备份。
+
+## 上一轮发布与素材记录
+
+上一轮按 2026-09-28 起的长期授权，完成本产品的素材更新、1.0.10 (34) 发版、推送、本机装机和官网部署。三个子 agent 分别负责素材、发版前置检查、页面资源口径；主 agent 集成、执行发布/装机/部署、复核截图并统一验收。此前的四个固定验收入口已随本版发布。
 
 ## 已交付
 
@@ -66,24 +80,23 @@
 
 遵照本轮快节奏约束，没有做长时间采样、反复 A/B 或架构优化；`perf/lightweight.json` 仍属 1.0.9 / 2026-09-26，未改版本或日期。当前没有 `sop.measure`，不能直接用 batch_measure 声称可完整测量；页面已明确待测。
 
-CLI 接手先执行空闲门（接电源、用户至少 10 分钟无操作、低负载、无构建；非 0 就停止）：
+CLI 接手需排定延迟执行后离开键盘（现场输入命令会重置闲置时间），空闲门要求接电源、用户至少 10 分钟无操作、低负载、无构建；任一失败即停止。以下只启动本次禁用自动写入的测量进程，不修改默认偏好，不操作已有实例：
 
 ```bash
-~/Dev/.venv/bin/python -c 'import sys; sys.path.insert(0,"/Users/tianli/Apps/chapter/engine"); import app_sop; ok,why=app_sop.steady(); print(why); raise SystemExit(0 if ok else 75)'
-```
-
-空闲门通过且没有既有 Unrevoke 进程时，用以下入口启动禁用自动写入的测量进程，不修改默认偏好：
-
-```bash
-open -n -g -j /Applications/WeChatUnrevoke.app --args -autoRepatch NO
-```
-
-静置 45 秒并再次通过空闲门后，第一步被动候选采样：
-
-```bash
-python3 /Users/tianli/Apps/.claude/skills/app-lightweight/scripts/measure.py \
-  --out build/accept/idle-1.0.10.json --product unrevoke-mac --version 1.0.10 \
-  idle Unrevoke --seconds 60 --with-helpers
+(
+  sleep 610
+  ~/Dev/.venv/bin/python -c 'import sys; sys.path.insert(0,"/Users/tianli/Apps/chapter/engine"); import app_sop; ok,why=app_sop.steady(); print(why); raise SystemExit(0 if ok else 75)' || exit 75
+  if pgrep -x Unrevoke >/dev/null; then
+    echo "已有 Unrevoke 实例，停止以避免混测。"
+    exit 75
+  fi
+  open -n -g -j /Applications/WeChatUnrevoke.app --args -autoRepatch NO
+  sleep 45
+  ~/Dev/.venv/bin/python -c 'import sys; sys.path.insert(0,"/Users/tianli/Apps/chapter/engine"); import app_sop; ok,why=app_sop.steady(); print(why); raise SystemExit(0 if ok else 75)' || exit 75
+  python3 /Users/tianli/Apps/.claude/skills/app-lightweight/scripts/measure.py \
+    --out build/accept/idle-1.0.10.json --product unrevoke-mac --version 1.0.10 \
+    idle Unrevoke --seconds 60 --with-helpers
+)
 ```
 
 该命令只补内存/空闲 CPU 候选；还需沿原方法补齐启动和周期状态检查样本，核对当前发行版本、原始数据和辅助进程口径后再正式更新 perf 和页面，不把部分候选作为完整通过。
