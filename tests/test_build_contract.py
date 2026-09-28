@@ -103,16 +103,18 @@ class SiteResourceContractTests(unittest.TestCase):
         self.assertEqual((self.root / "perf/lightweight.json").read_bytes(), before)
 
     def test_release_file_sizes_and_historical_installed_size_stay_distinct(self):
-        html = self.site.lightweight_section("1.0.10", 2_449_790, 4_402_604)
+        data = json.loads((self.root / "perf/lightweight.json").read_text())
+        installed = f"{data['size']['installed_bytes'] / 1_000_000:.6f}".rstrip("0").rstrip(".")
+        html = self.site.lightweight_section("99.0.1", 2_449_790, 4_402_604)
         current, historical = html.split("id='historical-performance'", 1)
-        self.assertIn("当前 v1.0.10", current)
+        self.assertIn("当前 v99.0.1", current)
         self.assertIn("<h3>当前发行 ZIP</h3>", current)
         self.assertIn("包内展开文件合计 <span data-release-metric='unpacked-file-size'>4.402604 MB</span>", current)
         self.assertIn("4,402,604 字节，不含文件系统分配开销", current)
         self.assertNotIn("data-perf-metric='installed'", current)
         self.assertNotIn("装好后", current)
-        self.assertIn("历史实测 · v1.0.9，2026-09-26", historical)
-        self.assertIn("装好后 <span data-perf-metric='installed'>4.3008 MB</span>", historical)
+        self.assertIn(f"历史实测 · v{data['version']}，{data['measured_at']}", historical)
+        self.assertIn(f"装好后 <span data-perf-metric='installed'>{installed} MB</span>", historical)
 
     def test_chapter_matches_historical_metrics_without_confusing_archive_lengths(self):
         # Read-only integration with Chapter's actual page parser, not a copy.
@@ -123,16 +125,18 @@ class SiteResourceContractTests(unittest.TestCase):
         sop = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(sop)
         raw = json.loads((self.root / "perf/lightweight.json").read_text())
-        html = self.site.lightweight_section("1.0.10", 2_449_790, 4_402_604)
-        self.assertEqual(sop.measured_fields(raw, html)["安装后占用"], ["4.3008 MB"])
+        html = self.site.lightweight_section("99.0.1", 2_449_790, 4_402_604)
+        installed = f"{raw['size']['installed_bytes'] / 1_000_000:.6f}".rstrip("0").rstrip(".")
+        self.assertEqual(sop.measured_fields(raw, html)["安装后占用"], [installed + " MB"])
         self.assertEqual(sop.numbers_on_page(raw, html), [])
 
-    def test_bilingual_readmes_identify_historical_runtime(self):
+    def test_bilingual_readmes_identify_measured_version(self):
         # The shared renderer replaces everything between lightweight markers.
-        # Release/history notes must remain outside that generated block.
+        # Release/version notes must remain outside that generated block.
+        data = json.loads((self.root / "perf/lightweight.json").read_text())
         chinese = (self.root / "README.md").read_text().split("<!-- lightweight:start -->", 1)[0]
         english = (self.root / "README_EN.md").read_text().split("<!-- lightweight:start -->", 1)[0]
-        self.assertIn("当前 v1.0.10：内存、CPU 与速度待测", chinese)
-        self.assertIn("v1.0.9 历史实测", chinese)
-        self.assertIn("Current v1.0.10: memory, CPU and speed are not yet measured", english)
-        self.assertIn("Historical measurements below are for v1.0.9", english)
+        self.assertIn(f"以下资源实测对应当前 v{data['version']}", chinese)
+        self.assertIn(f"The resource measurements below are for the current v{data['version']}", english)
+        self.assertNotIn("待测", chinese)
+        self.assertNotIn("not yet measured", english)

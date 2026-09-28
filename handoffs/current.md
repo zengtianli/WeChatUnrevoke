@@ -1,5 +1,12 @@
 # Chapter 页面口径修复交接（2026-09-28）
 
+## 2026-09-29 1.0.10 资源实测（05:38，空闲门开：空闲 13878 秒、负载 4.8）
+
+- 对象：公开 1.0.10 发行 ZIP（SHA256 25d1a22f…）解到 /tmp 的隔离副本，主程序 SHA256 与 release.json 一致；`open -n -g -j`，参数域 `autoRepatch=NO`、`everProtected=NO`，未执行任何补丁；测完用 SIGTERM 退出，无残留进程。
+- 结果（整机负载约 4.5）：空闲 31 MB / 界面 CPU 0.02%，含每 30 分钟完整检查折算约 0.03%；后台打开到首个状态检查结束中位 1862 ms，到窗口出现中位 281 ms（各 5 次）；完整检查 `wechattweak doctor` 中位 1640 ms / CPU 0.26 s；安装包 2,449,790 字节，装好后 4,316 KiB。原始数据 `perf/raw/current-1.0.10.json`，1.0.9 记录移入 `history`。
+- README 中英版由共享 perf_block 重写并改掉「待测」说明；`tests/test_build_contract.py` 的相关断言改为按实测版本通用；`bash tests/run.sh` 19 项 + Swift 检查通过。
+- 按 `bash scripts/deploy-site.sh` 部署，线上 200、ZIP/教程 SHA256、4 段视频 Range 通过，线上页面显示「资源实测：v1.0.10，2026-09-29」，Chapter `numbers_on_page` 无缺项。日志 `build/accept/perf-1.0.10-deploy.log`。
+
 ## 2026-09-29 复查轮
 
 - `cli_entry` 重新走固定验收：passed（Chapter 报的「验收材料与缓存不一致」源于检查报告缓存早于最新证据；app_sop check-only 当时返回 busy，由 Chapter 排队的只读重检刷新）。
@@ -88,7 +95,7 @@
 ~/Dev/.venv/bin/python ~/Apps/chapter/engine/app_sop.py run --app unrevoke-mac --check-only --json
 ```
 
-### 1.0.10 运行资源待空闲补测（可自动接续）
+### 1.0.10 运行资源待空闲补测（已于 2026-09-29 05:38 完成，以下为原接手记录）
 
 遵照本轮快节奏约束，没有做长时间采样、反复 A/B 或架构优化；`perf/lightweight.json` 仍属 1.0.9 / 2026-09-26，未改版本或日期。当前没有 `sop.measure`，不能直接用 batch_measure 声称可完整测量；页面已明确待测。
 

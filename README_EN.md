@@ -26,24 +26,24 @@ WeChatUnrevoke reads your WeChat build and lets you manage patches through a nat
 
 **No activation codes, no need to disable SIP, no kernel extension or persistent root helper.** Native SwiftUI with an embedded Swift CLI; no Python runtime. Patch configuration can update online; engine and interface changes still require app updates.
 
-**Current v1.0.10: memory, CPU and speed are not yet measured.** The download page reads current package and unpacked file sizes from the SHA256-verified release ZIP. **Historical measurements below are for v1.0.9** (2026-09-26), not v1.0.10.
+**The resource measurements below are for the current v1.0.10** (2026-09-29, an isolated copy of the public release). The download page reads package and unpacked file sizes from the SHA256-verified release ZIP. Historical measurements for v1.0.9 and earlier stay in `perf/lightweight.json`.
 
 <!-- lightweight:start -->
 ## Resource use
 
 | Download | Idle memory | Idle CPU | Background open (open -n -g -j) until the first status-check subprocess exits and the UI has the status |
 |---|---|---|---|
-| **2.4 MB** (installed 4.3 MB) | **33.6 MB** | **0.07%** | **2.8 s** |
+| **2.4 MB** (installed 4.4 MB) | **32.5 MB** | **0.03%** | **1.9 s** |
 
 Native SwiftUI with no Python runtime. Reading and patching WeChat is handed to the bundled Swift command-line engine. While the window is open, it compares a file fingerprint of 5 paths in the WeChat bundle once a minute (under a millisecond) and starts the engine only when WeChat was updated, patched or restored, plus a full check every 30 minutes as a backstop; checks stop when the window closes. No resident background service. Release builds are stripped of debug symbols.
 
-CPU conditions: The 60-second idle window measured 0.03% CPU for the app and helpers; including a full check every 30 minutes gives about 0.07%. Launch and full-check timings retain five measurements of the identical 1.0.9 binary at a system load average near 27.
+CPU conditions: The 60-second idle window measured 0.02% CPU for the app and helpers; including a full check every 30 minutes gives about 0.03%. Launch and full-check numbers are 5 runs of the same binary at a system load of about 4.5.
 
 Background tasks:
 
-- With the window open, compare five WeChat bundle fingerprints every minute; run the full status check on change or every 30 minutes.: Wall time per run 2.76 s; Interval 1800.0 s; Busy wall time per day 2.2 min; CPU time per run 0.7 s; CPU time per day 0.6 min; per_run_s 与 cpu_s_per_run 为 1.0.9 发布包引擎 5 次 /usr/bin/time 中位（含 codesign 等子进程），测于整机负载约 27 时，见 perf/raw/ab-launch-1.0.8-vs-1.0.9.txt；同条件交替测 1.0.8 引擎为 2.49 s / 0.67 s CPU。指纹比对不起进程，每次不到 1 毫秒，未计。关窗后停止，按全天开着窗口折算
+- With the window open, compare five WeChat bundle fingerprints every minute; run the full status check on change or every 30 minutes.: Wall time per run 1.64 s; Interval 1800.0 s; Busy wall time per day 1.3 min; CPU time per run 0.26 s; CPU time per day 0.2 min; per_run_s 与 cpu_s_per_run 为 1.0.10 发布包引擎 5 次 /usr/bin/time 中位（含 codesign 等子进程），整机负载约 4.5，见 perf/raw/current-1.0.10.json。指纹比对不起进程，每次不到 1 毫秒，未计。关窗后停止，按全天开着窗口折算
 
-<sub>v1.0.9 · Mac16,12 / Apple M4 / macOS 27.2 · Official installed app reading the real WeChat bundle; automatic writes disabled for this measurement process, with no patch or message operation. · measured 2026-09-26. Measured on the listed device; re-measured for each version. Memory uses phys_footprint; CPU is CPU time ÷ wall time over a 60-second sampling window; sizes in decimal MB. Raw data: [perf/lightweight.json](perf/lightweight.json).</sub>
+<sub>v1.0.10 · Mac16,12 / Apple M4 / macOS 27.2 · An isolated copy of the official 1.0.10 release reading the real WeChat bundle (build 269627); automatic writes disabled for this measurement process, with no patch or message operation. · measured 2026-09-29. Measured on the listed device; re-measured for each version. Memory uses phys_footprint; CPU is CPU time ÷ wall time over a 60-second sampling window; sizes in decimal MB. Raw data: [perf/lightweight.json](perf/lightweight.json).</sub>
 <!-- lightweight:end -->
 
 ## Get started

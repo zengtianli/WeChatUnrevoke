@@ -1,0 +1,54 @@
+{
+ "loads": [
+  4.7,
+  4.5,
+  4.5,
+  4.6,
+  4.6
+ ],
+ "cold_start_to_status_ms": [
+  1892,
+  1878,
+  1862,
+  1816,
+  1856
+ ],
+ "doctor": [
+  {
+   "rc": 0,
+   "real_ms": 1640,
+   "cpu_s": 0.28
+  },
+  {
+   "rc": 0,
+   "real_ms": 1680,
+   "cpu_s": 0.31
+  },
+  {
+   "rc": 0,
+   "real_ms": 1560,
+   "cpu_s": 0.2
+  },
+  {
+   "rc": 0,
+   "real_ms": 1490,
+   "cpu_s": 0.17
+  },
+  {
+   "rc": 0,
+   "real_ms": 1640,
+   "cpu_s": 0.26
+  }
+ ],
+ "idle_load_before": 5.4,
+ "idle_raw": "{\n  \"idle\": {\n    \"process\": \"Unrevoke\",\n    \"footprint_mb\": 31.0,\n    \"main_footprint_mb\": 31.0,\n    \"cpu_pct\": 0.02,\n    \"main_cpu_pct\": 0.02,\n    \"processes\": [\n      {\n        \"pid\": 37405,\n        \"name\": \"main\",\n        \"cpu_pct\": 0.016,\n        \"footprint_peak_mb\": 31.0\n      }\n    ],\n    \"window_s\": 60,\n    \"scope\": \"主进程 + XPC 辅助进程 + 子进程合计\"\n  }\n}\n",
+ "idle_err": "",
+ "idle_load_after": 4.1,
+ "cold_start_to_window_ms": [
+  318,
+  265,
+  281,
+  286,
+  275
+ ]
+}
