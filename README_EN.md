@@ -29,6 +29,8 @@ WeChatUnrevoke reads your WeChat build and lets you manage patches through a nat
 <!-- lightweight:start -->
 ## Resource use
 
+**Current v1.0.10: memory, CPU and speed are not yet measured.** The download page reads current package and unpacked file sizes from the SHA256-verified release ZIP. **Historical measurements below are for v1.0.9** (2026-09-26), not v1.0.10.
+
 | Download | Idle memory | Idle CPU | Background open (open -n -g -j) until the first status-check subprocess exits and the UI has the status |
 |---|---|---|---|
 | **2.4 MB** (installed 4.3 MB) | **33.6 MB** | **0.07%** | **2.8 s** |
@@ -41,7 +43,7 @@ Background tasks:
 
 - With the window open, compare five WeChat bundle fingerprints every minute; run the full status check on change or every 30 minutes.: Wall time per run 2.76 s; Interval 1800.0 s; Busy wall time per day 2.2 min; CPU time per run 0.7 s; CPU time per day 0.6 min; per_run_s 与 cpu_s_per_run 为 1.0.9 发布包引擎 5 次 /usr/bin/time 中位（含 codesign 等子进程），测于整机负载约 27 时，见 perf/raw/ab-launch-1.0.8-vs-1.0.9.txt；同条件交替测 1.0.8 引擎为 2.49 s / 0.67 s CPU。指纹比对不起进程，每次不到 1 毫秒，未计。关窗后停止，按全天开着窗口折算
 
-<sub>v1.0.9 · Mac16,12 / Apple M4 / macOS 27.2 · Official installed app reading the real WeChat bundle; automatic writes disabled for this measurement process, with no patch or message operation. · measured 2026-09-26. Measured on the listed device; re-measured for each version. Memory uses phys_footprint; CPU is CPU time ÷ wall time over a 60-second sampling window; sizes in decimal MB. Raw data: [perf/lightweight.json](perf/lightweight.json).</sub>
+<sub>v1.0.9 · Mac16,12 / Apple M4 / macOS 27.2 · Official installed app reading the real WeChat bundle; automatic writes disabled for this measurement process, with no patch or message operation. · measured 2026-09-26. Historical measurements; these are not measurements of the current release. Memory uses phys_footprint; CPU is CPU time ÷ wall time over a 60-second sampling window; sizes in decimal MB. Raw data: [perf/lightweight.json](perf/lightweight.json).</sub>
 <!-- lightweight:end -->
 
 ## Get started

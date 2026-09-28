@@ -2,60 +2,91 @@
 """Render current production SwiftUI views with explicit fictional status fixtures.
 
 This is an offscreen visual guide, never a patch/restore demonstration or benchmark.
-The temporary compilation disables ContentView's start task; no Engine method is run.
+The real ContentView uses its model injection seam with automatic startup disabled.
+A disposable bundle's doctor-only fixture supplies states; no real WeChat is read.
 """
 from pathlib import Path
-import hashlib, json, os, subprocess
+import hashlib, json, plistlib, sys, uuid
+
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'accept'))
+from _common import run as common_run, xcode_env
 
 ROOT = Path(__file__).resolve().parents[1]
 WORK = ROOT / 'build/current-guide'
 OUT = ROOT / 'docs/demo'
 WORK.mkdir(parents=True, exist_ok=True)
 OUT.mkdir(parents=True, exist_ok=True)
+ENV = xcode_env()
+VERSION = plistlib.loads((ROOT / 'Info.plist').read_bytes())['CFBundleShortVersionString']
+SOURCE_HASHES = {p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in (ROOT/'Sources').glob('*.swift')}
 
 def run(*args, **kwargs):
-    subprocess.run([str(x) for x in args], check=True, **kwargs)
+    result = common_run([str(x) for x in args], env=kwargs.pop('env', ENV), **kwargs)
+    if result.strip():
+        print(result.strip())
 
-view = (ROOT / 'Sources/ContentView.swift').read_text()
-assert view.count('.task { model.start() }') == 1
-(WORK / 'ContentView.swift').write_text(view.replace('.task { model.start() }', ''))
-model = (ROOT / 'Sources/ViewModel.swift').read_text()
-anchor = 'launchAtLogin = SMAppService.mainApp.status == .enabled'
-assert anchor in model.split('// MARK: - 生命周期')[0]
-model = model.replace(anchor, anchor + '''
-        let decoder = JSONDecoder(); decoder.keyDecodingStrategy = .convertFromSnakeCase
-        status = try! decoder.decode(DoctorStatus.self, from: Data(contentsOf: URL(fileURLWithPath: ProcessInfo.processInfo.environment["UNREVOKE_GUIDE_FIXTURE"]!)))
-        autoRepatch = false
-''', 1)
-(WORK / 'ViewModel.swift').write_text(model)
 (WORK / 'Capture.swift').write_text(r'''
 import AppKit
 import SwiftUI
 extension Notification.Name { static let consoleRefresh = Notification.Name("consoleRefresh") }
 @main struct Capture {
-  @MainActor static func main() throws {
+  @MainActor static func main() {
     let app = NSApplication.shared
     app.setActivationPolicy(.prohibited)
     app.applicationIconImage = NSImage(contentsOfFile: CommandLine.arguments[2])
     app.applicationIconImage.setName(NSImage.applicationIconName)
     app.appearance = NSAppearance(named: .aqua)
-    let view = NSHostingView(rootView: ContentView().environment(\.colorScheme, .light).background(Color(nsColor: .windowBackgroundColor)))
-    view.frame = NSRect(x: 0, y: 0, width: 620, height: 640)
-    let window = NSWindow(contentRect: view.frame, styleMask: [.borderless], backing: .buffered, defer: false)
-    window.contentView = view
-    view.layoutSubtreeIfNeeded()
-    RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.3))
-    let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds)!
-    view.cacheDisplay(in: view.bounds, to: rep)
-    try rep.representation(using: .png, properties: [:])!.write(to: URL(fileURLWithPath: CommandLine.arguments[1]))
+    Task { @MainActor in
+      do {
+        let bundleID = Bundle.main.bundleIdentifier!
+        precondition(bundleID.hasPrefix("io.github.zengtianli.unrevoke.offscreen-guide."))
+        precondition(Engine.weChatPath == ProcessInfo.processInfo.environment["UNREVOKE_GUIDE_TARGET"])
+        defer { UserDefaults.standard.removePersistentDomain(forName: bundleID) }
+        let model = AppModel(confirmAction: { _, _, _ in false })
+        model.autoRepatch = false
+        defer { model.stop() }
+        await model.refresh()
+        guard model.status != nil, model.errorMessage == nil else {
+          throw NSError(domain: "Guide", code: 1, userInfo: [NSLocalizedDescriptionKey: model.errorMessage ?? "Missing fixture state"])
+        }
+        let view = NSHostingView(rootView: ContentView(model: model, automaticallyStart: false)
+          .transaction { $0.animation = nil; $0.disablesAnimations = true }
+          .environment(\.colorScheme, .light).background(Color(nsColor: .windowBackgroundColor)))
+        view.frame = NSRect(x: 0, y: 0, width: 620, height: 640)
+        let window = NSWindow(contentRect: view.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = view
+        defer { window.close() }
+        try await Task.sleep(for: .milliseconds(300))
+        view.layoutSubtreeIfNeeded()
+        let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds)!
+        view.cacheDisplay(in: view.bounds, to: rep)
+        precondition(!window.isVisible && !window.isKeyWindow)
+        try rep.representation(using: .png, properties: [:])!.write(to: URL(fileURLWithPath: CommandLine.arguments[1]))
+      } catch {
+        fputs("Guide render failed: \(error)\n", stderr)
+        exit(1)
+      }
+      exit(0)
+    }
+    app.run()
   }
 }
 ''')
 APP = WORK / 'Guide.app'
 (APP / 'Contents/MacOS').mkdir(parents=True, exist_ok=True)
-import plistlib
-(APP / 'Contents/Info.plist').write_bytes(plistlib.dumps({'CFBundleIdentifier':'io.github.zengtianli.unrevoke.offscreen-guide','CFBundleExecutable':'Guide','CFBundlePackageType':'APPL'}))
-run('xcrun','swiftc','-parse-as-library',ROOT/'Sources/Models.swift',ROOT/'Sources/Engine.swift',WORK/'ViewModel.swift',WORK/'ContentView.swift',WORK/'Capture.swift','-o',APP/'Contents/MacOS/Guide')
+(APP / 'Contents/Resources').mkdir(parents=True, exist_ok=True)
+(APP / 'Contents/Info.plist').write_bytes(plistlib.dumps({'CFBundleIdentifier':f'io.github.zengtianli.unrevoke.offscreen-guide.{uuid.uuid4().hex}','CFBundleExecutable':'Guide','CFBundlePackageType':'APPL','CFBundleShortVersionString':VERSION,'LSUIElement':True}))
+target = WORK / 'WeChat-fixture.app'
+target.mkdir(exist_ok=True)
+engine = APP / 'Contents/Resources/wechattweak'
+engine.write_text('''#!/bin/sh
+set -eu
+[ "$1" = "doctor" ] && [ "$2" = "-a" ] && [ "$3" = "$UNREVOKE_GUIDE_TARGET" ] || exit 91
+cat "$UNREVOKE_GUIDE_FIXTURE"
+''')
+engine.chmod(0o755)
+run('xcrun','swiftc','-parse-as-library',ROOT/'Sources/Models.swift',ROOT/'Sources/Engine.swift',ROOT/'Sources/ViewModel.swift',ROOT/'Sources/ContentView.swift',WORK/'Capture.swift','-o',APP/'Contents/MacOS/Guide')
 run('xcrun','swiftc',ROOT/'scripts/demo-caption.swift','-o',WORK/'caption')
 scenes = [
     ('unprotected','01 · 检查当前状态','未打补丁时，主按钮显示「开启防撤回」','虚构状态 · 仅展示当前界面，不执行写入'),
@@ -64,10 +95,10 @@ scenes = [
 ]
 segments=[]; cues=['WEBVTT\n']
 for i,(state,title,line1,line2) in enumerate(scenes):
-    fixture={'overall':state,'build':'示例版本','app_path':'/Applications/WeChat.app','config_known':True,'config_targets':['revoke','update'],'running':False,'writable':True,'signature':'valid','sip':'enabled','entitlements_ok':True,'entitlement_key_count':15,'anti_revoke_keeptip':'pristine' if state=='unprotected' else 'patched','update_block':'notApplicable' if state=='antiRevokeOnly' else ('pristine' if state=='unprotected' else 'patched'),'update_source':'App Store' if state=='antiRevokeOnly' else 'config'}
+    fixture={'overall':state,'build':'示例版本','app_path':str(target),'config_known':True,'config_targets':['revoke','update'],'running':False,'writable':True,'signature':'valid','sip':'enabled','entitlements_ok':True,'entitlement_key_count':15,'anti_revoke_keeptip':'pristine' if state=='unprotected' else 'patched','update_block':'notApplicable' if state=='antiRevokeOnly' else ('pristine' if state=='unprotected' else 'patched'),'update_source':'App Store' if state=='antiRevokeOnly' else 'config'}
     spec=WORK/f'{state}.json';spec.write_text(json.dumps(fixture,ensure_ascii=False))
     image=OUT/f'current-{state}.png'
-    run(APP/'Contents/MacOS/Guide',image,ROOT/'icon/AppIcon.png','-AppleLanguages','(zh-Hans)','-AppleLocale','zh_CN',env={**os.environ,'UNREVOKE_GUIDE_FIXTURE':str(spec)})
+    run(APP/'Contents/MacOS/Guide',image,ROOT/'icon/AppIcon.png','-AppleLanguages','(zh-Hans)','-AppleLocale','zh_CN','-weChatPath',target,'-everProtected','NO',env={**ENV,'UNREVOKE_GUIDE_FIXTURE':str(spec),'UNREVOKE_GUIDE_TARGET':str(target)})
     caption=WORK/f'{state}-caption.json';caption.write_text(json.dumps({'title':title,'line1':line1,'line2':line2},ensure_ascii=False))
     overlay=WORK/f'{state}-overlay.png';run(WORK/'caption',caption,overlay)
     segment=WORK/f'{state}.mp4'
@@ -78,6 +109,8 @@ concat=WORK/'concat.txt';concat.write_text(''.join(f"file '{p}'\n" for p in segm
 run('ffmpeg','-v','error','-f','concat','-safe','0','-i',concat,'-c','copy','-movflags','+faststart','-y',OUT/'current-guide.mp4')
 (OUT/'current-guide.vtt').write_text('\n'.join(cues))
 sources={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in (ROOT/'Sources').glob('*.swift')}
+assert sources == SOURCE_HASHES, 'Sources changed during rendering; rerun with stable inputs'
+assert plistlib.loads((ROOT/'Info.plist').read_bytes())['CFBundleShortVersionString'] == VERSION, 'Version changed during rendering'
 files={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in OUT.glob('current-*') if p.suffix in ('.png','.mp4','.vtt')}
-(OUT/'current-guide.json').write_text(json.dumps({'version':'1.0.9','method':'Current production ContentView rendered offscreen with fictional DoctorStatus fixtures; start task disabled in temporary harness, no Engine operation, no system clipboard, input synthesis or foreground window. Not a performance measurement or real patch demonstration.','source_sha256':sources,'duration_seconds':21,'files':files},ensure_ascii=False,indent=2)+'\n')
+(OUT/'current-guide.json').write_text(json.dumps({'version':VERSION,'method':'Current production ContentView rendered offscreen with fictional DoctorStatus fixtures using the model injection seam and automaticallyStart:false. Isolated bundle and doctor-only fixture executable; no real WeChat access, patch/restore, network request, system clipboard, input synthesis or foreground window. Not a performance measurement or real patch demonstration.','source_sha256':sources,'duration_seconds':21,'files':files},ensure_ascii=False,indent=2)+'\n')
 print('Current UI guide rendered:',OUT/'current-guide.mp4')

@@ -28,3 +28,8 @@ CLAUDE.md
 # 舰队台账：内部注册表用，不属于产品本身
 catalog.yaml
 project.yaml
+
+# Chapter 本机验收回执（由固定验收脚本生成，不是产品源码或发行材料）
+/perf/acceptance/
+/perf/delivery-evidence.json
+/perf/build-receipt.json

@@ -78,3 +78,34 @@ class SiteResourceContractTests(unittest.TestCase):
         for name in ("README.md", "README_EN.md"):
             with self.subTest(readme=name):
                 self.assertIn(f"**{fields['PERF_MEM']} MB**", (self.root / name).read_text())
+
+    def test_new_release_requires_current_archive_size(self):
+        with self.assertRaisesRegex(SystemExit, "verified ZIP"):
+            self.site.perf_fields("99.0.0", 9_000_000)
+
+    def test_same_version_still_rejects_wrong_download_size(self):
+        data = json.loads((self.root / "perf/lightweight.json").read_text())
+        with self.assertRaisesRegex(SystemExit, "not this release"):
+            self.site.perf_fields(data["version"], 9_000_000, 15_000_000)
+
+    def test_new_release_runtime_is_unmeasured_and_history_keeps_its_version(self):
+        before = (self.root / "perf/lightweight.json").read_bytes()
+        data = json.loads(before)
+        html = self.site.lightweight_section("99.0.0", 9_000_000, 15_000_000)
+        current, historical = html.split("id='historical-performance'", 1)
+        self.assertIn("当前 v99.0.0：运行性能待测", current)
+        self.assertIn("<strong>9.0</strong>", current)
+        self.assertIn("15.0 MB", current)
+        self.assertEqual(current.count("<strong>未测</strong>"), 3)
+        self.assertNotIn("<strong>33.6</strong>", current)
+        self.assertIn(f"历史实测 · v{data['version']}，{data['measured_at']}", historical)
+        self.assertIn("历史实测记录，不代表当前发行版", historical)
+        self.assertEqual((self.root / "perf/lightweight.json").read_bytes(), before)
+
+    def test_bilingual_readmes_identify_historical_runtime(self):
+        chinese = (self.root / "README.md").read_text()
+        english = (self.root / "README_EN.md").read_text()
+        self.assertIn("当前 v1.0.10：内存、CPU 与速度待测", chinese)
+        self.assertIn("v1.0.9 历史实测", chinese)
+        self.assertIn("Current v1.0.10: memory, CPU and speed are not yet measured", english)
+        self.assertIn("Historical measurements below are for v1.0.9", english)
