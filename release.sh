@@ -43,6 +43,30 @@ ditto -c -k --sequesterRsrc --keepParent "$APP" "$ZIP"
 # 自检：解出来的那份必须仍带得动引擎。压坏的包和没打包一样糟，且更难发现。
 TMP="$(mktemp -d)"
 ditto -x -k "$ZIP" "$TMP"
+# The distributable has an exact manifest, including directory entries.
+python3 - "$ZIP" <<'PY_MANIFEST'
+import sys
+import zipfile
+
+allowed = {
+    "WeChatUnrevoke.app/",
+    "WeChatUnrevoke.app/Contents/",
+    "WeChatUnrevoke.app/Contents/_CodeSignature/",
+    "WeChatUnrevoke.app/Contents/_CodeSignature/CodeResources",
+    "WeChatUnrevoke.app/Contents/MacOS/",
+    "WeChatUnrevoke.app/Contents/MacOS/Unrevoke",
+    "WeChatUnrevoke.app/Contents/Resources/",
+    "WeChatUnrevoke.app/Contents/Resources/config.json",
+    "WeChatUnrevoke.app/Contents/Resources/wechattweak",
+    "WeChatUnrevoke.app/Contents/Resources/AppIcon.icns",
+    "WeChatUnrevoke.app/Contents/Info.plist",
+    "WeChatUnrevoke.app/Contents/PkgInfo",
+}
+with zipfile.ZipFile(sys.argv[1]) as archive:
+    names = archive.namelist()
+if len(names) != len(allowed) or set(names) != allowed:
+    raise SystemExit("Archive manifest differs from the approved file list")
+PY_MANIFEST
 codesign --verify --deep --strict "$TMP/$NAME.app"
 "$TMP/$NAME.app/Contents/Resources/wechattweak" versions \
   -c "$TMP/$NAME.app/Contents/Resources/config.json" >/dev/null \
