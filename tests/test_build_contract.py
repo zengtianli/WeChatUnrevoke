@@ -103,8 +103,10 @@ class SiteResourceContractTests(unittest.TestCase):
         self.assertEqual((self.root / "perf/lightweight.json").read_bytes(), before)
 
     def test_bilingual_readmes_identify_historical_runtime(self):
-        chinese = (self.root / "README.md").read_text()
-        english = (self.root / "README_EN.md").read_text()
+        # The shared renderer replaces everything between lightweight markers.
+        # Release/history notes must remain outside that generated block.
+        chinese = (self.root / "README.md").read_text().split("<!-- lightweight:start -->", 1)[0]
+        english = (self.root / "README_EN.md").read_text().split("<!-- lightweight:start -->", 1)[0]
         self.assertIn("当前 v1.0.10：内存、CPU 与速度待测", chinese)
         self.assertIn("v1.0.9 历史实测", chinese)
         self.assertIn("Current v1.0.10: memory, CPU and speed are not yet measured", english)
