@@ -1,5 +1,9 @@
 # Chapter 页面口径修复交接（2026-09-28）
 
+## 2026-09-29 主页数字文件上线
+
+- apps-site 会话提交了 `2f4df4b`：`scripts/build-site.py` 从本产品 perf 与发行记录生成 `facts.json`（门户卡片与 Chapter 读它）。本轮 `bash tests/run.sh` 19 项 + Swift 检查通过后，按 `bash scripts/deploy-site.sh` 部署；线上 `https://unrevoke.tianli.cyou/facts.json` 200，与本地构建逐字节一致（1.0.10 (34)，空闲 CPU 0.03%，内存 32.5 MB 为 31 MiB 的十进制换算）。日志 `build/accept/facts-deploy.log`。
+
 ## 2026-09-29 1.0.10 资源实测（05:38，空闲门开：空闲 13878 秒、负载 4.8）
 
 - 对象：公开 1.0.10 发行 ZIP（SHA256 25d1a22f…）解到 /tmp 的隔离副本，主程序 SHA256 与 release.json 一致；`open -n -g -j`，参数域 `autoRepatch=NO`、`everProtected=NO`，未执行任何补丁；测完用 SIGTERM 退出，无残留进程。
