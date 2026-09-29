@@ -170,6 +170,13 @@ def main():
         "download": f"downloads/{name}", "source": release["html_url"]}, indent=2) + "\n")
     (OUT / "robots.txt").write_text("User-agent: *\nAllow: /\nSitemap: https://unrevoke.tianli.cyou/sitemap.xml\n")
     (OUT / "sitemap.xml").write_text('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://unrevoke.tianli.cyou/</loc></url></urlset>\n')
+    # Portal/Chapter read published numbers from facts.json. It must follow the release.json
+    # written above (project.yaml sop.release), otherwise it would carry the previous version.
+    import product_facts
+    facts = product_facts.from_repo(ROOT, product_id="unrevoke-mac", icon="assets/icon.png")
+    if facts["version"] != version:
+        raise SystemExit(f"facts.json version {facts['version']} != release {version}")
+    product_facts.write(OUT, facts)
 
     class Links(HTMLParser):
         def handle_starttag(self, tag, attrs):
