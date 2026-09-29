@@ -128,16 +128,23 @@ CLI 接手需排定延迟执行后离开键盘（现场输入命令会重置闲�
 
 ### 管理员免密引擎摘要
 
-已装 1.0.10 的内嵌引擎 SHA256 仍为 `738c112e09e9c032a61adb348b1d4e20ca601937a26cdebb2e2bdcc1cf5c2bb4`。`local_unattended_engine` 仍待管理员刷新旧摘要；本轮未执行 sudo、编辑 sudoers 或重试业务。先回读，再编辑该引擎原有 4 行摘要，保留命令范围：
+在本机（Tianli MacBook Air M4）的「终端」里由管理员执行，要输入 Mac 登录密码；不要在聊天里发密码。`/etc/sudoers.d/claude-nopasswd`（root 0440，最后修改 2026-09-25）有 4 条规则用 sha256 钉住本机引擎的 `patch`、`patch *`、`restore`、`restore *`，旧值是 1.0.8 引擎 `af9c60d5…`；当前已装引擎（自用构建沿用公开 1.0.10 ZIP，未重签）为 `738c112e…`。本 Agent 读不了该文件，旧值来自 `build/refresh-installed-engine-digest.py`，因此第 2 步先核对。该脚本硬编码 1.0.9 界面摘要，对当前装机会拒绝执行，不要用。规则不含 `doctor`，验证用无副作用的 `patch --help`。
 
 ```bash
-shasum -a 256 /Applications/WeChatUnrevoke.app/Contents/Resources/wechattweak
-sudo visudo -f /etc/sudoers.d/claude-nopasswd
-sudo visudo -c -f /etc/sudoers.d/claude-nopasswd
-sudo -n /Applications/WeChatUnrevoke.app/Contents/Resources/wechattweak doctor --json
+ENGINE=/Applications/WeChatUnrevoke.app/Contents/Resources/wechattweak
+OLD=af9c60d50eaea331fd6bf5909907a2f8a1cac8a2076265a99f4b87fddba808a7
+NEW=738c112e09e9c032a61adb348b1d4e20ca601937a26cdebb2e2bdcc1cf5c2bb4
+shasum -a 256 "$ENGINE"                                               # 1. 必须等于 $NEW
+sudo grep -c "sha256:$OLD $ENGINE" /etc/sudoers.d/claude-nopasswd     # 2. 必须是 4；不是就停，先 sudo grep -n wechattweak 看现值
+sudo cp -p /etc/sudoers.d/claude-nopasswd /var/root/claude-nopasswd.before-unrevoke-1.0.10   # 3. 备份
+sudo sed "s/sha256:$OLD /sha256:$NEW /" /etc/sudoers.d/claude-nopasswd | sudo tee /var/root/claude-nopasswd.new >/dev/null
+sudo diff /etc/sudoers.d/claude-nopasswd /var/root/claude-nopasswd.new                     # 4. 只应有这 4 行摘要不同
+sudo visudo -c -f /var/root/claude-nopasswd.new                                            # 5. 必须 parsed OK
+sudo install -m 440 -o root -g wheel /var/root/claude-nopasswd.new /etc/sudoers.d/claude-nopasswd && sudo rm /var/root/claude-nopasswd.new
+sudo -k; sudo -n "$ENGINE" patch --help >/dev/null && echo "免密生效"                        # 6. 不应再要密码
 ```
 
-只读 doctor 免密成功不等于 patch/后台自动重打通过；业务验证仍须满足微信已退出、确曾成功保护、可写等条件，不据此手改 availability 证据。
+回滚：`sudo install -m 440 -o root -g wheel /var/root/claude-nopasswd.before-unrevoke-1.0.10 /etc/sudoers.d/claude-nopasswd`。只读 `patch --help` 免密成功不等于后台自动重打通过；业务验证仍须满足微信已退出、确曾成功保护、可写等条件，不据此手改 availability 证据。
 
 ### 装机图标
 
