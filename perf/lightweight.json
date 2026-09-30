@@ -327,7 +327,8 @@
     "executable_sha256": "245ddfbbea2bf431e5f62c56538ee4ddeab2d08aa42ad48d638fb162102c4f98"
   },
   "availability": {
-    "local_unattended_engine": "blocked_admin_digest_refresh",
-    "note": "本机免密执行规则仍指向旧engine摘要；待本机管理员刷新后再验证自动执行。当前GUI/签名/版本核验不代替这一步。"
+    "local_unattended_engine": "verified",
+    "verified_at": "2026-09-30",
+    "note": "本机管理员已把免密规则刷新到已装引擎 738c112e…；2026-09-30 用 sudo -n 以 root 对 WeChat 4.x (269627) 的 APFS 副本执行 patch -v keeptip：防撤回与拦截更新均 applied、重签 codesign --verify --deep --strict 通过、doctor overall=protected；正在运行的微信未改动。"
   }
 }

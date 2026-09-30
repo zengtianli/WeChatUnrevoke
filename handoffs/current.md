@@ -128,6 +128,8 @@ CLI 接手需排定延迟执行后离开键盘（现场输入命令会重置闲�
 
 ### 管理员免密引擎摘要
 
+**2026-09-30 已完成**：本人执行了下列步骤，规则已钉 `738c112e…`；随后 `sudo -n` 以 root 对 WeChat（269627）的 APFS 副本执行 `patch -v keeptip`，防撤回与拦截更新均 applied、重签严格校验通过、doctor 为 protected，正在运行的微信未动；`perf/lightweight.json` 的 `availability.local_unattended_engine` 已改为 `verified`。以后引擎摘要再变时，把 OLD/NEW 换成当时的值，照同样步骤执行。
+
 在本机（Tianli MacBook Air M4）的「终端」里由管理员执行，要输入 Mac 登录密码；不要在聊天里发密码。`/etc/sudoers.d/claude-nopasswd`（root 0440，最后修改 2026-09-25）有 4 条规则用 sha256 钉住本机引擎的 `patch`、`patch *`、`restore`、`restore *`，旧值是 1.0.8 引擎 `af9c60d5…`；当前已装引擎（自用构建沿用公开 1.0.10 ZIP，未重签）为 `738c112e…`。本 Agent 读不了该文件，旧值来自 `build/refresh-installed-engine-digest.py`，因此第 2 步先核对。该脚本硬编码 1.0.9 界面摘要，对当前装机会拒绝执行，不要用。规则不含 `doctor`，验证用无副作用的 `patch --help`。
 
 ```bash
