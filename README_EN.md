@@ -26,7 +26,7 @@ WeChatUnrevoke reads your WeChat build and lets you manage patches through a nat
 
 **No activation codes, no need to disable SIP, no kernel extension or persistent root helper.** Native SwiftUI with an embedded Swift CLI; no Python runtime. Patch configuration can update online; engine and interface changes still require app updates.
 
-**The resource measurements below are for the current v1.0.10** (2026-09-29, an isolated copy of the public release). The download page reads package and unpacked file sizes from the SHA256-verified release ZIP. Historical measurements for v1.0.9 and earlier stay in `perf/lightweight.json`.
+**The resource measurements below are for the current release** (an isolated copy of the public release package, launched hidden with automatic re-patching off and only read-only WeChat checks; the measured version and date are in the note under the table, and each new release is measured again). The download page reads package and unpacked file sizes from the SHA256-verified release ZIP. Measurements for earlier versions stay in `perf/lightweight.json`.
 
 <!-- lightweight:start -->
 ## Resource use
@@ -37,7 +37,7 @@ WeChatUnrevoke reads your WeChat build and lets you manage patches through a nat
 
 Native SwiftUI with no Python runtime. Reading and patching WeChat is handed to the bundled Swift command-line engine. While the window is open, it compares a file fingerprint of 5 paths in the WeChat bundle once a minute (under a millisecond) and starts the engine only when WeChat was updated, patched or restored, plus a full check every 30 minutes as a backstop; checks stop when the window closes. No resident background service. Release builds are stripped of debug symbols.
 
-<sub>v1.0.10 (34) · Mac16,12 / Apple M4 / macOS 27.2 · An isolated copy of the official 1.0.10 release reading the real WeChat bundle (build 269627); automatic writes disabled for this measurement process, with no patch or message operation. · measured 2026-10-01. Measured on the listed device; re-measured for each version. Memory uses phys_footprint; CPU is CPU time ÷ wall time over a 60-second sampling window; sizes in decimal MB. Raw data: [perf/lightweight.json](perf/lightweight.json).</sub>
+<sub>v1.0.10 (34) · Mac16,12 / Apple M4 / macOS 27.2 · An isolated copy of the public release package (launched hidden, automatic re-patching off via launch arguments) that only reads the real WeChat bundle's state; the measurement process never patches, touches messages or uses sudo, and the copy is removed afterwards. · measured 2026-10-01. Measured on the listed device; re-measured for each version. Memory uses phys_footprint; CPU is CPU time ÷ wall time over a 60-second sampling window; sizes in decimal MB. Raw data: [perf/lightweight.json](perf/lightweight.json).</sub>
 <!-- lightweight:end -->
 
 ## Get started
