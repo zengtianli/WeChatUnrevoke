@@ -1,5 +1,11 @@
 # Chapter 页面口径修复交接（2026-09-28）
 
+## 2026-10-01 功能验收超时的根因与修复
+
+- 现象：Chapter `functionality` 在 2026-10-01 00:16 记为失败，公开仓部分「超过 480 秒」。本轮单独复跑同样超时（共 581 秒）；同一时段整机 1 分钟负载约 400–620（10 核），三次写入各要对 1.3 GB 的微信副本完整重签，整条进程链只拿到约 41 秒 CPU。根因是整机过载，不是 AppModel 或引擎逻辑出错。负载降到约 120 时，单独计时引擎还原 83 秒、补丁 84 秒。
+- 验收脚本自身的缺陷：`subprocess.run(timeout=)` 只杀测试进程，引擎和 codesign 子进程会继续重签副本，同时 `finally` 在删临时目录，结果残留了 `build/accept/functionality-*`。`scripts/accept/functionality.py` 改为超时（或任何中断）时先逐个停住、再整棵杀掉测试进程树，仍留在调用方进程组里，Chapter 的整组超时照样有效；超时摘要附上当时负载。用合成进程树验证过：超时 2 秒触发，无残留进程。两份残留临时副本已删除。
+- 复跑：`chapter sop accept --app unrevoke-mac --check functionality` 用时约 5 分钟，passed（微信 build 269627 的独立副本：还原基线 → protected → unprotected；防撤回与更新拦截都是 patched，权限保留，来源关键文件未变）。`installed_icon` 由内置离屏验收判定 passed（不再用本人确认）；`native_ui`、`cli_entry` 复跑 passed。`bash tests/run.sh` 全部 PASS。
+
 ## 2026-09-29 主页数字文件上线
 
 - apps-site 会话提交了 `2f4df4b`：`scripts/build-site.py` 从本产品 perf 与发行记录生成 `facts.json`（门户卡片与 Chapter 读它）。本轮 `bash tests/run.sh` 19 项 + Swift 检查通过后，按 `bash scripts/deploy-site.sh` 部署；线上 `https://unrevoke.tianli.cyou/facts.json` 200，与本地构建逐字节一致（1.0.10 (34)，空闲 CPU 0.03%，内存 32.5 MB 为 31 MiB 的十进制换算）。日志 `build/accept/facts-deploy.log`。

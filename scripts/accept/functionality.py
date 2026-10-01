@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import plistlib
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -17,6 +18,61 @@ from _common import BUILD, ROOT, detail, run, xcode_env
 
 class Unavailable(Exception):
     pass
+
+
+# Chapter stops the whole acceptor at 600 s; leave room for the compile, the clone and the installed-export part.
+HARNESS_TIMEOUT = 480
+
+
+def children(pid):
+    table = subprocess.run(["/bin/ps", "-axo", "pid=,ppid="], text=True, stdout=subprocess.PIPE,
+                           stderr=subprocess.DEVNULL).stdout
+    return [int(parts[0]) for parts in map(str.split, table.splitlines())
+            if len(parts) == 2 and int(parts[1]) == pid]
+
+
+def kill_tree(root):
+    """Stop each process before listing its children (a stopped parent spawns nothing), then kill them all."""
+    stopped, pending = [], [root]
+    while pending:
+        pid = pending.pop()
+        try:
+            os.kill(pid, signal.SIGSTOP)
+        except ProcessLookupError:
+            continue
+        stopped.append(pid)
+        pending.extend(children(pid))
+    for pid in stopped:
+        try:
+            os.kill(pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+
+
+def run_harness(args, *, env, timeout):
+    """Run the harness; on timeout stop it together with the engine and codesign processes it started.
+
+    subprocess.run(timeout=) kills only the harness: the engine kept re-signing the copy after the
+    verdict, and the read of the shared stdout pipe blocked until it finished. Chapter's own kill
+    covers the whole process group, so this stays in the caller's group and kills the tree itself."""
+    proc = subprocess.Popen(args, cwd=ROOT, env=env, text=True,
+                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    try:
+        output, _ = proc.communicate(timeout=timeout)
+    except BaseException:
+        kill_tree(proc.pid)
+        proc.communicate()
+        raise
+    return subprocess.CompletedProcess(args, proc.returncode, output)
+
+
+def load_note():
+    """The engine re-signs a 1+ GB bundle three times; on a saturated machine that alone exceeds the budget."""
+    try:
+        load = os.getloadavg()[0]
+    except OSError:
+        return ""
+    return f"（1 分钟负载 {load:.0f}，{os.cpu_count()} 核）"
 
 
 def fingerprint(app):
@@ -82,9 +138,7 @@ def main():
         if (copy / "Contents/MacOS/WeChat").stat().st_ino == (source / "Contents/MacOS/WeChat").stat().st_ino:
             raise RuntimeError("副本没有独立 inode，已拒绝写入。")
         report = scratch / "result.json"
-        completed = subprocess.run([str(executable), str(copy), str(report)], cwd=ROOT,
-                                   env=env, text=True, stdout=subprocess.PIPE,
-                                   stderr=subprocess.STDOUT, timeout=480)
+        completed = run_harness([str(executable), str(copy), str(report)], env=env, timeout=HARNESS_TIMEOUT)
         if completed.returncode:
             message = clean(completed.stdout.strip())
             if completed.returncode == 78:
@@ -98,7 +152,9 @@ def main():
         code, summary = 78, "BLOCKED: " + clean(error)
     except subprocess.CalledProcessError as error:
         code, summary = 1, "FAIL: " + clean(error.stdout or str(error))
-    except (OSError, RuntimeError, subprocess.TimeoutExpired, ValueError) as error:
+    except subprocess.TimeoutExpired as error:
+        code, summary = 1, f"FAIL: 验收进程超过 {error.timeout:.0f} 秒，已连同引擎一起终止{load_note()}"
+    except (OSError, RuntimeError, ValueError) as error:
         code, summary = 1, "FAIL: " + clean(error)
     finally:
         if before is not None:
