@@ -21,7 +21,14 @@ sop:
     privacy: python3 scripts/accept/privacy.py
     native_ui: python3 scripts/accept/native_ui.py
   ui_self_test_flag: --ui-self-test
+  measure:
+    inputs: [Sources/**, Info.plist, icon/**, Unrevoke.xcodeproj/**]
+    archive: release
+    start_args: ['-autoRepatch', 'NO', '-everProtected', 'NO']
+    in_use: true
 ```
+
+资源实测同样无人值守：发布记录 `dist/site/release.json` 的 `download` 指向的公开 ZIP（按其 sha256 核对）解到 `build/perf-run/` 的隔离副本，`open -n -g -j` 隐藏启动，每次都带参数域 `-autoRepatch NO -everProtected NO`，所以副本只做只读 `doctor`，不打补丁、不调 sudo，也不碰本人实例；测完注销并删除副本。`NO` 必须加引号（YAML 的裸 `NO` 是布尔值，共享测量脚本会拒绝）。`in_use: true` 的依据是实测：隐藏启动的窗口从未上屏、从未成为前台 App。
 
 正式验收由 Chapter 执行；不要手写 `perf/delivery-evidence.json`：
 

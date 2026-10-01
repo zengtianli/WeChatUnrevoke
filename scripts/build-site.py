@@ -22,35 +22,34 @@ OUT = ROOT / "dist/site"
 REPO = "zengtianli/WeChatUnrevoke"
 
 
+def release_version(label):
+    """'1.0.10 (34)' -> '1.0.10': evidence labels carry the build, release tags do not."""
+    match = re.match(r"\s*v?(\d+(?:\.\d+)*)", str(label or ""))
+    return match.group(1) if match else str(label or "")
+
+
 def perf_fields(version, download_bytes, installed_bytes=None):
-    """Keep runtime numbers bound to their measured version, including historical data."""
+    """Keep runtime numbers bound to their measured version, including historical data.
+
+    Every figure comes from the shared renderer's summary, so the page reads whatever evidence shape the
+    measurement wrote: the automated release-copy measurement (cold launch to window, idle) as well as a
+    manual one with extra status-check timings."""
     perf = json.loads((ROOT / "perf/lightweight.json").read_text())
-    historical = perf.get("version") != version
+    historical = release_version(perf.get("version")) != release_version(version)
     if historical and (not installed_bytes or installed_bytes <= 0):
         raise SystemExit("A different release requires installed size from its verified ZIP")
     if not historical and perf["size"].get("download_bytes") != download_bytes:
         raise SystemExit("perf/lightweight.json download size is not this release's ZIP")
-    start = next(x for x in perf["speed_gui"] if x["key"] == "cold_start_to_status")
-    check = next(x for x in perf["background"] if x["key"] == "status_check")
     display = perf_block.summarize(perf, ROOT / "perf/lightweight.json")
+    if not display["memory"] or display["cpu"] is None:
+        raise SystemExit("perf/lightweight.json has no idle memory/CPU measurement")
     return {
-        # measure.py records MiB; the page uses decimal MB like the download size and Finder.
-        "PERF_INSTALLED": f"{(installed_bytes or perf['size'].get('installed_bytes') or perf['size']['installed_mb'] * 1024 * 1024) / 1_000_000:.1f}",
         "PERF_VERSION": perf["version"],
         "PERF_NOTICE": (f"v{version} 内存、CPU 与速度待测；下方保留 v{perf['version']} 历史实测。"
-                        if historical else f"资源实测：v{version}，{perf['measured_at']}。"),
+                        if historical else f"资源实测：v{perf['version']}，{perf['measured_at']}。"),
         "PERF_MEM": display["memory"],
-        # Below 1% one decimal would round a real 0.1x% to 0.1 or 0.0; keep two.
-        "PERF_CPU": f"{cpu:.2f}" if (cpu := perf['idle']['cpu_pct_with_checks']) < 1 else f"{cpu:.1f}",
-        "PERF_CPU_UI": f"{perf['idle']['cpu_pct']:.2f}",
-        "PERF_START": f"{start['median_ms'] / 1000:.1f}",
-        "PERF_CHECK": f"{check['per_run_s']:.1f}",
-        "PERF_CHECK_CPU": f"{check['cpu_s_per_run']:.2f}",
-        "PERF_WINDOW": str(perf["idle"]["window_s"]),
-        "PERF_WINDOWS": str(perf["idle"].get("windows", 1)),
-        "PERF_RUNS": str(start["runs"]),
-        "PERF_DEVICE": perf["device"],
-        "PERF_DATA": perf["data"],
+        # The README's shared block prints the same rounding, so the gate below compares like with like.
+        "PERF_CPU": display["cpu"],
         "PERF_DATE": perf["measured_at"],
     }
 
@@ -60,8 +59,8 @@ def lightweight_section(version, download_bytes, installed_bytes):
     source = ROOT / "perf/lightweight.json"
     recorded = json.loads(source.read_text())
     fields = perf_fields(version, download_bytes, installed_bytes)
-    if recorded["version"] == version:
-        return perf_block.standalone_section(source, version, '#50723c')
+    if release_version(recorded["version"]) == release_version(version):
+        return perf_block.standalone_section(source, release_version(version), '#50723c')
     # This view exists only in memory; the measured evidence is never rewritten.
     current = {
         "version": version, "measured_at": datetime.now().date().isoformat(),
@@ -78,7 +77,7 @@ def lightweight_section(version, download_bytes, installed_bytes):
         "下载文件大小。",
         f"发行 ZIP；包内展开文件合计 <span data-release-metric='unpacked-file-size'>{expanded_mb} MB</span>"
         f"（{installed_bytes:,} 字节，不含文件系统分配开销）。")
-    historical = perf_block.standalone_section(source, recorded["version"], '#50723c')
+    historical = perf_block.standalone_section(source, release_version(recorded["version"]), '#50723c')
     historical = historical.replace("id='light'", "id='historical-performance'").replace(
         "资源占用与响应速度。", f"历史实测 · v{escape(recorded['version'])}，{escape(fields['PERF_DATE'])}。")
     historical = historical.replace("数字来自所列设备实测，版本更新后重新测量。", "历史实测记录，不代表当前发行版。")
@@ -142,7 +141,7 @@ def main():
         text = (ROOT / readme).read_text()
         required = [f"**{perf['PERF_MEM']} MB**", f"**{perf['PERF_CPU']}%**",
                     f"v{perf['PERF_VERSION']}", perf["PERF_DATE"]]
-        if perf['PERF_VERSION'] == version:
+        if release_version(perf['PERF_VERSION']) == release_version(version):
             required.append(f"**{size} MB**")
         else:
             required.extend([f"v{version}", "历史实测" if readme == "README.md" else "Historical measurements",

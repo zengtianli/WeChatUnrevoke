@@ -1,5 +1,14 @@
 # Chapter 页面口径修复交接（2026-09-28）
 
+## 2026-10-01 无人值守资源实测登记
+
+- 起因：版本一变，Chapter 的自动测量就报「启动测量缺少 App 路径」（`sop.measure` 只有 `inputs`）。现在本机 `project.yaml` 登记了 `archive: release`、`start_args: ['-autoRepatch', 'NO', '-everProtected', 'NO']`、`in_use: true`，公开示例见 `scripts/accept/README.md`。
+- 共享改动：Apps 仓 `8073ace`（共享测量脚本把 `start_args` 带到每次冷启动并在方法里写明；参数格式不对就在解包、启动之前失败；解出的发行副本测完从 LaunchServices 注销并删除；副本也记 `measured_artifact`）；Chapter `ec9e41b`（发布记录写了本地 `download` 时就测这一个文件，且须与记录的 sha256 一致）。
+- 隐藏启动实测（`in_use` 的依据）：一次单独试启动，加上正式测量全程的被动观察（只读窗口列表和前台 App，不碰输入）。副本的主窗口创建了，但从未上屏、从未成为前台 App；子进程只有 `wechattweak doctor`（正式测量 5 次启动各 1 次），没有 sudo/osascript；微信包 5 个路径的指纹、本 App 偏好前后不变；测完无残留进程，副本已删除。
+- 正式测量走 Chapter 自己的测量动作（`app_sop.measure`，持全局锁，过采样门），提交 `acd7cb4` 并推送：1.0.10 (34)，空闲 33.0 MiB（页面 34.6 MB）、CPU 0.0%，冷启动到窗口出现中位 289 ms（5 次），安装包 2,449,790 字节。标签从 `1.0.10` 变成 `1.0.10 (34)`，按共享规则旧的状态检查计时、30 分钟检查折算 CPU、后台任务记录移入 `history`；之后每次换版本都会这样。
+- 产品页生成器原先写死了人工测量才有的字段（`cold_start_to_status`、`background.status_check`、`cpu_pct_with_checks`），也按字符串比较 `1.0.10 (34)` 和 `1.0.10`，自动实测后建站失败。现在所有数字都取自共享渲染器的摘要，版本按发行号比较；新增回归测试用自动实测的证据格式建页。README 正文里写死版本和日期的那句改成不带版本，版本和日期只留在生成块里（测试同步改）。`perf/lightweight.json` 的 `data`/`data_en` 改成不带版本号的测量说明。
+- `chapter sop run --app unrevoke-mac --stage perf --now --json`：perf、size、budget、speed、test 都是 ok，没有 input-binding 失效项。
+
 ## 2026-10-01 免密复核
 
 - 管理员已于 2026-09-30 刷新 `/etc/sudoers.d/claude-nopasswd`（文件时间 09-30 10:53）；`perf/lightweight.json` 的 `availability.local_unattended_engine` 当日已记为 `verified`（以 root 对微信副本真实 patch 并核验）。

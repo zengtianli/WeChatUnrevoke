@@ -11,8 +11,8 @@
     "download_file": "WeChatUnrevoke-1.0.10.zip"
   },
   "compare": [],
-  "data": "正式 1.0.10 发行包隔离副本，读取真实微信包（build 269627）的只读状态；自动写入在本次测量进程禁用，未执行补丁或消息操作。",
-  "data_en": "An isolated copy of the official 1.0.10 release reading the real WeChat bundle (build 269627); automatic writes disabled for this measurement process, with no patch or message operation.",
+  "data": "公开发行包的隔离副本（后台隐藏启动，启动参数关闭自动重打），只读检查本机真实微信包的状态；测量进程不打补丁、不做消息操作、不调 sudo，测完注销并删除副本。",
+  "data_en": "An isolated copy of the public release package (launched hidden, automatic re-patching off via launch arguments) that only reads the real WeChat bundle's state; the measurement process never patches, touches messages or uses sudo, and the copy is removed afterwards.",
   "why": "原生 SwiftUI 界面，无 Python 运行时；读写微信交给包内的 Swift 命令行引擎。窗口打开时每 60 秒只比对一次微信安装包里 5 个路径的文件指纹（不到 1 毫秒），微信没被更新、打补丁或还原就不启动引擎，另每 30 分钟完整检查一次兜底；关窗即停，无常驻后台服务。发布包剥离调试符号。",
   "why_en": "Native SwiftUI with no Python runtime. Reading and patching WeChat is handed to the bundled Swift command-line engine. While the window is open, it compares a file fingerprint of 5 paths in the WeChat bundle once a minute (under a millisecond) and starts the engine only when WeChat was updated, patched or restored, plus a full check every 30 minutes as a backstop; checks stop when the window closes. No resident background service. Release builds are stripped of debug symbols.",
   "history": [

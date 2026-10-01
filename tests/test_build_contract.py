@@ -131,12 +131,41 @@ class SiteResourceContractTests(unittest.TestCase):
         self.assertEqual(sop.numbers_on_page(raw, html), [])
 
     def test_bilingual_readmes_identify_measured_version(self):
-        # The shared renderer replaces everything between lightweight markers.
-        # Release/version notes must remain outside that generated block.
+        # The shared renderer rewrites everything between the lightweight markers after every measurement, which
+        # now runs unattended for each release. The note outside the block names no version or date, so it cannot
+        # go stale; the generated block itself names the measured version and date.
         data = json.loads((self.root / "perf/lightweight.json").read_text())
-        chinese = (self.root / "README.md").read_text().split("<!-- lightweight:start -->", 1)[0]
-        english = (self.root / "README_EN.md").read_text().split("<!-- lightweight:start -->", 1)[0]
-        self.assertIn(f"以下资源实测对应当前 v{data['version']}", chinese)
-        self.assertIn(f"The resource measurements below are for the current v{data['version']}", english)
-        self.assertNotIn("待测", chinese)
-        self.assertNotIn("not yet measured", english)
+        for name, note in (("README.md", "以下资源实测对应当前发行版"),
+                           ("README_EN.md", "The resource measurements below are for the current release")):
+            with self.subTest(readme=name):
+                before, _, rest = (self.root / name).read_text().partition("<!-- lightweight:start -->")
+                block = rest.partition("<!-- lightweight:end -->")[0]
+                self.assertIn(note, before)
+                self.assertNotRegex(before.split(note, 1)[1].split("\n", 1)[0], r"v\d+\.\d+|20\d\d-\d\d-\d\d")
+                self.assertIn(f"v{data['version']}", block)
+                self.assertIn(data["measured_at"], block)
+                self.assertNotIn("待测" if name == "README.md" else "not yet measured", before)
+
+    def test_automated_measurement_evidence_builds_the_page(self):
+        # The unattended release-copy measurement writes only cold launch to window and idle numbers (no manual
+        # status-check timings, no folded 30-minute check CPU); the page and its README gate must still build.
+        data = json.loads((self.root / "perf/lightweight.json").read_text())
+        data["version"] = data["version"].split(" ")[0] + " (99)"
+        data["speed_gui"] = [{"key": "cold_launch_to_window", "label": "冷启动到窗口出现", "median_ms": 289,
+                              "runs": 5, "headline": True}]
+        data["idle"] = {"footprint_mb": 33.0, "main_footprint_mb": 33.0, "cpu_pct": 0.0, "main_cpu_pct": 0.0,
+                        "window_s": 60, "method": "fixture"}
+        for section in ("speed_cli", "background"):
+            data.pop(section, None)
+        release = data["version"].split(" ")[0]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "perf").mkdir()
+            (root / "perf/lightweight.json").write_text(json.dumps(data))
+            with patch.object(self.site, "ROOT", root):
+                fields = self.site.perf_fields(release, data["size"]["download_bytes"])
+                html = self.site.lightweight_section(release, data["size"]["download_bytes"], 4_402_604)
+        self.assertEqual(fields["PERF_CPU"], "0")
+        self.assertEqual(fields["PERF_NOTICE"], f"资源实测：v{data['version']}，{data['measured_at']}。")
+        self.assertNotIn("historical-performance", html)  # '1.0.10 (99)' is the release 1.0.10, not history
+        self.assertIn("289", html)
