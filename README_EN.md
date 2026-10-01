@@ -31,19 +31,13 @@ WeChatUnrevoke reads your WeChat build and lets you manage patches through a nat
 <!-- lightweight:start -->
 ## Resource use
 
-| Download | Idle memory | Idle CPU | Background open (open -n -g -j) until the first status-check subprocess exits and the UI has the status |
+| Download | Idle memory | Idle CPU | Cold launch to window |
 |---|---|---|---|
-| **2.4 MB** (installed 4.4 MB) | **32.5 MB** | **0.03%** | **1.9 s** |
+| **2.4 MB** (installed 4.4 MB) | **34.6 MB** | **0%** | **289 ms** |
 
 Native SwiftUI with no Python runtime. Reading and patching WeChat is handed to the bundled Swift command-line engine. While the window is open, it compares a file fingerprint of 5 paths in the WeChat bundle once a minute (under a millisecond) and starts the engine only when WeChat was updated, patched or restored, plus a full check every 30 minutes as a backstop; checks stop when the window closes. No resident background service. Release builds are stripped of debug symbols.
 
-CPU conditions: The 60-second idle window measured 0.02% CPU for the app and helpers; including a full check every 30 minutes gives about 0.03%. Launch and full-check numbers are 5 runs of the same binary at a system load of about 4.5.
-
-Background tasks:
-
-- With the window open, compare five WeChat bundle fingerprints every minute; run the full status check on change or every 30 minutes.: Wall time per run 1.64 s; Interval 1800.0 s; Busy wall time per day 1.3 min; CPU time per run 0.26 s; CPU time per day 0.2 min; per_run_s 与 cpu_s_per_run 为 1.0.10 发布包引擎 5 次 /usr/bin/time 中位（含 codesign 等子进程），整机负载约 4.5，见 perf/raw/current-1.0.10.json。指纹比对不起进程，每次不到 1 毫秒，未计。关窗后停止，按全天开着窗口折算
-
-<sub>v1.0.10 · Mac16,12 / Apple M4 / macOS 27.2 · An isolated copy of the official 1.0.10 release reading the real WeChat bundle (build 269627); automatic writes disabled for this measurement process, with no patch or message operation. · measured 2026-09-29. Measured on the listed device; re-measured for each version. Memory uses phys_footprint; CPU is CPU time ÷ wall time over a 60-second sampling window; sizes in decimal MB. Raw data: [perf/lightweight.json](perf/lightweight.json).</sub>
+<sub>v1.0.10 (34) · Mac16,12 / Apple M4 / macOS 27.2 · An isolated copy of the official 1.0.10 release reading the real WeChat bundle (build 269627); automatic writes disabled for this measurement process, with no patch or message operation. · measured 2026-10-01. Measured on the listed device; re-measured for each version. Memory uses phys_footprint; CPU is CPU time ÷ wall time over a 60-second sampling window; sizes in decimal MB. Raw data: [perf/lightweight.json](perf/lightweight.json).</sub>
 <!-- lightweight:end -->
 
 ## Get started
