@@ -123,6 +123,19 @@ def main():
     if info['CFBundleShortVersionString'] != version:
         raise SystemExit('Release version differs from packaged application')
     source_commit = subprocess.check_output(['gh', 'api', f"repos/{REPO}/commits/{release['target_commitish']}", '--jq', '.sha'], text=True).strip()
+    guide = json.loads((ROOT / 'docs/demo/current-guide.json').read_text())
+    for filename, digest in guide['files'].items():
+        if hashlib.sha256((ROOT / 'docs/demo' / filename).read_bytes()).hexdigest() != digest:
+            raise SystemExit('Reviewed UI guide media changed: ' + filename)
+    if guide['version'] != version:
+        reuse = guide.get('reused_for', {}).get(version, {})
+        if not (reuse.get('historical_reference') is True and reuse.get('not_covered')
+                and str(reuse.get('build')) == str(info['CFBundleVersion'])
+                and reuse.get('release_sha256') == expected):
+            raise SystemExit('Historical UI guide is not explicitly bound to this release')
+        sources = {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in (ROOT / 'Sources').glob('*.swift')}
+        if reuse.get('source_sha256') != sources:
+            raise SystemExit('Historical guide review is stale for the current UI sources')
 
     OUT.mkdir(parents=True, exist_ok=True)
     for folder in ("assets", "media", "downloads"):
@@ -130,7 +143,11 @@ def main():
     for file in ("style.css", "app.js"):
         shutil.copy2(ROOT / "site" / file, OUT / file)
     page = (ROOT / "site/index.html").read_text()
-    page = page.replace("{{VERSION}}", version).replace("{{SIZE}}", f"{asset['size'] / 1_000_000:.1f}")
+    page = page.replace("{{VERSION}}", version).replace("{{GUIDE_VERSION}}", escape(guide['version'])).replace("{{SIZE}}", f"{asset['size'] / 1_000_000:.1f}")
+    if guide['version'] != version:
+        page = page.replace('当前应用界面', '原版本界面参考').replace('当前版本的三个常见状态。', '原版本的三个常见状态。')
+        page = page.replace('当前版本状态导览', '原版本状态导览').replace('下载当前界面导览', '下载原版本界面导览')
+        page = page.replace('界面以当前导览为准', '原有操作可参考上方历史导览；新版配置与更新窗口未在旧素材中展示')
     page = page.replace('{{LIGHTWEIGHT}}', lightweight_section(version, download_bytes, installed_bytes))
     perf = perf_fields(version, download_bytes, installed_bytes)
     for key, value in perf.items():

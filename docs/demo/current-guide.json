@@ -8,6 +8,25 @@
     "ContentView.swift": "e5e693d3ab72438b9c794261cbf099f6d8b8201ee1bda235cef9bac1ba4f5c6f",
     "UnrevokeApp.swift": "b23fafaa752333be023f30e06b212657e073040943ef310393ac3f95cad2f713"
   },
+  "reused_for": {
+    "1.0.11": {
+      "build": "54",
+      "release_sha256": "f3d0a9a2de3a2f91cc40edeaff59a4815cd871a920aaa3b425a27b710e7a20db",
+      "historical_reference": true,
+      "not_covered": "新版配置与更新窗口及真实跨设备同步；不是新版性能或补丁操作实测",
+      "reason": "按增量升级保留原1.0.10生产界面离屏导览，页面明确展示原录制版本。新发行包身份、签名、共享更新配置及隐私边界分别核验。",
+      "source_sha256": {
+        "AppConfiguration.swift": "66d1b04072dbcbcbbc556afb79be1181396fc8bd1a6940d5960adea742219edc",
+        "AppLifecycle.swift": "07adaba8327f855b9a497346384ece9f8a526089c1c2f987b8873ab95a4fec3c",
+        "AppLifecycleUI.swift": "c5bfb42bb97555125d3822a98ab0bab71adf368f0de1439f170f0dddb7456974",
+        "ContentView.swift": "131b5b34b5936d72e053e66bd20777aff3c63434f43ebf7285b7cbc6b7f6aae4",
+        "Engine.swift": "b31b8345e5f6f2fa4791342eaa7a25502c837d1c316a76184687e9f09ef44ec2",
+        "Models.swift": "3c99d58322afb702dac548317c7f26fb1250201cfe13447aad0864fb883df2b2",
+        "UnrevokeApp.swift": "e0c0e14261992023776ea30878a72dc0cd26fd975020665414c56a61983bb851",
+        "ViewModel.swift": "b4b93bc3e25b440dd331d5a391917e9123678ba1903882b1d3e64fe6a088efbd"
+      }
+    }
+  },
   "duration_seconds": 21,
   "files": {
     "current-guide.mp4": "0d881416b13103af5ea3c6c9e0318d9a7b2d9e6891e23ef7fc3ae462c400cc43",
