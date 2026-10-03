@@ -65,6 +65,9 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: .consoleRefresh)) { _ in
             Task { await refresh() }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .unrevokePreferencesChanged)) { _ in
+            if automaticallyStart { model.reloadPortablePreferences() }
+        }
         .overlay(alignment: .bottom) { toastView }
         .animation(.easeInOut(duration: 0.18), value: model.status)
     }

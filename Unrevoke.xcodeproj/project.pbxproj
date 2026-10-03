@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		BF0000000000000000000111 /* AppLifecycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000211 /* AppLifecycle.swift */; };
+		BF0000000000000000000112 /* AppConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000212 /* AppConfiguration.swift */; };
+		BF0000000000000000000113 /* AppLifecycleUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000213 /* AppLifecycleUI.swift */; };
 		BF0000000000000000000101 /* UnrevokeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000201 /* UnrevokeApp.swift */; };
 		BF0000000000000000000102 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000202 /* ContentView.swift */; };
 		BF0000000000000000000103 /* ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000203 /* ViewModel.swift */; };
@@ -16,6 +19,9 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		BF0000000000000000000211 /* AppLifecycle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLifecycle.swift; sourceTree = "<group>"; };
+		BF0000000000000000000212 /* AppConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfiguration.swift; sourceTree = "<group>"; };
+		BF0000000000000000000213 /* AppLifecycleUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLifecycleUI.swift; sourceTree = "<group>"; };
 		BF0000000000000000000201 /* UnrevokeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnrevokeApp.swift; sourceTree = "<group>"; };
 		BF0000000000000000000202 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		BF0000000000000000000203 /* ViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModel.swift; sourceTree = "<group>"; };
@@ -58,6 +64,9 @@
 		BF0000000000000000000603 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				BF0000000000000000000211 /* AppLifecycle.swift */,
+				BF0000000000000000000212 /* AppConfiguration.swift */,
+				BF0000000000000000000213 /* AppLifecycleUI.swift */,
 				BF0000000000000000000201 /* UnrevokeApp.swift */,
 				BF0000000000000000000202 /* ContentView.swift */,
 				BF0000000000000000000203 /* ViewModel.swift */,
@@ -136,6 +145,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BF0000000000000000000111 /* AppLifecycle.swift in Sources */,
+				BF0000000000000000000112 /* AppConfiguration.swift in Sources */,
+				BF0000000000000000000113 /* AppLifecycleUI.swift in Sources */,
 				BF0000000000000000000101 /* UnrevokeApp.swift in Sources */,
 				BF0000000000000000000102 /* ContentView.swift in Sources */,
 				BF0000000000000000000103 /* ViewModel.swift in Sources */,

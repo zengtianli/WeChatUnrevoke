@@ -1,5 +1,7 @@
 [中文](README.md) | **English**
 
+“Configuration and Updates…” offers optional system iCloud sync and export/import for the message-tip variant and automatic repatch preference. WeChat paths, this Mac's patch history, login items and permissions stay local; restoring settings does not authorize patching WeChat on a new Mac. “Check for Updates…” checks this edition's release channel on demand.
+
 <p align="center"><img src="icon/AppIcon.png" width="128" height="128" alt="WeChatUnrevoke icon"></p>
 <h1 align="center">WeChatUnrevoke</h1>
 <p align="center"><strong>Keep the message. Even after recall.</strong><br>A native SwiftUI app to check, apply and restore WeChat anti-recall patches on Mac.</p>

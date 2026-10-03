@@ -29,7 +29,7 @@ final class AppModel: ObservableObject {
     @Published var autoRepatch: Bool {
         didSet {
             defaults.set(autoRepatch, forKey: Keys.autoRepatch)
-            if autoRepatch { Task { await requestNotificationPermission() } }
+            if autoRepatch && !restoringPreferences { Task { await requestNotificationPermission() } }
         }
     }
     @Published var launchAtLogin: Bool {
@@ -38,6 +38,7 @@ final class AppModel: ObservableObject {
 
     private let engine = Engine()
     private let defaults = UserDefaults.standard
+    private var restoringPreferences = false
     private let confirmAction: ((String, String, String) -> Bool)?
     private var lastWriteError: String?
     private var automaticWriteBlocked = false
@@ -63,6 +64,14 @@ final class AppModel: ObservableObject {
     }
 
     // MARK: - 生命周期
+
+    /// Restoring a preference never carries authorization to patch this Mac or show a permission prompt.
+    func reloadPortablePreferences() {
+        restoringPreferences = true
+        defer { restoringPreferences = false }
+        variant = PatchVariant(rawValue: defaults.string(forKey: Keys.variant) ?? "") ?? .keeptip
+        autoRepatch = defaults.object(forKey: Keys.autoRepatch) as? Bool ?? true
+    }
 
     func start() {
         // 先体检再联网：拉 config.json 最长要 15 秒，让界面先干等着那 15 秒

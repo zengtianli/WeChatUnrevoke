@@ -1,5 +1,7 @@
 **中文** | [English](README_EN.md)
 
+菜单“配置与更新…”可选择使用系统 iCloud 记住提示样式与自动检查后重打偏好，也可导出、导入配置。微信路径、当前机器是否曾打补丁、登录项与系统权限不迁移；恢复配置不等于授权修改新机器上的微信。菜单“检查更新…”按需读取本发行渠道的新版本。
+
 <p align="center">
   <img src="icon/AppIcon.png" width="128" height="128" alt="WeChatUnrevoke 应用图标">
 </p>

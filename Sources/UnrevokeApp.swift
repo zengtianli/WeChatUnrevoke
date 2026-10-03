@@ -10,6 +10,7 @@ import AppKit
 
 extension Notification.Name {
     static let consoleRefresh = Notification.Name("consoleRefresh")
+    static let unrevokePreferencesChanged = Notification.Name("UnrevokePreferencesChanged")
 }
 
 @main
@@ -25,6 +26,15 @@ enum UnrevokeEntry {
 }
 
 struct UnrevokeApp: App {
+    init() {
+        let configuration = AppConfiguration(productID: "io.github.zengtianli.unrevoke", defaultsKeys: ["variant", "autoRepatch"])
+        configuration.onChange = {
+            NotificationCenter.default.post(name: .unrevokePreferencesChanged, object: nil)
+        }
+        let personal = Bundle.main.object(forInfoDictionaryKey: "AppLifecycleUpdateChannel") as? String == "personal"
+        let update: AppUpdateSource = personal ? .privateCloud(channel: "personal") : .github(repository: "zengtianli/WeChatUnrevoke")
+        AppLifecycleUI.install(name: "WeChatUnrevoke", configuration: configuration, updateSource: update)
+    }
     var body: some Scene {
         WindowGroup {
             ContentView()
