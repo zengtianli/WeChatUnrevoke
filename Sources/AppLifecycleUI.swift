@@ -83,7 +83,7 @@ final class AppLifecycleUI: NSObject {
                     if release.isNewer(than: self.currentVersion, build: self.currentBuild) {
                         self.status.stringValue = "有新版 \(release.version) (\(release.build))，当前 \(self.currentVersion) (\(self.currentBuild))。升级会保留本机配置。"
                         self.installButton.isHidden = release.downloadURL == nil
-                        self.installButton.title = release.sha256 == nil ? "下载新版…" : "升级到新版…"
+                        self.installButton.title = AppUpgradeInstaller.supportsReplacement(release: release, currentBundle: Bundle.main.bundleURL) ? "升级到新版…" : "下载新版…"
                     } else if AppVersion.compare(self.currentVersion, release.version) == .orderedDescending {
                         self.status.stringValue = "当前 \(self.currentVersion) (\(self.currentBuild))；此渠道正式发行版本为 \(release.version) (\(release.build))。"
                     } else { self.status.stringValue = "当前已是此渠道最新版：\(self.currentVersion) (\(self.currentBuild))。" }
@@ -182,7 +182,7 @@ final class AppLifecycleUI: NSObject {
 
     @objc private func upgrade() {
         guard !working, let release, let url = release.downloadURL else { return }
-        if release.sha256 == nil {
+        if !AppUpgradeInstaller.supportsReplacement(release: release, currentBundle: Bundle.main.bundleURL) {
             NSWorkspace.shared.open(url)
             status.stringValue = "已打开正式安装包下载；安装新版会保留支持目录中的配置。"
             return
@@ -219,6 +219,14 @@ final class AppLifecycleUI: NSObject {
 
 enum AppUpgradeInstaller {
     struct Prepared { let app: URL; let directory: URL; let installation: String? }
+
+    static func supportsReplacement(release: AppRelease, currentBundle: URL) -> Bool {
+        guard release.sha256 != nil, let url = release.downloadURL, currentBundle.pathExtension == "app",
+              FileManager.default.isWritableFile(atPath: currentBundle.deletingLastPathComponent().path) else { return false }
+        // A publicly downloaded bundle needs the existing developer identity.
+        // Ad-hoc products retain their actual download-and-install distribution flow.
+        return url.isFileURL || (try? signingTeam(currentBundle)) != nil
+    }
 
     static func prepare(release: AppRelease, currentBundle: URL, completion: @escaping (Result<Prepared, Error>) -> Void) {
         guard let url = release.downloadURL, let expectedHash = release.sha256,
