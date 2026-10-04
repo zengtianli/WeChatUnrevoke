@@ -35,11 +35,11 @@ The current v1.0.11 download is 2.7 MB; memory, CPU and launch speed are not yet
 
 | Download | Idle memory | Idle CPU | Cold launch to window |
 |---|---|---|---|
-| **2.4 MB** (installed 4.4 MB) | **34.6 MB** | **0%** | **289 ms** |
+| **2.7 MB** (installed 4.9 MB) | **34.6 MB** | **0%** | **366 ms** |
 
 Native SwiftUI with no Python runtime. Reading and patching WeChat is handed to the bundled Swift command-line engine. While the window is open, it compares a file fingerprint of 5 paths in the WeChat bundle once a minute (under a millisecond) and starts the engine only when WeChat was updated, patched or restored, plus a full check every 30 minutes as a backstop; checks stop when the window closes. No resident background service. Release builds are stripped of debug symbols.
 
-<sub>v1.0.10 (34) · Mac16,12 / Apple M4 / macOS 27.2 · An isolated copy of the public release package (launched hidden, automatic re-patching off via launch arguments) that only reads the real WeChat bundle's state; the measurement process never patches, touches messages or uses sudo, and the copy is removed afterwards. · measured 2026-10-01. Measured on the listed device; re-measured for each version. Memory uses phys_footprint; CPU is CPU time ÷ wall time over a 60-second sampling window; sizes in decimal MB. Raw data: [perf/lightweight.json](perf/lightweight.json).</sub>
+<sub>v1.0.11 (54) · Mac16,12 / Apple M4 / macOS 27.2 · An isolated copy of the public release package (launched hidden, automatic re-patching off via launch arguments) that only reads the real WeChat bundle's state; the measurement process never patches, touches messages or uses sudo, and the copy is removed afterwards. · measured 2026-10-04. Measured on the listed device; re-measured for each version. Memory uses phys_footprint; CPU is CPU time ÷ wall time over a 60-second sampling window; sizes in decimal MB. Raw data: [perf/lightweight.json](perf/lightweight.json).</sub>
 <!-- lightweight:end -->
 
 ## Get started
