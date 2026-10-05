@@ -4,6 +4,9 @@ import Darwin
 /// Real AppModel/Engine acceptance; every write is restricted to the disposable sibling bundle.
 @main
 struct FunctionalityAcceptance {
+    static func progress(_ message: String) {
+        FileHandle.standardOutput.write(Data(("Functionality: " + message + "\n").utf8))
+    }
     struct CheckError: LocalizedError {
         let message: String
         let unavailable: Bool
@@ -82,6 +85,7 @@ struct FunctionalityAcceptance {
         await model.refresh()
         try require(model.status != nil && model.status?.needsAdmin == false && model.status?.running == false,
                     "AppModel did not load a writable, stopped copy.", unavailable: true)
+        progress("independent doctor and AppModel verified the writable, stopped copy.")
         func complete(_ expected: Set<String>, _ phase: String) throws -> [String: Any] {
             if model.errorMessage != nil {
                 let denied = model.errorMessage == L.err_writePermissionDenied
@@ -100,18 +104,24 @@ struct FunctionalityAcceptance {
             return state
         }
 
+        progress("starting baseline restore on the isolated copy.")
         await model.restoreNow()
         _ = try complete(["unprotected"], "baseline restore")
+        progress("baseline restore verified by independent doctor.")
         try writable(try doctor())
+        progress("starting the keep-tip patch on the isolated copy.")
         await model.protectNow()
         let patched = try complete(["protected", "antiRevokeOnly"], "patch")
         try require(patched["anti_revoke_keeptip"] as? String == "patched", "Default keep-tip variant was not applied.")
         try require(defaults.bool(forKey: "everProtected"), "Successful patch did not set everProtected.")
+        progress("keep-tip patch and preferences verified by independent doctor.")
         try writable(try doctor())
+        progress("starting final restore on the isolated copy.")
         await model.restoreNow()
         let restored = try complete(["unprotected"], "final restore")
         try require(!defaults.bool(forKey: "everProtected"), "Restore did not clear everProtected.")
         try require(confirmations == 2, "Unexpected confirmation path was invoked.")
+        progress("final restore, entitlements and confirmation path verified.")
         let report: [String: Any] = [
             "source_build": initial["build"] ?? "unknown",
             "patched_overall": patched["overall"] ?? "unknown",

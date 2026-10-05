@@ -3,15 +3,18 @@
 from __future__ import annotations
 
 import hashlib
+import codecs
 import json
 import os
 from pathlib import Path
 import plistlib
 import shutil
 import signal
+import selectors
 import subprocess
 import sys
 import tempfile
+import time
 
 from _common import BUILD, ROOT, detail, run, xcode_env
 
@@ -55,15 +58,36 @@ def run_harness(args, *, env, timeout):
     subprocess.run(timeout=) kills only the harness: the engine kept re-signing the copy after the
     verdict, and the read of the shared stdout pipe blocked until it finished. Chapter's own kill
     covers the whole process group, so this stays in the caller's group and kills the tree itself."""
-    proc = subprocess.Popen(args, cwd=ROOT, env=env, text=True,
+    proc = subprocess.Popen(args, cwd=ROOT, env=env,
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    chunks = []
+    decoder = codecs.getincrementaldecoder("utf-8")("replace")
+    deadline = time.monotonic() + timeout
     try:
-        output, _ = proc.communicate(timeout=timeout)
+        with selectors.DefaultSelector() as selector:
+            selector.register(proc.stdout, selectors.EVENT_READ)
+            while selector.get_map():
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise subprocess.TimeoutExpired(args, timeout)
+                for key, _ in selector.select(min(.2, remaining)):
+                    chunk = os.read(key.fd, 65536)
+                    if not chunk:
+                        selector.unregister(key.fileobj)
+                        continue
+                    chunks.append(chunk)
+                    sys.stdout.write(decoder.decode(chunk))
+                    sys.stdout.flush()
+            sys.stdout.write(decoder.decode(b"", final=True))
+            sys.stdout.flush()
+        proc.wait(timeout=max(0, deadline - time.monotonic()))
     except BaseException:
         kill_tree(proc.pid)
-        proc.communicate()
+        proc.wait()
         raise
-    return subprocess.CompletedProcess(args, proc.returncode, output)
+    finally:
+        proc.stdout.close()
+    return subprocess.CompletedProcess(args, proc.returncode, b"".join(chunks).decode("utf-8", "replace"))
 
 
 def load_note():
@@ -129,6 +153,7 @@ def main():
         shutil.copy2(engine, resources / "wechattweak")
         shutil.copy2(config, resources / "config.json")
         executable = macos / "UnrevokeFunctionality"
+        print("Functionality: compiling the actual AppModel/Engine harness.", flush=True)
         run(["xcrun", "swiftc", "-parse-as-library", "Sources/Models.swift",
              "Sources/Engine.swift", "Sources/ViewModel.swift", "tests/FunctionalityAcceptance.swift",
              "-o", str(executable)], env=env)
@@ -137,6 +162,7 @@ def main():
         run(["/bin/cp", "-cR", str(source), str(copy)], timeout=180)
         if (copy / "Contents/MacOS/WeChat").stat().st_ino == (source / "Contents/MacOS/WeChat").stat().st_ino:
             raise RuntimeError("副本没有独立 inode，已拒绝写入。")
+        print("Functionality: isolated clone prepared; checking patch and restore.", flush=True)
         report = scratch / "result.json"
         completed = run_harness([str(executable), str(copy), str(report)], env=env, timeout=HARNESS_TIMEOUT)
         if completed.returncode:
