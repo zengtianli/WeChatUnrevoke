@@ -261,33 +261,36 @@ actor Engine {
                 let group = DispatchGroup()
                 let outBox = DataBox(), errBox = DataBox()
 
+                group.enter()
+                group.enter()
+                // Install before launch: a short-lived child can exit before a
+                // background waitUntilExit run loop starts observing it.
+                process.terminationHandler = { finished in
+                    group.notify(queue: queue) {
+                        finished.terminationHandler = nil
+                        if canceled.on { cont.resume(throwing: CancellationError()); return }
+                        if timedOut.on { cont.resume(throwing: EngineError.timeout(timeout)); return }
+                        let out = String(decoding: outBox.data, as: UTF8.self)
+                        let err = String(decoding: errBox.data, as: UTF8.self)
+                        if finished.terminationStatus == 0 {
+                            cont.resume(returning: out)
+                        } else {
+                            cont.resume(throwing: EngineError.failed(
+                                code: finished.terminationStatus,
+                                output: err.isEmpty ? out : (out.isEmpty ? err : out + "\n" + err)))
+                        }
+                    }
+                }
                 do { try process.run() } catch {
+                    process.terminationHandler = nil
+                    group.leave(); group.leave()
                     cont.resume(throwing: EngineError.launchFailed(error.localizedDescription)); return
                 }
-
-                group.enter()
                 queue.async { outBox.data = outPipe.fileHandleForReading.readDataToEndOfFile(); group.leave() }
-                group.enter()
                 queue.async { errBox.data = errPipe.fileHandleForReading.readDataToEndOfFile(); group.leave() }
 
                 queue.asyncAfter(deadline: .now() + timeout) {
                     if process.isRunning { timedOut.on = true; process.terminate() }
-                }
-
-                queue.async {
-                    process.waitUntilExit()
-                    group.wait()
-                    if canceled.on { cont.resume(throwing: CancellationError()); return }
-                    if timedOut.on { cont.resume(throwing: EngineError.timeout(timeout)); return }
-                    let out = String(decoding: outBox.data, as: UTF8.self)
-                    let err = String(decoding: errBox.data, as: UTF8.self)
-                    if process.terminationStatus == 0 {
-                        cont.resume(returning: out)
-                    } else {
-                        cont.resume(throwing: EngineError.failed(
-                            code: process.terminationStatus,
-                            output: err.isEmpty ? out : (out.isEmpty ? err : out + "\n" + err)))
-                    }
                 }
             }
         } onCancel: {

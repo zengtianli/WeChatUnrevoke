@@ -40,6 +40,23 @@ struct WriteFailureTests {
         }
         try doctor()
         try engine("echo 'update locator failed for 269136' >&2; exit 42")
+        // Short-lived processes and concurrent exits must complete without a
+        // waiter missing the exit notification; use the production Engine.
+        let fastEngine = Engine()
+        for _ in 0..<40 {
+            let state = try await fastEngine.doctor()
+            precondition(state.overall == .unprotected)
+        }
+        try await withThrowingTaskGroup(of: Void.self) { group in
+            for _ in 0..<12 {
+                group.addTask {
+                    let state = try await Engine().doctor()
+                    precondition(state.overall == .unprotected)
+                }
+            }
+            try await group.waitForAll()
+        }
+        print("PASS: repeated and concurrent fast child exits return actual doctor results")
         let preferences = defaults.persistentDomain(forName: Bundle.main.bundleIdentifier!) ?? [:]
         let readOnly = AppModel(readOnly: true)
         await readOnly.refresh()
