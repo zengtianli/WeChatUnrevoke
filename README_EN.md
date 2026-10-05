@@ -39,7 +39,7 @@ The resource measurements below are for local acceptance build 1.0.11 (60); the 
 
 Native SwiftUI with no Python runtime. Reading and patching WeChat is handed to the bundled Swift command-line engine. While the window is open, it compares a file fingerprint of 5 paths in the WeChat bundle once a minute (under a millisecond) and starts the engine only when WeChat was updated, patched or restored, plus a full check every 30 minutes as a backstop; checks stop when the window closes. No resident background service. Release builds are stripped of debug symbols.
 
-<sub>v1.0.11 (60) · Mac16,12 / Apple M4 / macOS 27.2 · An isolated copy of the public release package (launched hidden, automatic re-patching off via launch arguments) that only reads the real WeChat bundle's state; the measurement process never patches, touches messages or uses sudo, and the copy is removed afterwards. · measured 2026-10-05. Measured on the listed device; re-measured for each version. Memory uses phys_footprint; CPU is CPU time ÷ wall time over a 60-second sampling window; sizes in decimal MB. Raw data: [perf/lightweight.json](perf/lightweight.json).</sub>
+<sub>v1.0.11 (60) · Mac16,12 / Apple M4 / macOS 27.2 · An LSUIElement copy of the current installed GUI; read-only WeChat checks and offscreen rendering, with no network, patching or preference writes. · measured 2026-10-05. Measured on the listed device; re-measured for each version. Memory uses phys_footprint; CPU is CPU time ÷ wall time over a 60-second sampling window; sizes in decimal MB. Raw data: [perf/lightweight.json](perf/lightweight.json).</sub>
 <!-- lightweight:end -->
 
 ## Get started
