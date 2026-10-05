@@ -1,13 +1,13 @@
 {
   "product": "WeChatUnrevoke",
-  "version": "1.0.11 (60)",
+  "version": "1.0.11 (69)",
   "measured_at": "2026-10-05",
   "device": "Mac16,12 / Apple M4 / macOS 27.2",
   "size": {
-    "download_bytes": 2691111,
+    "download_bytes": 2692387,
     "download_mb": 2.57,
-    "installed_bytes": 5238784,
-    "installed_mb": 5.0,
+    "installed_bytes": 5255168,
+    "installed_mb": 5.01,
     "download_file": "WeChatUnrevoke-1.0.11.zip"
   },
   "compare": [],
@@ -546,29 +546,131 @@
         "installed_mb": 4.66,
         "download_file": "WeChatUnrevoke-1.0.11.zip"
       }
+    },
+    {
+      "section": "version",
+      "replaced_on": "2026-10-05",
+      "reason": "装机：安装了轻量化后的新构建",
+      "value": "1.0.11 (60)"
+    },
+    {
+      "section": "idle",
+      "version": "1.0.11 (60)",
+      "replaced_on": "2026-10-05",
+      "reason": "版本变化；仅本次实测可作为当前证据",
+      "value": {
+        "process": "/private/var/folders/x7/qptxw08j00v__67yzr3gcd000000gp/T/sim-lane-mac.zj2u0vqc/WeChatUnrevoke.app",
+        "footprint_mb": 29.0,
+        "main_footprint_mb": 29.0,
+        "cpu_pct": 0.0,
+        "main_cpu_pct": 0.0,
+        "processes": [
+          {
+            "name": "main",
+            "cpu_pct": 0.0,
+            "footprint_peak_mb": 29.0
+          }
+        ],
+        "window_s": 60,
+        "settle_s": 45,
+        "measured_at": "2026-10-05",
+        "method": "App os_log 首屏就绪后，LSUIElement 隔离副本静置 45 秒；open -g -j 后台启动；带产品登记的启动参数 --background-measure -autoRepatch NO -everProtected NO，静置 45 秒后 measure.py idle <PID> --seconds 60 --with-helpers：内存为主进程 + WebKit/XPC 辅助进程 + 子进程同一时刻 phys_footprint 之和的峰值（活动监视器「内存」列同口径），CPU 为这些进程窗口内 CPU 时间增量之和 ÷ 墙钟",
+        "load": "负载均值 3.57 3.65 3.23；total = 6144.00M  used = 4589.69M  free = 1554.31M",
+        "owner_idle_s_at_start": 3561
+      }
+    },
+    {
+      "section": "speed_gui",
+      "version": "1.0.11 (60)",
+      "replaced_on": "2026-10-05",
+      "reason": "版本变化；仅本次实测可作为当前证据",
+      "value": [
+        {
+          "key": "cold_launch_to_ready",
+          "label": "冷启动到首屏就绪",
+          "median_ms": 2042.0,
+          "runs": 5,
+          "ready_signal": "os_log",
+          "headline": true,
+          "raw_ms": [
+            2177.0,
+            2009.0,
+            2064.0,
+            2042.0,
+            2034.0
+          ],
+          "method": "sim_lane.run_mac_quiet：LSUIElement 隔离副本；open -g -j -n -> App os_log lane-ready（首屏数据与布局完成）；5 次中位数"
+        }
+      ]
+    },
+    {
+      "section": "runtime_measurement",
+      "version": "1.0.11 (60)",
+      "replaced_on": "2026-10-05",
+      "reason": "版本变化；仅本次实测可作为当前证据",
+      "value": {
+        "environment": "native",
+        "evidence": "/Users/tianli/Library/Caches/app-lightweight/measurement-candidates/fc793de569b1476aa3bc0b765dae99db.raw.json",
+        "evidence_sha256": "35fd11af2a56d9465db805e5ec8506b13aa6362e795be6ae194389f11d20f8a3",
+        "input_sha256": "3e9bda8f9f3099566ab714e06acafecec29e18a705a88a0746ba5407ae26eca2",
+        "ready_signal": "os_log"
+      }
+    },
+    {
+      "section": "speed",
+      "version": "1.0.11 (60)",
+      "replaced_on": "2026-10-05",
+      "reason": "版本变化；仅本次实测可作为当前证据",
+      "value": {
+        "cold_launch_ms": 2042.0,
+        "runs": 5,
+        "ready_signal": "os_log",
+        "raw_ms": [
+          2177.0,
+          2009.0,
+          2064.0,
+          2042.0,
+          2034.0
+        ],
+        "method": "sim_lane.run_mac_quiet：LSUIElement 隔离副本；open -g -j -n -> App os_log lane-ready（首屏数据与布局完成）；5 次中位数"
+      }
+    },
+    {
+      "section": "size",
+      "version": "1.0.11 (60)",
+      "replaced_on": "2026-10-05",
+      "reason": "版本变化；旧安装包大小不沿用",
+      "value": {
+        "download_bytes": 2691111,
+        "download_mb": 2.57,
+        "installed_bytes": 5238784,
+        "installed_mb": 5.0,
+        "download_file": "WeChatUnrevoke-1.0.11.zip"
+      }
     }
   ],
   "measured_artifact": {
     "version": "1.0.11",
-    "build": "60",
-    "executable_sha256": "94cf9dcea0d8a5d68ecf9388c2a2c9d4064ea99d78adbc4b9ea50a877797fd67"
+    "build": "69",
+    "executable_sha256": "a9dc381a962d5633a0fa739f2bd9b124f3563adb576575e3e0f81efb761d95cf"
   },
   "availability": {
     "local_unattended_engine": "verified",
     "verified_at": "2026-09-30",
     "note": "本机管理员已把免密规则刷新到已装引擎 738c112e…；2026-09-30 用 sudo -n 以 root 对 WeChat 4.x (269627) 的 APFS 副本执行 patch -v keeptip：防撤回与拦截更新均 applied、重签 codesign --verify --deep --strict 通过、doctor overall=protected；正在运行的微信未改动。"
   },
-  "env_note": "2026-10-05 主会话逐个顺序测量，负载均值 3.09 3.24 3.03；total = 6144.00M  used = 4597.69M  free = 1546.31M（开始时）；启动时间受负载影响，内存与 CPU 为进程自身数值",
+  "env_note": "2026-10-05 主会话逐个顺序测量，负载均值 2.69 2.94 3.12；total = 6144.00M  used = 4445.69M  free = 1698.31M（开始时）；启动时间受负载影响，内存与 CPU 为进程自身数值",
+  "input_sha256": "63cf23cf78e067712071e5b76ca54ede05791a6c3d71c62c0abec731158e6917",
   "speed": {
-    "cold_launch_ms": 2042.0,
+    "cold_launch_ms": 2068.0,
     "runs": 5,
     "ready_signal": "os_log",
     "raw_ms": [
-      2177.0,
-      2009.0,
-      2064.0,
-      2042.0,
-      2034.0
+      2399.0,
+      2004.0,
+      2081.0,
+      2068.0,
+      1948.0
     ],
     "method": "sim_lane.run_mac_quiet：LSUIElement 隔离副本；open -g -j -n -> App os_log lane-ready（首屏数据与布局完成）；5 次中位数"
   },
@@ -576,22 +678,22 @@
     {
       "key": "cold_launch_to_ready",
       "label": "冷启动到首屏就绪",
-      "median_ms": 2042.0,
+      "median_ms": 2068.0,
       "runs": 5,
       "ready_signal": "os_log",
       "headline": true,
       "raw_ms": [
-        2177.0,
-        2009.0,
-        2064.0,
-        2042.0,
-        2034.0
+        2399.0,
+        2004.0,
+        2081.0,
+        2068.0,
+        1948.0
       ],
       "method": "sim_lane.run_mac_quiet：LSUIElement 隔离副本；open -g -j -n -> App os_log lane-ready（首屏数据与布局完成）；5 次中位数"
     }
   ],
   "idle": {
-    "process": "/private/var/folders/x7/qptxw08j00v__67yzr3gcd000000gp/T/sim-lane-mac.zj2u0vqc/WeChatUnrevoke.app",
+    "process": "/private/var/folders/x7/qptxw08j00v__67yzr3gcd000000gp/T/sim-lane-mac.xva_vak3/WeChatUnrevoke.app",
     "footprint_mb": 29.0,
     "main_footprint_mb": 29.0,
     "cpu_pct": 0.0,
@@ -606,16 +708,15 @@
     "window_s": 60,
     "settle_s": 45,
     "measured_at": "2026-10-05",
-    "method": "App os_log 首屏就绪后，LSUIElement 隔离副本静置 45 秒；open -g -j 后台启动；带产品登记的启动参数 --background-measure -autoRepatch NO -everProtected NO，静置 45 秒后 measure.py idle <PID> --seconds 60 --with-helpers：内存为主进程 + WebKit/XPC 辅助进程 + 子进程同一时刻 phys_footprint 之和的峰值（活动监视器「内存」列同口径），CPU 为这些进程窗口内 CPU 时间增量之和 ÷ 墙钟",
-    "load": "负载均值 3.57 3.65 3.23；total = 6144.00M  used = 4589.69M  free = 1554.31M",
-    "owner_idle_s_at_start": 3561
+    "method": "App os_log 首屏就绪后，LSUIElement 隔离副本静置 45 秒；open -g -j 后台启动；带产品登记的启动参数 --background-measure -autoRepatch NO -everProtected NO，静置 45 秒后 measure.py idle <PID> --seconds 60 --with-helpers：内存为主进程 + WebKit/XPC 辅助进程 + 子进程同一时刻 phys_footprint 之和的峰值（活动监视器「内存」列同口径），CPU 为这些进程窗口内 CPU 时间增量之和 ÷ 墙钟；采样时本人在用电脑（被测 App 未在前台被使用，否则丢弃重采）",
+    "load": "负载均值 3.28 3.04 3.12；total = 6144.00M  used = 4445.69M  free = 1698.31M",
+    "owner_idle_s_at_start": 221
   },
-  "input_sha256": "3e9bda8f9f3099566ab714e06acafecec29e18a705a88a0746ba5407ae26eca2",
   "runtime_measurement": {
     "environment": "native",
-    "evidence": "/Users/tianli/Library/Caches/app-lightweight/measurement-candidates/fc793de569b1476aa3bc0b765dae99db.raw.json",
-    "evidence_sha256": "35fd11af2a56d9465db805e5ec8506b13aa6362e795be6ae194389f11d20f8a3",
-    "input_sha256": "3e9bda8f9f3099566ab714e06acafecec29e18a705a88a0746ba5407ae26eca2",
+    "evidence": "/Users/tianli/Library/Caches/app-lightweight/measurement-candidates/701c3779e48f47d7ba9e0681b82838ee.raw.json",
+    "evidence_sha256": "d9d19d086e445933976ae73953e584faeff4c9d2b9aa50a60eaac24d83651601",
+    "input_sha256": "63cf23cf78e067712071e5b76ca54ede05791a6c3d71c62c0abec731158e6917",
     "ready_signal": "os_log"
   }
 }
