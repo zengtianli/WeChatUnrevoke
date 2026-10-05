@@ -1,7 +1,7 @@
 {
   "product": "WeChatUnrevoke",
   "version": "1.0.11 (54)",
-  "measured_at": "2026-10-04",
+  "measured_at": "2026-10-05",
   "device": "Mac16,12 / Apple M4 / macOS 27.2",
   "size": {
     "download_bytes": 2670275,
@@ -431,6 +431,52 @@
         "installed_mb": 4.21,
         "download_file": "WeChatUnrevoke-1.0.10.zip"
       }
+    },
+    {
+      "section": "speed_gui.cold_launch_to_window",
+      "replaced_on": "2026-10-05",
+      "reason": "低负载下按 5 次重测",
+      "value": {
+        "key": "cold_launch_to_window",
+        "label": "冷启动到窗口出现",
+        "median_ms": 366,
+        "runs": 5,
+        "headline": true,
+        "raw_ms": [
+          487,
+          450,
+          334,
+          366,
+          344
+        ],
+        "method": "open -g -j 后台隐藏启动，被动读取窗口列表直到主窗口出现；不点击、不激活；5 次取中位；带产品登记的启动参数 -autoRepatch NO -everProtected NO",
+        "load": "负载均值 3.61 5.33 12.34；total = 11264.00M  used = 10152.94M  free = 1111.06M"
+      }
+    },
+    {
+      "section": "idle",
+      "replaced_on": "2026-10-05",
+      "reason": "本次按记录的采样窗口与辅助进程合计实测",
+      "value": {
+        "process": "~/Apps/unrevoke/build/perf-run/WeChatUnrevoke.app",
+        "footprint_mb": 33.0,
+        "main_footprint_mb": 33.0,
+        "cpu_pct": 0.0,
+        "main_cpu_pct": 0.0,
+        "processes": [
+          {
+            "name": "main",
+            "cpu_pct": 0.0,
+            "footprint_peak_mb": 33.0
+          }
+        ],
+        "window_s": 60,
+        "settle_s": 45,
+        "measured_at": "2026-10-04",
+        "method": "open -g -j 后台启动；带产品登记的启动参数 -autoRepatch NO -everProtected NO，静置 45 秒后 measure.py idle <PID> --seconds 60 --with-helpers：内存为主进程 + WebKit/XPC 辅助进程 + 子进程同一时刻 phys_footprint 之和的峰值（活动监视器「内存」列同口径），CPU 为这些进程窗口内 CPU 时间增量之和 ÷ 墙钟；采样时本人在用电脑（被测 App 未在前台被使用，否则丢弃重采）",
+        "load": "负载均值 3.83 4.83 11.25；total = 11264.00M  used = 10152.94M  free = 1111.06M",
+        "owner_idle_s_at_start": 5
+      }
     }
   ],
   "measured_artifact": {
@@ -443,23 +489,23 @@
     "verified_at": "2026-09-30",
     "note": "本机管理员已把免密规则刷新到已装引擎 738c112e…；2026-09-30 用 sudo -n 以 root 对 WeChat 4.x (269627) 的 APFS 副本执行 patch -v keeptip：防撤回与拦截更新均 applied、重签 codesign --verify --deep --strict 通过、doctor overall=protected；正在运行的微信未改动。"
   },
-  "env_note": "2026-10-04 主会话逐个顺序测量，负载均值 3.56 5.38 12.44；total = 11264.00M  used = 10160.94M  free = 1103.06M（开始时）；启动时间受负载影响，内存与 CPU 为进程自身数值",
+  "env_note": "2026-10-05 主会话逐个顺序测量，负载均值 2.41 2.31 2.61；total = 6144.00M  used = 4605.69M  free = 1538.31M（开始时）；启动时间受负载影响，内存与 CPU 为进程自身数值",
   "speed_gui": [
     {
       "key": "cold_launch_to_window",
       "label": "冷启动到窗口出现",
-      "median_ms": 366,
+      "median_ms": 579,
       "runs": 5,
       "headline": true,
       "raw_ms": [
-        487,
-        450,
-        334,
-        366,
-        344
+        668,
+        808,
+        544,
+        579,
+        523
       ],
       "method": "open -g -j 后台隐藏启动，被动读取窗口列表直到主窗口出现；不点击、不激活；5 次取中位；带产品登记的启动参数 -autoRepatch NO -everProtected NO",
-      "load": "负载均值 3.61 5.33 12.34；total = 11264.00M  used = 10152.94M  free = 1111.06M"
+      "load": "负载均值 2.24 2.27 2.59；total = 6144.00M  used = 4605.69M  free = 1538.31M"
     }
   ],
   "idle": {
@@ -477,9 +523,9 @@
     ],
     "window_s": 60,
     "settle_s": 45,
-    "measured_at": "2026-10-04",
-    "method": "open -g -j 后台启动；带产品登记的启动参数 -autoRepatch NO -everProtected NO，静置 45 秒后 measure.py idle <PID> --seconds 60 --with-helpers：内存为主进程 + WebKit/XPC 辅助进程 + 子进程同一时刻 phys_footprint 之和的峰值（活动监视器「内存」列同口径），CPU 为这些进程窗口内 CPU 时间增量之和 ÷ 墙钟；采样时本人在用电脑（被测 App 未在前台被使用，否则丢弃重采）",
-    "load": "负载均值 3.83 4.83 11.25；total = 11264.00M  used = 10152.94M  free = 1111.06M",
-    "owner_idle_s_at_start": 5
+    "measured_at": "2026-10-05",
+    "method": "open -g -j 后台启动；带产品登记的启动参数 -autoRepatch NO -everProtected NO，静置 45 秒后 measure.py idle <PID> --seconds 60 --with-helpers：内存为主进程 + WebKit/XPC 辅助进程 + 子进程同一时刻 phys_footprint 之和的峰值（活动监视器「内存」列同口径），CPU 为这些进程窗口内 CPU 时间增量之和 ÷ 墙钟",
+    "load": "负载均值 3.16 2.48 2.62；total = 6144.00M  used = 4605.69M  free = 1538.31M",
+    "owner_idle_s_at_start": 3046
   }
 }
