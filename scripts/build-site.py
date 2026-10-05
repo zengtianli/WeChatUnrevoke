@@ -28,7 +28,13 @@ def release_version(label):
     return match.group(1) if match else str(label or "")
 
 
-def perf_fields(version, download_bytes, installed_bytes=None):
+def local_measurement(version, release_build, measured):
+    return (release_build is not None and release_version(measured) == release_version(version)
+            and re.search(r"\([0-9]+\)$", str(measured)) is not None
+            and measured != f"{version} ({release_build})")
+
+
+def perf_fields(version, download_bytes, installed_bytes=None, release_build=None):
     """Keep runtime numbers bound to their measured version, including historical data.
 
     Every figure comes from the shared renderer's summary, so the page reads whatever evidence shape the
@@ -36,16 +42,18 @@ def perf_fields(version, download_bytes, installed_bytes=None):
     manual one with extra status-check timings."""
     perf = json.loads((ROOT / "perf/lightweight.json").read_text())
     historical = release_version(perf.get("version")) != release_version(version)
+    local = local_measurement(version, release_build, perf.get("version"))
     if historical and (not installed_bytes or installed_bytes <= 0):
         raise SystemExit("A different release requires installed size from its verified ZIP")
-    if not historical and perf["size"].get("download_bytes") != download_bytes:
+    if not historical and not local and perf["size"].get("download_bytes") != download_bytes:
         raise SystemExit("perf/lightweight.json download size is not this release's ZIP")
     display = perf_block.summarize(perf, ROOT / "perf/lightweight.json")
     if not display["memory"] or display["cpu"] is None:
         raise SystemExit("perf/lightweight.json has no idle memory/CPU measurement")
     return {
         "PERF_VERSION": perf["version"],
-        "PERF_NOTICE": (f"v{version} 内存、CPU 与速度待测；下方保留 v{perf['version']} 历史实测。"
+        "PERF_NOTICE": (f"本地验收构建 {perf['version']} 的实测；公开下载仍为 {version} ({release_build})，下列数据不代表已发布包。"
+                        if local else f"v{version} 内存、CPU 与速度待测；下方保留 v{perf['version']} 历史实测。"
                         if historical else f"资源实测：v{perf['version']}，{perf['measured_at']}。"),
         "PERF_MEM": display["memory"],
         # The README's shared block prints the same rounding, so the gate below compares like with like.
@@ -54,13 +62,17 @@ def perf_fields(version, download_bytes, installed_bytes=None):
     }
 
 
-def lightweight_section(version, download_bytes, installed_bytes):
+def lightweight_section(version, download_bytes, installed_bytes, release_build=None):
     """Render current archive facts and explicitly separate older runtime evidence."""
     source = ROOT / "perf/lightweight.json"
     recorded = json.loads(source.read_text())
-    fields = perf_fields(version, download_bytes, installed_bytes)
+    fields = perf_fields(version, download_bytes, installed_bytes, release_build)
     if release_version(recorded["version"]) == release_version(version):
-        return perf_block.standalone_section(source, release_version(version), '#50723c')
+        section = perf_block.standalone_section(source, release_version(version), '#50723c')
+        if local_measurement(version, release_build, recorded["version"]):
+            section = section.replace("<div class='perf-grid'>",
+                "<p class='fine'>" + escape(fields["PERF_NOTICE"]) + "</p><div class='perf-grid'>", 1)
+        return section
     # This view exists only in memory; the measured evidence is never rewritten.
     current = {
         "version": version, "measured_at": datetime.now().date().isoformat(),
@@ -148,8 +160,8 @@ def main():
         page = page.replace('当前应用界面', '原版本界面参考').replace('当前版本的三个常见状态。', '原版本的三个常见状态。')
         page = page.replace('当前版本状态导览', '原版本状态导览').replace('下载当前界面导览', '下载原版本界面导览')
         page = page.replace('界面以当前导览为准', '原有操作可参考上方历史导览；新版配置与更新窗口未在旧素材中展示')
-    page = page.replace('{{LIGHTWEIGHT}}', lightweight_section(version, download_bytes, installed_bytes))
-    perf = perf_fields(version, download_bytes, installed_bytes)
+    page = page.replace('{{LIGHTWEIGHT}}', lightweight_section(version, download_bytes, installed_bytes, info['CFBundleVersion']))
+    perf = perf_fields(version, download_bytes, installed_bytes, info['CFBundleVersion'])
     for key, value in perf.items():
         page = page.replace("{{" + key + "}}", value)
     # README consumes the same evidence through the shared renderer.
@@ -192,6 +204,13 @@ def main():
     facts = product_facts.from_repo(ROOT, product_id="unrevoke-mac", icon="assets/icon.png")
     if facts["version"] != version:
         raise SystemExit(f"facts.json version {facts['version']} != release {version}")
+    facts["measurement_version"] = perf["PERF_VERSION"]
+    if local_measurement(version, info['CFBundleVersion'], perf["PERF_VERSION"]):
+        facts["measurement_scope"] = "local acceptance build"
+        facts["release_download_bytes"] = download_bytes
+        facts["card_line"] = facts["card_line"].replace("<p class='collection-perf'>",
+            "<p class='collection-perf'>本地验收构建 " + escape(perf["PERF_VERSION"]) + " 实测 · ", 1)
+        facts["card_text"] = product_facts.card_text(facts["card_line"])
     product_facts.write(OUT, facts)
 
     class Links(HTMLParser):

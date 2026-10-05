@@ -88,6 +88,24 @@ class SiteResourceContractTests(unittest.TestCase):
         with self.assertRaisesRegex(SystemExit, "not this release"):
             self.site.perf_fields(data["version"], 9_000_000, 15_000_000)
 
+    def test_local_build_numbers_are_explicitly_separate_from_public_download(self):
+        data = json.loads((self.root / "perf/lightweight.json").read_text())
+        version = self.site.release_version(data["version"])
+        data["version"] = version + " (99)"
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "perf").mkdir()
+            (root / "perf/lightweight.json").write_text(json.dumps(data))
+            with patch.object(self.site, "ROOT", root):
+                fields = self.site.perf_fields(version, 9_000_000, 15_000_000, "54")
+                html = self.site.lightweight_section(version, 9_000_000, 15_000_000, "54")
+                self.assertIn("本地验收构建 " + data["version"], fields["PERF_NOTICE"])
+                self.assertIn(version + " (54)", fields["PERF_NOTICE"])
+                self.assertIn("不代表已发布包", html)
+                # The public-release scope retains its strict ZIP-size check.
+                with self.assertRaisesRegex(SystemExit, "not this release"):
+                    self.site.perf_fields(version, 9_000_000, 15_000_000, "99")
+
     def test_new_release_runtime_is_unmeasured_and_history_keeps_its_version(self):
         before = (self.root / "perf/lightweight.json").read_bytes()
         data = json.loads(before)
