@@ -32,7 +32,7 @@ BUILD="$(plutil -extract CFBundleVersion raw "$APP/Contents/Info.plist")"
 [ "$VERSION" = "$(plutil -extract CFBundleShortVersionString raw "$DIR/Info.plist")" ] \
   && [ "$BUILD" = "$(git rev-list --count HEAD)" ] \
   || { echo "❌ 构建产物版本与当前源码不一致，拒绝打包"; exit 1; }
-OUT="$DIR/dist"
+OUT="${UNREVOKE_RELEASE_DIR:-$DIR/dist}"
 mkdir -p "$OUT"
 # 文件名只带版本号，不带 build ——
 # Homebrew cask 的 url 是 "…/Unrevoke-#{version}.zip" 模板，多一段 build 号就套不上。

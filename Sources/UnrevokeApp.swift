@@ -19,9 +19,47 @@ enum UnrevokeEntry {
     static func main() {
         if CommandLine.arguments.contains("--ui-self-test") {
             NativeUISelfTest.launch()
+        } else if CommandLine.arguments.contains("--background-measure") && LaneSignal.quiet {
+            UnrevokeQuietMeasure.launch()
         } else {
             UnrevokeApp.main()
         }
+    }
+}
+
+/// Real doctor status in the production view, rendered offscreen without starting
+/// periodic checks, config updates, automatic patching or preference synchronization.
+@MainActor
+enum UnrevokeQuietMeasure {
+    static func launch() {
+        let application = NSApplication.shared
+        LaneSignal.enterQuietIfAsked()
+        let model = AppModel(readOnly: true)
+        let window = NSWindow(contentRect: NSRect(x: -10000, y: -10000, width: 620, height: 720),
+                              styleMask: [.titled, .closable], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        let view = NSHostingView(rootView: ContentView(model: model, automaticallyStart: false))
+        window.contentView = view
+        let timeout = Timer.scheduledTimer(withTimeInterval: 30, repeats: false) { _ in NSApp.terminate(nil) }
+        Task { @MainActor in
+            await model.refresh()
+            guard model.status != nil, model.errorMessage == nil else {
+                NSApp.terminate(nil)
+                return
+            }
+            DispatchQueue.main.async {
+                view.layoutSubtreeIfNeeded()
+                guard let bitmap = view.bitmapImageRepForCachingDisplay(in: view.bounds) else {
+                    NSApp.terminate(nil)
+                    return
+                }
+                view.cacheDisplay(in: view.bounds, to: bitmap)
+                timeout.invalidate()
+                LaneSignal.ready("doctor")
+            }
+        }
+        application.run()
+        withExtendedLifetime(window) {}
     }
 }
 

@@ -131,20 +131,30 @@ class SiteResourceContractTests(unittest.TestCase):
         self.assertEqual(sop.numbers_on_page(raw, html), [])
 
     def test_bilingual_readmes_identify_measured_version(self):
-        # The shared renderer rewrites everything between the lightweight markers after every measurement, which
-        # now runs unattended for each release. The note outside the block names no version or date, so it cannot
-        # go stale; the generated block itself names the measured version and date.
+        # Historical samples must remain identified when a newer ZIP is published.
+        # A local acceptance build also needs its scope, rather than a release claim.
         data = json.loads((self.root / "perf/lightweight.json").read_text())
+        release = json.loads((self.root / "dist/site/release.json").read_text())
         for name, note in (("README.md", "以下资源实测对应当前发行版"),
                            ("README_EN.md", "The resource measurements below are for the current release")):
             with self.subTest(readme=name):
                 before, _, rest = (self.root / name).read_text().partition("<!-- lightweight:start -->")
                 block = rest.partition("<!-- lightweight:end -->")[0]
-                self.assertIn(note, before)
-                self.assertNotRegex(before.split(note, 1)[1].split("\n", 1)[0], r"v\d+\.\d+|20\d\d-\d\d-\d\d")
+                local_scope = "本地验收构建" if name == "README.md" else "local acceptance build"
+                if local_scope in before:
+                    self.assertIn(data["version"], before)
+                    self.assertIn(release["version"], before)
+                elif data["version"].split(" ")[0] != release["version"]:
+                    self.assertIn("历史实测" if name == "README.md" else "Historical measurements", before)
+                    self.assertIn(f"v{data['version']}", before)
+                    self.assertIn(f"v{release['version']}", before)
+                else:
+                    self.assertIn(note, before)
+                    self.assertNotRegex(before.split(note, 1)[1].split("\n", 1)[0], r"v\d+\.\d+|20\d\d-\d\d-\d\d")
                 self.assertIn(f"v{data['version']}", block)
                 self.assertIn(data["measured_at"], block)
-                self.assertNotIn("待测" if name == "README.md" else "not yet measured", before)
+                if data["version"].split(" ")[0] == release["version"]:
+                    self.assertNotIn("待测" if name == "README.md" else "not yet measured", before)
 
     def test_automated_measurement_evidence_builds_the_page(self):
         # The unattended release-copy measurement writes only cold launch to window and idle numbers (no manual

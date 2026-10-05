@@ -34,6 +34,13 @@ DISPLAY_NAME="$(plutil -extract CFBundleName raw "$DIR/Info.plist")"
 
 # ── 1. 引擎：构建 wechattweak（universal），准备好待拷贝 ──────────────────
 ENGINE_REPO="${ENGINE_REPO:-$DIR/../vendor/WeChatTweak}"
+PREBUILT_ENGINE="${UNREVOKE_PREBUILT_ENGINE:-}"
+if [ -n "$PREBUILT_ENGINE" ]; then
+  [ -x "$PREBUILT_ENGINE" ] || { echo "❌ 预构建引擎不可执行"; exit 1; }
+  codesign --verify --strict "$PREBUILT_ENGINE"
+  ENGINE_BIN="$PREBUILT_ENGINE"
+  echo "→ 保留已验证引擎（不重编、不重签）"
+else
 if [ ! -f "$ENGINE_REPO/Package.swift" ]; then
   cat >&2 <<EOF
 ❌ 找不到引擎仓库：$ENGINE_REPO
@@ -49,6 +56,7 @@ echo "→ 构建引擎 (universal) ← $ENGINE_REPO"
 ENGINE_BIN="$ENGINE_REPO/.build/out/Products/Release/wechattweak"
 [ -x "$ENGINE_BIN" ] || ENGINE_BIN="$ENGINE_REPO/.build/apple/Products/Release/wechattweak"
 [ -x "$ENGINE_BIN" ] || { echo "❌ 引擎构建产物不存在（找过 .build/out 和 .build/apple）"; exit 1; }
+fi
 # 拒绝把只支持一种架构的引擎打进去：Intel Mac 上那会是「打开就报错」。
 ARCHS="$(lipo -archs "$ENGINE_BIN")"
 case "$ARCHS" in
@@ -91,10 +99,14 @@ chmod +x "$APP/Contents/Resources/wechattweak"
 # 只动拷进包里的副本，不改引擎仓的产物；strip 让原签名失效，下面统一重签。
 if [ "$CONFIG" = "Release" ]; then
   strip -x -S "$APP/Contents/MacOS/Unrevoke" 2>/dev/null
-  strip -x -S "$APP/Contents/Resources/wechattweak" 2>/dev/null
+  if [ -z "$PREBUILT_ENGINE" ]; then strip -x -S "$APP/Contents/Resources/wechattweak" 2>/dev/null; fi
 fi
 # 内嵌的可执行文件要单独签，再签整包（否则整包签名把它算作未签名资源而失败）
-codesign --force -s - "$APP/Contents/Resources/wechattweak"
+if [ -z "$PREBUILT_ENGINE" ]; then
+  codesign --force -s - "$APP/Contents/Resources/wechattweak"
+else
+  cmp "$ENGINE_BIN" "$APP/Contents/Resources/wechattweak"
+fi
 codesign --force -s - "$APP"
 
 # 装完立刻自检：引擎在不在、能不能跑、config 认识几个 build。

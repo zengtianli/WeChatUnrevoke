@@ -100,6 +100,9 @@ enum AppUpdateChecker {
                 completion(result.flatMap { data in Result { try manifest(data, at: url, bundleID: bundleID) } })
             }
         case .github(let repository):
+            #if APP_LIFECYCLE_LOCAL_ONLY
+            completion(.failure(AppUpdateError("此 App 只读取 iCloud 已下载到本机的私有发行包。")))
+            #else
             guard repository.split(separator: "/").count == 2,
                   repository.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber || "-_/ .".contains($0)) }),
                   !repository.contains(" "), !repository.contains(".."),
@@ -109,7 +112,11 @@ enum AppUpdateChecker {
             fetch(url) { result in
                 completion(result.flatMap { data in Result { try github(data, bundleID: bundleID) } })
             }
+            #endif
         case .appStore(let id):
+            #if APP_LIFECYCLE_LOCAL_ONLY
+            completion(.failure(AppUpdateError("此 App 只读取 iCloud 已下载到本机的私有发行包。")))
+            #else
             let region = (Locale.current.region?.identifier ?? "US").lowercased()
             let country = region.count == 2 && region.allSatisfy(\.isLetter) ? region : "us"
             guard id.allSatisfy(\.isNumber), !id.isEmpty,
@@ -119,6 +126,7 @@ enum AppUpdateChecker {
             fetch(url) { result in
                 completion(result.flatMap { data in Result { try appStore(data, id: id, bundleID: bundleID) } })
             }
+            #endif
         }
     }
 

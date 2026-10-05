@@ -38,6 +38,7 @@ final class AppModel: ObservableObject {
 
     private let engine = Engine()
     private let defaults = UserDefaults.standard
+    private let readOnly: Bool
     private var restoringPreferences = false
     private let confirmAction: ((String, String, String) -> Bool)?
     private var lastWriteError: String?
@@ -56,17 +57,19 @@ final class AppModel: ObservableObject {
         static let everProtected = "everProtected"
     }
 
-    init(confirmAction: ((String, String, String) -> Bool)? = nil) {
+    init(confirmAction: ((String, String, String) -> Bool)? = nil, readOnly: Bool = false) {
         self.confirmAction = confirmAction
-        variant = PatchVariant(rawValue: defaults.string(forKey: Keys.variant) ?? "") ?? .keeptip
-        autoRepatch = defaults.object(forKey: Keys.autoRepatch) as? Bool ?? true
-        launchAtLogin = SMAppService.mainApp.status == .enabled
+        self.readOnly = readOnly
+        variant = readOnly ? .keeptip : PatchVariant(rawValue: defaults.string(forKey: Keys.variant) ?? "") ?? .keeptip
+        autoRepatch = readOnly ? false : defaults.object(forKey: Keys.autoRepatch) as? Bool ?? true
+        launchAtLogin = readOnly ? false : SMAppService.mainApp.status == .enabled
     }
 
     // MARK: - 生命周期
 
     /// Restoring a preference never carries authorization to patch this Mac or show a permission prompt.
     func reloadPortablePreferences() {
+        guard !readOnly else { return }
         restoringPreferences = true
         defer { restoringPreferences = false }
         variant = PatchVariant(rawValue: defaults.string(forKey: Keys.variant) ?? "") ?? .keeptip
@@ -173,6 +176,7 @@ final class AppModel: ObservableObject {
 
     /// 版本变了、或补丁不在了 —— 决定是自己动手还是只提醒。
     private func reactToChange(from previous: DoctorStatus?, to fresh: DoctorStatus) async {
+        guard !readOnly else { return }
         let knownBuild = defaults.string(forKey: Keys.lastBuild)
         if let build = fresh.build, build != knownBuild {
             defaults.set(build, forKey: Keys.lastBuild)

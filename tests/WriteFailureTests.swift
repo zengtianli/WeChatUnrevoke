@@ -40,6 +40,20 @@ struct WriteFailureTests {
         }
         try doctor()
         try engine("echo 'update locator failed for 269136' >&2; exit 42")
+        let preferences = defaults.persistentDomain(forName: Bundle.main.bundleIdentifier!) ?? [:]
+        let readOnly = AppModel(readOnly: true)
+        await readOnly.refresh()
+        precondition(readOnly.status?.overall == .unprotected)
+        precondition(!readOnly.autoRepatch && !readOnly.launchAtLogin)
+        precondition(NSDictionary(dictionary: preferences).isEqual(to:
+            defaults.persistentDomain(forName: Bundle.main.bundleIdentifier!) ?? [:]))
+        try doctor("protected")
+        await readOnly.refresh()
+        precondition(readOnly.status?.overall == .protected)
+        precondition(NSDictionary(dictionary: preferences).isEqual(to:
+            defaults.persistentDomain(forName: Bundle.main.bundleIdentifier!) ?? [:]))
+        try doctor()
+        print("PASS: read-only doctor loads actual status without changing product preferences")
         let model = AppModel()
         await model.refresh()
         await model.protectNow()
