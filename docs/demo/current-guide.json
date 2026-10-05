@@ -15,15 +15,25 @@
       "historical_reference": true,
       "not_covered": "新版配置与更新窗口及真实跨设备同步；不是新版性能或补丁操作实测",
       "reason": "按增量升级保留原1.0.10生产界面离屏导览，页面明确展示原录制版本。新发行包身份、签名、共享更新配置及隐私边界分别核验。",
+      "local_ui_validation": {
+        "build": "60",
+        "check": "native_ui",
+        "input_sha256": "16248602bd71a2b24b4cb1f03a3acbc22a671c134f3af4f8e8258d8f01a5970e",
+        "evidence": "perf/acceptance/run-pc24uk10/native_ui.json",
+        "checks_passed": 9,
+        "offscreen_captures": 5,
+        "reason": "本轮只增加独立只读测量分支并同步共享生命周期守卫，正常ContentView布局未改；原录像继续标注旧录制版本，不冒充新性能或新配置窗口演示。"
+      },
       "source_sha256": {
         "AppConfiguration.swift": "66d1b04072dbcbcbbc556afb79be1181396fc8bd1a6940d5960adea742219edc",
-        "AppLifecycle.swift": "07adaba8327f855b9a497346384ece9f8a526089c1c2f987b8873ab95a4fec3c",
+        "AppLifecycle.swift": "3033bc6f87a69a2402ff1cda2c8196a4abd677222582c75d21302a65626c2d89",
         "AppLifecycleUI.swift": "c5bfb42bb97555125d3822a98ab0bab71adf368f0de1439f170f0dddb7456974",
         "ContentView.swift": "131b5b34b5936d72e053e66bd20777aff3c63434f43ebf7285b7cbc6b7f6aae4",
         "Engine.swift": "b31b8345e5f6f2fa4791342eaa7a25502c837d1c316a76184687e9f09ef44ec2",
+        "LaneSignal.swift": "e7e68ac41417ddd06e7049a7bd4e01a92d52305bc999cd6ddd323178c64a2ce8",
         "Models.swift": "3c99d58322afb702dac548317c7f26fb1250201cfe13447aad0864fb883df2b2",
-        "UnrevokeApp.swift": "e0c0e14261992023776ea30878a72dc0cd26fd975020665414c56a61983bb851",
-        "ViewModel.swift": "b4b93bc3e25b440dd331d5a391917e9123678ba1903882b1d3e64fe6a088efbd"
+        "UnrevokeApp.swift": "38967c19b19e3c54adbf181eb4542fa850ced1d9210f8f73cf14e29ef5fd1599",
+        "ViewModel.swift": "f180228aa2bd5ff657d18abf5a4c75c0374d3d04dd02ad36d39ed34e679eb6a7"
       }
     }
   },
