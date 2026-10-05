@@ -12,7 +12,7 @@
   },
   "compare": [],
   "data": "当前装机GUI的LSUIElement隔离副本；只读本机微信体检并离屏绘制首屏，不联网、不打补丁、不写偏好。",
-  "data_en": "An isolated copy of the public release package (launched hidden, automatic re-patching off via launch arguments) that only reads the real WeChat bundle's state; the measurement process never patches, touches messages or uses sudo, and the copy is removed afterwards.",
+  "data_en": "An LSUIElement copy of the current installed GUI; read-only WeChat checks and offscreen rendering, with no network, patching or preference writes.",
   "why": "原生 SwiftUI 界面，无 Python 运行时；读写微信交给包内的 Swift 命令行引擎。窗口打开时每 60 秒只比对一次微信安装包里 5 个路径的文件指纹（不到 1 毫秒），微信没被更新、打补丁或还原就不启动引擎，另每 30 分钟完整检查一次兜底；关窗即停，无常驻后台服务。发布包剥离调试符号。",
   "why_en": "Native SwiftUI with no Python runtime. Reading and patching WeChat is handed to the bundled Swift command-line engine. While the window is open, it compares a file fingerprint of 5 paths in the WeChat bundle once a minute (under a millisecond) and starts the engine only when WeChat was updated, patched or restored, plus a full check every 30 minutes as a backstop; checks stop when the window closes. No resident background service. Release builds are stripped of debug symbols.",
   "history": [
