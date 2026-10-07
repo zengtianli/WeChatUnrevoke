@@ -29,7 +29,7 @@ def main():
         try:
             run(["xcrun", "swiftc", "-parse-as-library",
                  *[str(ROOT / "Sources" / source) for source in
-                   ["Models.swift", "Engine.swift", "ViewModel.swift"]],
+                   ["Models.swift", "Engine.swift", "WriteHistory.swift", "ViewModel.swift"]],
                  str(ROOT / "tests/RecoveryAcceptance.swift"), "-o", str(executable)],
                 env=env)
             output = run([str(executable)], timeout=45, env=env)

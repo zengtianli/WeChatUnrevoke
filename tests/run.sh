@@ -18,7 +18,16 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 <key>CFBundlePackageType</key><string>APPL</string>
 </dict></plist>
 PLIST
-swiftc -parse-as-library Sources/Models.swift Sources/Engine.swift Sources/ViewModel.swift \
+swiftc -parse-as-library Sources/Models.swift Sources/Engine.swift Sources/WriteHistory.swift Sources/ViewModel.swift \
   tests/WriteFailureTests.swift -o "$APP/Contents/MacOS/UnrevokeTests"
 "$APP/Contents/MacOS/UnrevokeTests"
 echo "Test bundle: $APP"
+swiftc -parse-as-library Sources/AppCommandMode.swift tests/LoginCommandTests.swift -o "$TEST_DIR/LoginCommandTests"
+"$TEST_DIR/LoginCommandTests"
+HISTORY_APP="$TEST_DIR/WriteHistoryTests.app"
+mkdir -p "$HISTORY_APP/Contents/MacOS"
+cp "$APP/Contents/Info.plist" "$HISTORY_APP/Contents/Info.plist"
+plutil -replace CFBundleExecutable -string WriteHistoryTests "$HISTORY_APP/Contents/Info.plist"
+swiftc -parse-as-library Sources/Models.swift Sources/Engine.swift Sources/WriteHistory.swift Sources/ViewModel.swift \
+  tests/WriteHistoryTests.swift -o "$HISTORY_APP/Contents/MacOS/WriteHistoryTests"
+"$HISTORY_APP/Contents/MacOS/WriteHistoryTests"

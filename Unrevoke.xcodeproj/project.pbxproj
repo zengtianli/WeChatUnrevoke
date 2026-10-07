@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		BF0000000000000000000115 /* AppLifecycleCLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000215 /* AppLifecycleCLI.swift */; };
+		BF0000000000000000000116 /* ProductLifecycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000216 /* ProductLifecycle.swift */; };
+		BF0000000000000000000117 /* AppCommandMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000217 /* AppCommandMode.swift */; };
+		BF0000000000000000000118 /* WriteHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000218 /* WriteHistory.swift */; };
 		BF0000000000000000000114 /* LaneSignal.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000214 /* LaneSignal.swift */; };
 		BF0000000000000000000111 /* AppLifecycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000211 /* AppLifecycle.swift */; };
 		BF0000000000000000000112 /* AppConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000212 /* AppConfiguration.swift */; };
@@ -20,6 +24,10 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		BF0000000000000000000215 /* AppLifecycleCLI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLifecycleCLI.swift; sourceTree = "<group>"; };
+		BF0000000000000000000216 /* ProductLifecycle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductLifecycle.swift; sourceTree = "<group>"; };
+		BF0000000000000000000217 /* AppCommandMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCommandMode.swift; sourceTree = "<group>"; };
+		BF0000000000000000000218 /* WriteHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WriteHistory.swift; sourceTree = "<group>"; };
 		BF0000000000000000000214 /* LaneSignal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaneSignal.swift; sourceTree = "<group>"; };
 		BF0000000000000000000211 /* AppLifecycle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLifecycle.swift; sourceTree = "<group>"; };
 		BF0000000000000000000212 /* AppConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfiguration.swift; sourceTree = "<group>"; };
@@ -67,6 +75,10 @@
 			isa = PBXGroup;
 			children = (
 				BF0000000000000000000211 /* AppLifecycle.swift */,
+				BF0000000000000000000215 /* AppLifecycleCLI.swift */,
+				BF0000000000000000000216 /* ProductLifecycle.swift */,
+				BF0000000000000000000217 /* AppCommandMode.swift */,
+				BF0000000000000000000218 /* WriteHistory.swift */,
 				BF0000000000000000000214 /* LaneSignal.swift */,
 				BF0000000000000000000212 /* AppConfiguration.swift */,
 				BF0000000000000000000213 /* AppLifecycleUI.swift */,
@@ -149,6 +161,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				BF0000000000000000000111 /* AppLifecycle.swift in Sources */,
+				BF0000000000000000000115 /* AppLifecycleCLI.swift in Sources */,
+				BF0000000000000000000116 /* ProductLifecycle.swift in Sources */,
+				BF0000000000000000000117 /* AppCommandMode.swift in Sources */,
+				BF0000000000000000000118 /* WriteHistory.swift in Sources */,
 				BF0000000000000000000114 /* LaneSignal.swift in Sources */,
 				BF0000000000000000000112 /* AppConfiguration.swift in Sources */,
 				BF0000000000000000000113 /* AppLifecycleUI.swift in Sources */,

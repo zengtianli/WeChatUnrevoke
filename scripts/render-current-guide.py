@@ -86,7 +86,7 @@ set -eu
 cat "$UNREVOKE_GUIDE_FIXTURE"
 ''')
 engine.chmod(0o755)
-run('xcrun','swiftc','-parse-as-library',ROOT/'Sources/Models.swift',ROOT/'Sources/Engine.swift',ROOT/'Sources/ViewModel.swift',ROOT/'Sources/ContentView.swift',WORK/'Capture.swift','-o',APP/'Contents/MacOS/Guide')
+run('xcrun','swiftc','-parse-as-library',ROOT/'Sources/Models.swift',ROOT/'Sources/Engine.swift',ROOT/'Sources/WriteHistory.swift',ROOT/'Sources/ViewModel.swift',ROOT/'Sources/ContentView.swift',WORK/'Capture.swift','-o',APP/'Contents/MacOS/Guide')
 run('xcrun','swiftc',ROOT/'scripts/demo-caption.swift','-o',WORK/'caption')
 scenes = [
     ('unprotected','01 · 检查当前状态','未打补丁时，主按钮显示「开启防撤回」','虚构状态 · 仅展示当前界面，不执行写入'),

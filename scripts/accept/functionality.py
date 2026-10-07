@@ -155,7 +155,7 @@ def main():
         executable = macos / "UnrevokeFunctionality"
         print("Functionality: compiling the actual AppModel/Engine harness.", flush=True)
         run(["xcrun", "swiftc", "-parse-as-library", "Sources/Models.swift",
-             "Sources/Engine.swift", "Sources/ViewModel.swift", "tests/FunctionalityAcceptance.swift",
+             "Sources/Engine.swift", "Sources/WriteHistory.swift", "Sources/ViewModel.swift", "tests/FunctionalityAcceptance.swift",
              "-o", str(executable)], env=env)
         copy = scratch / "WeChat.app"
         # APFS clone: separate inodes and copy-on-write data, never hard links.

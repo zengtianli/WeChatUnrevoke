@@ -17,7 +17,9 @@ extension Notification.Name {
 @MainActor
 enum UnrevokeEntry {
     static func main() {
-        if CommandLine.arguments.contains("--ui-self-test") {
+        if let code = AppCommandMode.run(arguments: Array(CommandLine.arguments.dropFirst())) {
+            exit(code)
+        } else if CommandLine.arguments.contains("--ui-self-test") {
             NativeUISelfTest.launch()
         } else if CommandLine.arguments.contains("--background-measure") && LaneSignal.quiet {
             UnrevokeQuietMeasure.launch()
@@ -65,13 +67,13 @@ enum UnrevokeQuietMeasure {
 
 struct UnrevokeApp: App {
     init() {
-        let configuration = AppConfiguration(productID: "io.github.zengtianli.unrevoke", defaultsKeys: ["variant", "autoRepatch"])
+        let configuration = ProductLifecycle.makeConfiguration()
         configuration.onChange = {
             NotificationCenter.default.post(name: .unrevokePreferencesChanged, object: nil)
         }
-        let personal = Bundle.main.object(forInfoDictionaryKey: "AppLifecycleUpdateChannel") as? String == "personal"
-        let update: AppUpdateSource = personal ? .privateCloud(channel: "personal") : .github(repository: "zengtianli/WeChatUnrevoke")
-        AppLifecycleUI.install(name: "WeChatUnrevoke", configuration: configuration, updateSource: update)
+        AppLifecycleCLI.follow(configuration)
+        AppLifecycleUI.install(name: ProductLifecycle.name, configuration: configuration,
+                               updateSource: ProductLifecycle.updateSource())
     }
     var body: some Scene {
         WindowGroup {

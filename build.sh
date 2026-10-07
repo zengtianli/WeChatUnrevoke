@@ -13,7 +13,7 @@ set -euo pipefail
 DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$DIR"
 LIFECYCLE_VENDOR="${APP_LIFECYCLE_VENDOR:-$HOME/Dev/tools/dev/lib/tools/macapp/swift-shared/vendor-lifecycle.py}"
-if [ -f "$LIFECYCLE_VENDOR" ]; then python3 "$LIFECYCLE_VENDOR" --platform mac --target-source-dir "$DIR/Sources"; fi
+if [ -f "$LIFECYCLE_VENDOR" ]; then python3 "$LIFECYCLE_VENDOR" --platform mac --cli --target-source-dir "$DIR/Sources"; fi
 
 # 随仓检查，不依赖维护者的私有工具目录或 Homebrew 安装位置。
 # 保留旧的显式跳过开关，但正常构建仍必须通过 CodingKeys 契约检查。

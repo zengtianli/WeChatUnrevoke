@@ -21,6 +21,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var isBusy = false
     @Published private(set) var busyMessage = ""
     @Published private(set) var lastLog = ""
+    @Published private(set) var writeHistoryError: String?
     @Published var errorMessage: String?
     @Published var toast: String?
     @Published var variant: PatchVariant {
@@ -39,6 +40,7 @@ final class AppModel: ObservableObject {
     private let engine = Engine()
     private let defaults = UserDefaults.standard
     private let readOnly: Bool
+    private let writeHistoryStore: WriteHistoryStore?
     private var restoringPreferences = false
     private let confirmAction: ((String, String, String) -> Bool)?
     private var lastWriteError: String?
@@ -57,12 +59,23 @@ final class AppModel: ObservableObject {
         static let everProtected = "everProtected"
     }
 
-    init(confirmAction: ((String, String, String) -> Bool)? = nil, readOnly: Bool = false) {
+    init(confirmAction: ((String, String, String) -> Bool)? = nil, readOnly: Bool = false,
+         writeHistoryStore: WriteHistoryStore? = WriteHistoryStore.forProductBundle()) {
         self.confirmAction = confirmAction
         self.readOnly = readOnly
+        self.writeHistoryStore = readOnly ? nil : writeHistoryStore
         variant = readOnly ? .keeptip : PatchVariant(rawValue: defaults.string(forKey: Keys.variant) ?? "") ?? .keeptip
         autoRepatch = readOnly ? false : defaults.object(forKey: Keys.autoRepatch) as? Bool ?? true
         launchAtLogin = readOnly ? false : SMAppService.mainApp.status == .enabled
+        do {
+            if let previous = try self.writeHistoryStore?.load() {
+                lastLog = previous.lastEngineLog
+                lastWriteError = previous.lastWriteError
+                errorMessage = previous.lastWriteError
+            }
+        } catch {
+            writeHistoryError = error.localizedDescription
+        }
     }
 
     // MARK: - 生命周期
@@ -192,7 +205,7 @@ final class AppModel: ObservableObject {
 
         // 够得着就自己打回去：不用密码、微信没开、补丁库认识这个版本。
         if !fresh.needsAdmin && !fresh.running && fresh.configKnown {
-            let succeeded = await write(message: L.flow_resigning) { current in
+            let succeeded = await write(action: "automaticPatch", message: L.flow_resigning) { current in
                 guard !current.needsAdmin else { throw EngineError.launchFailed(L.det_admin) }
                 return try await self.engine.patch(variant: self.variant, admin: false)
             }
@@ -223,7 +236,7 @@ final class AppModel: ObservableObject {
             }
         }
         let shouldReopen = current.running
-        let succeeded = await write(message: L.flow_resigning) { fresh in
+        let succeeded = await write(action: "patch", message: L.flow_resigning) { fresh in
             try await self.engine.patch(variant: self.variant, admin: fresh.needsAdmin)
         }
         if succeeded && (status?.overall == .protected || status?.overall == .antiRevokeOnly) {
@@ -246,7 +259,7 @@ final class AppModel: ObservableObject {
             }
         }
         let shouldReopen = current.running
-        let succeeded = await write(message: L.flow_resigning) { fresh in
+        let succeeded = await write(action: "restore", message: L.flow_resigning) { fresh in
             try await self.engine.restore(admin: fresh.needsAdmin)
         }
         if succeeded && status?.overall == .unprotected {
@@ -258,7 +271,7 @@ final class AppModel: ObservableObject {
 
     /// 跑一个写动作：置忙 → 执行 → 无论成败都重新体检一次。
     /// 「重新体检」不能省：失败也可能已经写了一半，界面必须显示真实状态而不是我以为的状态。
-    private func write(message: String, _ body: @escaping (DoctorStatus) async throws -> String) async -> Bool {
+    private func write(action: String, message: String, _ body: @escaping (DoctorStatus) async throws -> String) async -> Bool {
         guard !isBusy else { return false }
         isBusy = true
         writeGeneration += 1
@@ -286,6 +299,16 @@ final class AppModel: ObservableObject {
             errorMessage = lastWriteError
         }
         await refresh(duringWrite: true)
+        // Persist the same raw output and write error as the diagnostic report. A failed
+        // history save must never replace the engine's result or skip the final doctor.
+        do {
+            try writeHistoryStore?.save(WriteHistoryRecord(
+                action: action, succeeded: succeeded, lastEngineLog: lastLog,
+                lastWriteError: lastWriteError, overall: status?.overall.rawValue))
+            writeHistoryError = nil
+        } catch {
+            writeHistoryError = error.localizedDescription
+        }
         return succeeded
     }
 
@@ -313,9 +336,9 @@ final class AppModel: ObservableObject {
 
     // MARK: - 杂项
 
-    func copyReport() {
-        guard let s = status else { return }
-        let report = """
+    var diagnosticsReport: String? {
+        guard let s = status else { return nil }
+        return """
         WeChatUnrevoke diagnostics
         app version    : \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown") (\(Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown"))
         overall        : \(s.overall.rawValue)
@@ -336,7 +359,14 @@ final class AppModel: ObservableObject {
 
         last write error:
         \(lastWriteError ?? "(none)")
+
+        write history error:
+        \(writeHistoryError ?? "(none)")
         """
+    }
+
+    func copyReport() {
+        guard let report = diagnosticsReport else { return }
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(report, forType: .string)
         toast = L.btn_copied
