@@ -44,6 +44,28 @@ final class AppConfiguration: NSObject {
     private let localDirectory: URL
     private var stateURL: URL { localDirectory.appendingPathComponent("state.json") }
     private var importedURL: URL { localDirectory.appendingPathComponent("pending-import.json") }
+    #if os(macOS)
+    /// The sentence `status` holds, kept beside state.json for another process to read: the command line reports what
+    /// the running window shows. A file, never a preference (a stored preference would start another sync pass); it is
+    /// not exported, not synced and presented by nothing. The app keeps the default name. A command process names its
+    /// own record, so a short-lived command never replaces the running window's sentence.
+    static let appStatusRecord = "status.json"
+    var statusRecordName = AppConfiguration.appStatusRecord
+    struct StatusRecord { let status: String; let at: TimeInterval; let pid: Int32 }
+    func statusRecord(named name: String = AppConfiguration.appStatusRecord) -> StatusRecord? {
+        guard let data = try? Data(contentsOf: localDirectory.appendingPathComponent(name)),
+              let value = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+              let status = value["status"] as? String, let at = (value["at"] as? NSNumber)?.doubleValue,
+              let pid = (value["pid"] as? NSNumber)?.int32Value else { return nil }
+        return StatusRecord(status: status, at: at, pid: pid)
+    }
+    private func recordStatus(_ value: String) {
+        let record: [String: Any] = ["status": value, "at": Date().timeIntervalSince1970, "pid": Int(ProcessInfo.processInfo.processIdentifier)]
+        guard let data = try? JSONSerialization.data(withJSONObject: record, options: [.sortedKeys]) else { return }
+        try? FileManager.default.createDirectory(at: localDirectory, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+        try? data.write(to: localDirectory.appendingPathComponent(statusRecordName), options: .atomic)
+    }
+    #endif
     private let isolated: Bool
 
     init(productID: String, defaultsKeys: [String] = [], files: [AppConfigurationFile] = [], defaults: UserDefaults = .standard) {
@@ -109,14 +131,17 @@ final class AppConfiguration: NSObject {
                 guard self.hasSettings else { self.publishStatus("此 App 没有需要同步的配置"); self.finish(completion, nil); return }
                 self.installLocalPresenters()
                 try self.withLock {
-                    let local = try self.snapshot()
                     let remote = try self.readCloud()
                     let baseline = try self.readState()
-                    let imported = FileManager.default.fileExists(atPath: self.importedURL.path) ? try self.decode(Data(contentsOf: self.importedURL)) : nil
+                    // The file's presence is the intent. Its values were applied to this device when the import was made.
+                    let pendingImport = FileManager.default.fileExists(atPath: self.importedURL.path)
+                    // Local settings are read last: one changed while the cloud copy was being read belongs to this pass.
+                    let local = try self.snapshot()
                     var merged: [String: Any]
-                    if let imported {
-                        // A deliberate import also wins before this device's first cloud connection.
-                        merged = imported
+                    if pendingImport {
+                        // A deliberate import also wins before this device's first cloud connection. What wins is this
+                        // device as it stands now, not a replay of the file: a setting changed since is not put back.
+                        merged = local
                     } else if let baseline {
                         // A temporarily absent/not-yet-downloaded cloud file is not deletion of all settings.
                         merged = Self.merge(local: local, cloud: remote ?? baseline.cloud, baseLocal: baseline.local, baseCloud: baseline.cloud)
@@ -130,12 +155,19 @@ final class AppConfiguration: NSObject {
                         self.publishStatus("iCloud 已开启，等待已有配置；空白配置不会覆盖云端")
                         return
                     }
-                    if !Self.equal(local, merged) { try self.apply(merged, backup: true) }
+                    // The baseline is the local values this pass reconciled, never a re-read after the cloud write: a
+                    // setting changed meanwhile must still count as a local change, and still start the next pass.
+                    var synced = local
+                    if !Self.equal(local, merged) {
+                        try self.apply(merged, backup: true)
+                        // Only what this pass wrote here is re-read, to record it the way this device stores it.
+                        let stored = try self.snapshot()
+                        for key in Set(local.keys).union(merged.keys) where !Self.equalValue(local[key], merged[key]) { synced[key] = stored[key] }
+                    }
                     if remote == nil || !Self.equal(remote!, merged) { try self.writeCloud(merged) }
-                    let applied = try self.snapshot()
-                    try self.writeState(local: applied, cloud: merged)
-                    if imported != nil { try FileManager.default.removeItem(at: self.importedURL) }
-                    self.lastFingerprint = try Self.json(applied)
+                    try self.writeState(local: synced, cloud: merged)
+                    if pendingImport { try FileManager.default.removeItem(at: self.importedURL) }
+                    self.lastFingerprint = try Self.json(synced)
                     #if os(macOS) && !APP_LIFECYCLE_KVS
                     self.publishStatus("配置已与 iCloud Drive 同步；其他设备由系统下载")
                     #elseif os(macOS)
@@ -407,7 +439,13 @@ final class AppConfiguration: NSObject {
     #endif
 
     private func publishStatus(_ value: String) {
-        DispatchQueue.main.async { [weak self] in self?.status = value; NotificationCenter.default.post(name: Notification.Name("AppConfigurationStatusChanged"), object: self) }
+        DispatchQueue.main.async { [weak self] in
+            self?.status = value
+            #if os(macOS)
+            self?.recordStatus(value)   // where the sentence is set, so the record never differs from it
+            #endif
+            NotificationCenter.default.post(name: Notification.Name("AppConfigurationStatusChanged"), object: self)
+        }
     }
     private func finish(_ completion: ((Error?) -> Void)?, _ error: Error?) { DispatchQueue.main.async { completion?(error) } }
 
