@@ -105,6 +105,24 @@ def lightweight_section(version, download_bytes, installed_bytes, release_build=
     return css + "</style>" + current_html + historical_body
 
 
+def write_site_manifest(out, version, build):
+    """Enumerate every public file with its SHA256; the portal publishes only what is listed here."""
+    manifest = out / "site-manifest.json"
+    manifest.unlink(missing_ok=True)
+    for junk in out.rglob(".DS_Store"):
+        junk.unlink()
+    files = []
+    for path in sorted(p for p in out.rglob("*") if not p.is_dir() or p.is_symlink()):
+        name = path.relative_to(out).as_posix()
+        if path.is_symlink() or any(part.startswith(".") for part in path.relative_to(out).parts):
+            raise SystemExit("Site output has a file that cannot be published: " + name)
+        files.append({"path": name, "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+                      "bytes": path.stat().st_size})
+    manifest.write_text(json.dumps({"schema_version": 1, "product": "WeChatUnrevoke", "preview": False,
+        "version": version, "build": str(build), "files": files}, ensure_ascii=False, indent=2) + "\n")
+    return files
+
+
 def main():
     release = json.loads(subprocess.check_output(
         ["gh", "api", f"repos/{REPO}/releases/latest"], text=True))
@@ -223,6 +241,8 @@ def main():
                 if not url.scheme and not url.netloc and not (OUT / url.path.lstrip("/")).is_file():
                     raise ValueError(f"Missing local asset: {value}")
     Links().feed(page)
+    # Last write: the manifest must describe the finished directory.
+    write_site_manifest(OUT, version, info['CFBundleVersion'])
     print(f"Site ready: {OUT}\nRelease: {version}\nSHA256: {expected}")
 
 

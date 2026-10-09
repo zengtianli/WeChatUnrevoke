@@ -1,3 +1,4 @@
+import hashlib
 import importlib.util
 import json
 from pathlib import Path
@@ -173,6 +174,26 @@ class SiteResourceContractTests(unittest.TestCase):
                 self.assertIn(data["measured_at"], block)
                 if data["version"].split(" ")[0] == release["version"]:
                     self.assertNotIn("待测" if name == "README.md" else "not yet measured", before)
+
+    def test_site_manifest_lists_every_public_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            out = Path(directory)
+            (out / "downloads").mkdir()
+            (out / "index.html").write_text("page")
+            (out / "downloads/app.zip").write_bytes(b"zip")
+            (out / "downloads/.DS_Store").write_bytes(b"finder")
+            (out / "site-manifest.json").write_text("stale")
+            files = self.site.write_site_manifest(out, "9.9.9", 7)
+            manifest = json.loads((out / "site-manifest.json").read_text())
+            self.assertEqual(manifest["files"], files)
+            self.assertEqual([row["path"] for row in files], ["downloads/app.zip", "index.html"])
+            self.assertEqual(files[0], {"path": "downloads/app.zip", "bytes": 3,
+                                        "sha256": hashlib.sha256(b"zip").hexdigest()})
+            self.assertEqual((manifest["version"], manifest["build"], manifest["preview"]), ("9.9.9", "7", False))
+            self.assertFalse((out / "downloads/.DS_Store").exists())
+            (out / ".env").write_text("secret")
+            with self.assertRaises(SystemExit):
+                self.site.write_site_manifest(out, "9.9.9", 7)
 
     def test_automated_measurement_evidence_builds_the_page(self):
         # The unattended release-copy measurement writes only cold launch to window and idle numbers (no manual
