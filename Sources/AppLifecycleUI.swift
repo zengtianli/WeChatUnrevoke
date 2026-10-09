@@ -333,7 +333,10 @@ enum AppUpgradeInstaller {
         return url.isFileURL || (try? signingTeam(currentBundle)) != nil
     }
 
-    static func prepare(release: AppRelease, currentBundle: URL, completion: @escaping (Result<Prepared, Error>) -> Void) {
+    static func prepare(release: AppRelease, currentBundle: URL, expectedTeam: String? = nil,
+                        allowFirstInstall: Bool = false, strictBundle: Bool = false,
+                        stagingRoot: URL? = nil,
+                        completion: @escaping (Result<Prepared, Error>) -> Void) {
         guard let url = release.downloadURL, let expectedHash = release.sha256,
               expectedHash.count == 64, expectedHash.allSatisfy(\.isHexDigit) else {
             completion(.failure(AppUpdateError("发行包缺少完整性校验。"))); return
@@ -363,17 +366,57 @@ enum AppUpgradeInstaller {
                         _ = try command("/usr/bin/ditto", [apps[0].path, extracted.appendingPathComponent(apps[0].lastPathComponent).path])
                     } else { throw AppUpdateError("不支持此安装包格式。") }
                     let apps = try FileManager.default.contentsOfDirectory(at: extracted, includingPropertiesForKeys: nil).filter { $0.pathExtension == "app" }
-                    guard apps.count == 1, let bundle = Bundle(url: apps[0]), let old = Bundle(url: currentBundle),
-                          bundle.bundleIdentifier == old.bundleIdentifier,
+                    let exists = FileManager.default.fileExists(atPath: currentBundle.path)
+                    let old = exists ? Bundle(url: currentBundle) : nil
+                    guard apps.count == 1, let bundle = Bundle(url: apps[0]),
+                          (old != nil || allowFirstInstall),
+                          bundle.bundleIdentifier == (old?.bundleIdentifier ?? release.bundleID),
                           bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String == release.version,
                           release.build == "0" || bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String == release.build else {
                         throw AppUpdateError("安装包 App 身份或版本不匹配。")
                     }
                     _ = try command("/usr/bin/codesign", ["--verify", "--deep", "--strict", apps[0].path])
-                    let oldTeam = try signingTeam(currentBundle), newTeam = try signingTeam(apps[0])
-                    if !url.isFileURL && oldTeam == nil { throw AppUpdateError("当前 App 无开发者身份，请使用正式下载渠道手动安装。") }
-                    guard oldTeam == newTeam else { throw AppUpdateError("新版的签名开发者与当前 App 不同。") }
-                    if !url.isFileURL { _ = try command("/usr/sbin/spctl", ["--assess", "--type", "execute", apps[0].path]) }
+                    let oldTeam = exists ? try signingTeam(currentBundle) : nil
+                    let newTeam = try signingTeam(apps[0])
+                    if !url.isFileURL && exists && oldTeam == nil { throw AppUpdateError("当前 App 无开发者身份，请使用正式下载渠道手动安装。") }
+                    guard !exists || oldTeam == newTeam else { throw AppUpdateError("新版的签名开发者与当前 App 不同。") }
+                    if let expectedTeam {
+                        guard newTeam == expectedTeam else { throw AppUpdateError("发行包 Team 不匹配。") }
+                    }
+                    if strictBundle {
+                        guard release.build != "0", release.bundleID == bundle.bundleIdentifier,
+                              let executable = bundle.executableURL,
+                              bundle.object(forInfoDictionaryKey: "LSMinimumSystemVersion") as? String != nil else {
+                            throw AppUpdateError("同步安装缺少完整身份、build 或最低系统版本。")
+                        }
+                        if let oldVersion = old?.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String,
+                           let oldBuild = old?.object(forInfoDictionaryKey: "CFBundleVersion") as? String,
+                           !release.isNewer(than: oldVersion, build: oldBuild) {
+                            throw AppUpdateError("同步安装拒绝相同版本和降级。")
+                        }
+                        #if arch(arm64)
+                        let architecture = "arm64"
+                        #else
+                        let architecture = "x86_64"
+                        #endif
+                        let archs = try command("/usr/bin/lipo", ["-archs", executable.path])
+                        guard archs.split(whereSeparator: { $0.isWhitespace }).contains(Substring(architecture)) else {
+                            throw AppUpdateError("安装包架构不匹配。")
+                        }
+                    }
+                    if !url.isFileURL || strictBundle || !exists {
+                        #if APP_UPGRADE_ISOLATED_TEST
+                        guard let root = ProcessInfo.processInfo.environment["APP_LIFECYCLE_SUPPORT_DIR"],
+                              currentBundle.path.hasPrefix(URL(fileURLWithPath: root).resolvingSymlinksInPath().path + "/") else {
+                            throw AppUpdateError("测试构建仅允许隔离目录。")
+                        }
+                        #else
+                        let signed = try command("/usr/bin/codesign", ["-dv", "--verbose=4", apps[0].path])
+                        guard signed.contains("Authority=Developer ID Application:") else { throw AppUpdateError("需要正式 Developer ID 签名。") }
+                        let assessment = try command("/usr/sbin/spctl", ["--assess", "--type", "execute", "--verbose=4", apps[0].path])
+                        guard assessment.contains("source=Notarized Developer ID") else { throw AppUpdateError("需要正式公证。") }
+                        #endif
+                    }
                     if let minimum = bundle.object(forInfoDictionaryKey: "LSMinimumSystemVersion") as? String {
                         let system = ProcessInfo.processInfo.operatingSystemVersion
                         let current = "\(system.majorVersion).\(system.minorVersion).\(system.patchVersion)"
@@ -387,7 +430,8 @@ enum AppUpgradeInstaller {
             }
         }
         do {
-            let directory = FileManager.default.temporaryDirectory.appendingPathComponent("app-upgrade-" + UUID().uuidString, isDirectory: true)
+            let directory = (stagingRoot ?? FileManager.default.temporaryDirectory).resolvingSymlinksInPath()
+                .appendingPathComponent("app-upgrade-" + UUID().uuidString, isDirectory: true)
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
             let archive = directory.appendingPathComponent("archive." + url.pathExtension)
             if url.isFileURL {
@@ -430,7 +474,10 @@ enum AppUpgradeInstaller {
     /// `backup` is the temporary rollback location (removed to Trash after verification; retained on failure).
     /// `reopens` is whether the helper was told to open the app again (never in an isolated run).
     @discardableResult
-    static func launchReplacement(_ prepared: Prepared, currentBundle: URL, pid: Int32, relaunch: Bool = true) throws -> (process: Process, backup: URL?, reopens: Bool) {
+    static func launchReplacement(_ prepared: Prepared, currentBundle: URL, pid: Int32, relaunch: Bool = true,
+                                  allowFirstInstall: Bool = false, requireIdle: Bool = false,
+                                  verificationTool: URL? = nil, expectedContentHash: String? = nil) throws -> (process: Process, backup: URL?, reopens: Bool) {
+        guard (verificationTool == nil) == (expectedContentHash == nil) else { throw AppUpdateError("完整性回读参数不完整。") }
         guard FileManager.default.isWritableFile(atPath: currentBundle.deletingLastPathComponent().path),
               currentBundle.pathExtension == "app" else { throw AppUpdateError("当前安装目录不可写，请把 App 安装在用户可写的位置。") }
         if prepared.installation == "notifhub-collector" {
@@ -452,8 +499,10 @@ enum AppUpgradeInstaller {
               let identifier = info["CFBundleIdentifier"] as? String,
               let version = info["CFBundleShortVersionString"] as? String,
               let build = info["CFBundleVersion"] as? String,
-              identifier == Bundle(url: currentBundle)?.bundleIdentifier,
-              !((try? currentBundle.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) ?? true) else {
+              (identifier == Bundle(url: currentBundle)?.bundleIdentifier ||
+               (allowFirstInstall && !FileManager.default.fileExists(atPath: currentBundle.path))),
+              ((!FileManager.default.fileExists(atPath: currentBundle.path) && allowFirstInstall) ||
+               !((try? currentBundle.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) ?? true)) else {
             throw AppUpdateError("替换前 App 身份或路径不匹配。")
         }
         // No user input, permissions, defaults or support directories are touched by this helper.
@@ -463,6 +512,8 @@ enum AppUpgradeInstaller {
         set -euo pipefail
         app_pid="$1"; source_app="$2"; target_app="$3"; task_dir="$4"; backup_app="$5"; relaunch="$6"
         expected_id="$7"; expected_version="$8"; expected_build="$9"; trash_dir="${10}"
+        first_install="${11}"; require_idle="${12}"
+        verification_tool="${13}"; expected_content="${14}"
         same_product() {
           [ ! -L "$1" ] && [ -d "$1" ] &&
             [ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$1/Contents/Info.plist")" = "$expected_id" ]
@@ -471,7 +522,8 @@ enum AppUpgradeInstaller {
           same_product "$target_app" &&
             /usr/bin/codesign --verify --deep --strict "$target_app" &&
             [ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$target_app/Contents/Info.plist")" = "$expected_version" ] &&
-            [ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$target_app/Contents/Info.plist")" = "$expected_build" ]
+            [ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$target_app/Contents/Info.plist")" = "$expected_build" ] &&
+            { [ -z "$verification_tool" ] || "$verification_tool" verify "$target_app" "$expected_id" "$expected_version" "$expected_build" "$expected_content"; }
         }
         retire_old() {
           local old="$1" name="$2"
@@ -487,17 +539,35 @@ enum AppUpgradeInstaller {
           done
           if kill -0 "$app_pid" 2>/dev/null; then exit 1; fi
         fi
-        next_app="${target_app%.app}.upgrade-$app_pid.app"
+        if [ "$require_idle" = 1 ]; then
+          while IFS= read -r running; do
+            case "$running" in "$target_app"/*) exit 75;; esac
+          done < <(/bin/ps -axo comm=)
+        fi
+        next_app="${target_app%.app}.upgrade-${task_dir##*/}.app"
+        [ ! -e "$next_app" ] && [ ! -L "$next_app" ]
         /bin/mkdir -p "$(/usr/bin/dirname "$backup_app")"
         /usr/bin/ditto "$source_app" "$next_app"
         /usr/bin/codesign --verify --deep --strict "$next_app"
-        same_product "$target_app"
+        if [ "$first_install" = 1 ]; then
+          [ ! -e "$target_app" ] && [ ! -L "$target_app" ]
+        else
+          same_product "$target_app"
+        fi
         if [ -e "$backup_app" ] || [ -L "$backup_app" ]; then
           same_product "$backup_app"
           /bin/mv "$backup_app" "$task_dir/previous-backup.app"
         fi
-        /bin/mv "$target_app" "$backup_app"
-        if ! /bin/mv "$next_app" "$target_app"; then /bin/mv "$backup_app" "$target_app"; exit 1; fi
+        if [ "$require_idle" = 1 ]; then
+          while IFS= read -r running; do
+            case "$running" in "$target_app"/*) exit 75;; esac
+          done < <(/bin/ps -axo comm=)
+        fi
+        if [ "$first_install" != 1 ]; then /bin/mv "$target_app" "$backup_app"; fi
+        if ! /bin/mv "$next_app" "$target_app"; then
+          if [ "$first_install" != 1 ]; then /bin/mv "$backup_app" "$target_app"; fi
+          exit 1
+        fi
         started=1
         if ! verified_new; then started=0; fi
         if [ "$started" = 1 ] && [ "$relaunch" = 1 ]; then
@@ -514,11 +584,11 @@ enum AppUpgradeInstaller {
         fi
         if [ "$started" != 1 ]; then
           /bin/mv "$target_app" "$task_dir/failed-new.app"
-          /bin/mv "$backup_app" "$target_app"
+          if [ "$first_install" != 1 ]; then /bin/mv "$backup_app" "$target_app"; fi
           if [ "$relaunch" = 1 ]; then /usr/bin/open -g -j "$target_app"; fi
           exit 1
         fi
-        if ! retire_old "$backup_app" "${target_app##*/}"; then
+        if [ "$first_install" != 1 ] && ! retire_old "$backup_app" "${target_app##*/}"; then
           echo "cleanup_failed: installed app verified; old app retained at $backup_app" >&2
           exit 2
         fi
@@ -542,7 +612,9 @@ enum AppUpgradeInstaller {
             .appendingPathComponent(prepared.directory.lastPathComponent, isDirectory: true)
         let reopens = relaunch && !noRelaunch
         process.arguments = [script.path, String(pid), prepared.app.path, currentBundle.path, prepared.directory.path,
-                             backup.path, reopens ? "1" : "0", identifier, version, build, trash.path]
+                             backup.path, reopens ? "1" : "0", identifier, version, build, trash.path,
+                             allowFirstInstall && !FileManager.default.fileExists(atPath: currentBundle.path) ? "1" : "0", requireIdle ? "1" : "0",
+                             verificationTool?.path ?? "", expectedContentHash ?? ""]
         let log = prepared.directory.appendingPathComponent("install.log")
         FileManager.default.createFile(atPath: log.path, contents: nil)
         let handle = try FileHandle(forWritingTo: log); process.standardOutput = handle; process.standardError = handle
