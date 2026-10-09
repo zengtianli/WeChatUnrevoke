@@ -3,9 +3,11 @@
 set -euo pipefail
 DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$DIR"
+# Built by sop.site_build and reviewed by Lintel beforehand; deploy transfers those exact bytes, never a rebuild.
+# Lintel gate: only the exact bytes Lintel checked and reviewed may leave this Mac.
+"$HOME/Dev/.venv/bin/python" "$HOME/Apps/lintel/engine/lintel.py" site gate --site unrevoke --bundle "$PWD/dist/site"
 source "${DEPLOY_LIB:-$HOME/Dev/tools/dev/lib/deploy}/core.sh"
 vps_load
-python3 scripts/build-site.py
 # Stage complete content, then switch the current directory; retain one rollback.
 rsync -az --delete "$DIR/dist/site/" "$VPS:/var/www/unrevoke-next/"
 ssh "$VPS" 'test -s /var/www/unrevoke-next/index.html && test -s /var/www/unrevoke-next/media/tutorial.mp4 && if [ -d /var/www/unrevoke ]; then rm -rf /var/www/unrevoke-previous; mv /var/www/unrevoke /var/www/unrevoke-previous; fi; mv /var/www/unrevoke-next /var/www/unrevoke'
