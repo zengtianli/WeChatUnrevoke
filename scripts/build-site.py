@@ -35,7 +35,7 @@ HISTORICAL_RELEASES = (
 )
 
 
-def release_asset_records(version, sha256, download_bytes):
+def release_asset_records(version, sha256, download_bytes, build=None, source_commit=None):
     """Register the pinned historical downloads and exactly one current release."""
     if version in {item["version"] for item in HISTORICAL_RELEASES}:
         raise SystemExit("Current release cannot also be a historical download")
@@ -45,13 +45,60 @@ def release_asset_records(version, sha256, download_bytes):
         filename = f"WeChatUnrevoke-{item['version']}.zip"
         records.append({**item, "filename": filename, "download": f"downloads/{filename}",
                         "current": item["version"] == version,
+                        "source_commit": source_commit if item["version"] == version else None,
                         "source": f"https://github.com/{REPO}/releases/tag/v{item['version']}"})
+        if item["version"] == version and build is not None:
+            records[-1]["build"] = str(build)
+    return records
+
+
+def verify_release_archive(path, approved):
+    """Read each package's own identity and facts after verifying its bytes."""
+    if path.is_symlink() or not path.is_file() or path.stat().st_size != approved["download_bytes"]:
+        raise SystemExit("Release archive size or file type mismatch: " + path.name)
+    if hashlib.sha256(path.read_bytes()).hexdigest() != approved["sha256"]:
+        raise SystemExit("Release archive checksum mismatch: " + path.name)
+    try:
+        with zipfile.ZipFile(path) as package:
+            names = [n for n in package.namelist()
+                     if n.endswith('.app/Contents/Info.plist') and not n.startswith('__MACOSX/')]
+            if len(names) != 1:
+                raise ValueError("Expected exactly one application Info.plist")
+            info_path = names[0]
+            info = plistlib.loads(package.read(info_path))
+            version = info['CFBundleShortVersionString']
+            build = str(info['CFBundleVersion'])
+            if version != approved['version'] or not re.fullmatch(r"[0-9]+", build):
+                raise ValueError("Packaged version/build differs from the release")
+            if approved.get('build') is not None and build != str(approved['build']):
+                raise ValueError("Packaged build differs from the release")
+            executable = info_path.removesuffix('Info.plist') + 'MacOS/' + info['CFBundleExecutable']
+            prefix = info_path.removesuffix('Contents/Info.plist')
+            return {"version": version, "build": build,
+                    "executable_sha256": hashlib.sha256(package.read(executable)).hexdigest(),
+                    "installed_file_bytes": sum(item.file_size for item in package.infolist()
+                                                if item.filename.startswith(prefix) and not item.is_dir())}
+    except (OSError, ValueError, KeyError, zipfile.BadZipFile, plistlib.InvalidFileException) as exc:
+        raise SystemExit(f"Invalid release archive {path.name}: {exc}") from exc
+
+
+def prepare_release_assets(version, sha256, download_bytes, build, source_commit=None):
+    """Restore only approved Release archives into this build's isolated dist."""
+    records = release_asset_records(version, sha256, download_bytes, build, source_commit)
+    for item in records:
+        path = ROOT / "dist" / item["filename"]
+        if not path.exists() and not path.is_symlink():
+            path.parent.mkdir(parents=True, exist_ok=True)
+            subprocess.run(["gh", "release", "download", "v" + item['version'], "--repo", REPO,
+                            "--pattern", item['filename'], "--dir", str(path.parent)], check=True)
+        item.update(verify_release_archive(path, item))
     return records
 
 
 def verify_release_assets(out, release):
     """Refuse missing, unregistered or altered packages before sealing the site."""
-    expected = release_asset_records(release["version"], release["sha256"], release["download_bytes"])
+    expected = release_asset_records(release["version"], release["sha256"], release["download_bytes"],
+                                     release["build"], release.get("source_commit"))
     expected_by_path = {item["download"]: item for item in expected}
     current = next(item for item in expected if item["current"])
     if release.get("download") != current["download"]:
@@ -70,11 +117,9 @@ def verify_release_assets(out, release):
         item = by_path[relative]
         if any(item.get(field) != approved[field] for field in approved):
             raise SystemExit("Release asset differs from approved record: " + relative)
-        path = out / relative
-        if path.is_symlink() or path.stat().st_size != approved["download_bytes"]:
-            raise SystemExit("Release archive size or file type mismatch: " + relative)
-        if hashlib.sha256(path.read_bytes()).hexdigest() != approved["sha256"]:
-            raise SystemExit("Release archive checksum mismatch: " + relative)
+        metadata = verify_release_archive(out / relative, approved)
+        if any(item.get(field) != value for field, value in metadata.items()):
+            raise SystemExit("Release asset differs from packaged version/build or facts: " + relative)
 
 
 def release_version(label):
@@ -193,6 +238,7 @@ def main():
         raise SystemExit("GitHub asset has no SHA256 digest; refusing an unverified download")
     archive = ROOT / "dist" / name
     if not archive.exists():
+        archive.parent.mkdir(parents=True, exist_ok=True)
         subprocess.run(["gh", "release", "download", "v" + version, "--repo", REPO,
                         "--pattern", name, "--dir", str(archive.parent)], check=True)
     if hashlib.sha256(archive.read_bytes()).hexdigest() != expected:
@@ -225,15 +271,7 @@ def main():
         if reuse.get('source_sha256') != sources:
             raise SystemExit('Historical guide review is stale for the current UI sources')
 
-    assets = release_asset_records(version, expected, download_bytes)
-    # Check all explicit inputs before replacing the previous build. A corrupt
-    # historical archive must never be repaired by trusting an old site copy.
-    for item in assets:
-        path = ROOT / "dist" / item["filename"]
-        if path.is_symlink() or not path.is_file():
-            raise SystemExit("Approved release archive is missing or not a regular file: " + item["filename"])
-        if path.stat().st_size != item["download_bytes"] or hashlib.sha256(path.read_bytes()).hexdigest() != item["sha256"]:
-            raise SystemExit("Approved release archive checksum/size mismatch: " + item["filename"])
+    assets = prepare_release_assets(version, expected, download_bytes, info['CFBundleVersion'], source_commit)
     # Start empty, then copy only verified inputs. Preserve public historical
     # addresses without carrying arbitrary build remnants into the manifest.
     if OUT.exists():

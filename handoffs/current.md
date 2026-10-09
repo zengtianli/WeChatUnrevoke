@@ -1,5 +1,18 @@
 # Chapter 源码与测试交接（2026-10-08）
 
+## 2026-10-10 续轮：补资产独立 build 与隔离构建缺包恢复
+
+接续 `2275e3f` 的两处实物缺口，固定预算 10 分钟，仅修改 `scripts/build-site.py`、`tests/test_site_release_assets.py` 和本交接；2026-10-10 00:32（上海）源码、重建与必要回归通过。此前九包 GitHub 摘要证据直接沿用，没有重做 Release 核验；没有发版、装机、push 或部署。原 `2275e3f/201b4d3` 保留，Lintel 任务二与 root 统一冻结后发布。
+
+- 每个资产都在核 SHA256/bytes 后读取自身 ZIP 的 `Info.plist`，校验 `CFBundleShortVersionString`，取真实 `CFBundleVersion`，并读取自身主程序 SHA256 与包内展开文件字节数。当前 build 还必须匹配当前发行登记；最终 manifest 前再核对每个资产的 version/build/包内数据与实际 ZIP，拒绝把当前 build 继承给历史包。
+- 历史资产显式写 `source_commit: null`，`source` 指向自己的正式 Release；`version/build/executable_sha256/installed_file_bytes/download/sha256/download_bytes` 均为自身值，因此 Lintel 以顶层与 asset 合并时不会继承当前发行的这些字段。当前资产保留当前真实 source_commit。
+- 白名单包本地缺失时，沿原 `gh release download v<该版本> --repo zengtianli/WeChatUnrevoke --pattern WeChatUnrevoke-<该版本>.zip --dir <本次ROOT>/dist` 恢复，然后核固定 SHA256/bytes 和 ZIP 内 version/build；不 dist 通配、不复制其他工作区、不自动覆盖损坏的已有文件。隔离 ROOT 没有 dist 时先创建本次目录，当前缺包入口也补齐父目录创建。
+- 专项测试扩展为 **16 项**：用九个假 ZIP 的独立 plist 逐资产核 version/build，覆盖历史不得继承当前 commit/包内数据、空 ROOT 无 dist 时录制九条精确 Release 下载命令并恢复、已存在包不重复下载、下载长度损坏/等长摘要损坏拒绝、即使摘要正确仍拒绝 ZIP 内版本或当前 build 失配。没有真实下载历史包，没有新增未公开字节。
+- Mac mini 按文件并行执行全部 6 个 Python 测试文件：18 + 2 + 4 + 2 + 1 + 16，**共 43 项全部通过**（保留原 37 项回归，新增 6 项）；`git diff --check` 通过。`python3 scripts/build-site.py` 退出 0，实物逐包读取 plist 对照清单通过，当前仍唯一为 **1.0.11 (54)**。
+- 实物 build 对照：**1.0.3→12、1.0.4→13、1.0.5→19、1.0.6→21、1.0.7→22、1.0.8→23、1.0.9→26、1.0.10→34、1.0.11→54**。历史 commit 均为 null；当前 commit 为 `8b4ece941b37c119f4e002b7b4b45e340c283aac`。九包 ZIP 字节未变化，完整 SHA 证据仍见下节原表。
+- 更新候选位于 `/Users/tianli/Apps/unrevoke/dist/site`；`release.json` SHA256 **`d15f514dde0a1b7df3a87cdfc5446813e0a8ca04651dec615c3f7469f3266076`**，`site-manifest.json` SHA256 **`655c90eb3d9c170ba832453421cac16d4f934b64f117a14db89ddb6542c2d948`**，取代下节旧候选摘要。本轮未重跑视觉/播放验收或统一发布，静态与隔离构建的最终合并验证由 Lintel 原任务接续，不沿用旧清单的 ready 作为新候选通过记录。
+- 本轮写前复用 Chapter `--pid 48511 --session chapter-task:b6dee4aaffdb493f80912f694121ef49` 精确身份核 claims，通过；不另开、不释放。仅提交上述三个文件；提交保留凭证与消息检查，单次省掉自动向另一台 Mac 推送的 post-commit 钩子，不改全局配置。
+
 ## 2026-10-10：v35 前置收尾，登记八个历史包并保留当前发行
 
 本轮接续 `201b4d3`，固定预算 20 分钟，仅完成站点构建、发行清单、适用测试与本交接；2026-10-10 00:13（上海）校验完成。原提交保留，下面 2026-10-09 的“只带当前版本”处理已由本节修正。没有部署、push、重跑发版、变更 GitHub Release/Homebrew，也没有新公开安装包或源码；后续由 **Lintel 原 task2** 接续合并与统一发布。本轮构建/发行清单源码已完成并冻结，发布阶段使用完成后的候选，不边发布边改源码。
