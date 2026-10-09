@@ -168,7 +168,11 @@ def main():
         if reuse.get('source_sha256') != sources:
             raise SystemExit('Historical guide review is stale for the current UI sources')
 
-    OUT.mkdir(parents=True, exist_ok=True)
+    # Start empty: the site carries this release only. Earlier ZIPs stay on GitHub Releases, where
+    # their digests are recorded; anything a previous build left here would be published again unlisted.
+    if OUT.exists():
+        shutil.rmtree(OUT)
+    OUT.mkdir(parents=True)
     for folder in ("assets", "media", "downloads"):
         (OUT / folder).mkdir(exist_ok=True)
     for file in ("style.css", "app.js"):

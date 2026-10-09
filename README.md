@@ -130,7 +130,7 @@ ENGINE_REPO=../WeChatTweak ./build.sh
 python3 scripts/publish.py docs/releases/1.0.5.md
 ```
 
-发布入口运行回归测试、构建、打包、推送、草稿上传、下载校验、公开发布、Homebrew 同步及产品主页部署。网站下载版本和校验值读取最新公开 Release；已有同版本 Release 不会覆盖。站点部署失败时，已公开的 GitHub Release 不会撤销；修复后运行 `bash scripts/deploy-site.sh` 单独续接。实机验收仍需完成，不自动发送 issue 评论。
+发布入口运行回归测试、构建、打包、推送、草稿上传、下载校验、公开发布、Homebrew 同步及产品主页部署。网站下载版本和校验值读取最新公开 Release；已有同版本 Release 不会覆盖。产品主页经 Lintel 上线（重建站点目录、检查、验收、部署并回读线上），站点目录只带当前版本的安装包，旧版本留在 GitHub Releases。主页未上线时，已公开的 GitHub Release 不会撤销，发布入口以退出码 3 结束并打印续接命令；修复后只运行该命令（`~/Dev/.venv/bin/python ~/Apps/lintel/engine/lintel.py site ship --site unrevoke --work ~/Library/Caches/unrevoke-site-ship --json`），不要重跑发布入口，也不要直接运行 `scripts/deploy-site.sh`（未经 Lintel 验收的目录会被它的闸拒绝）。实机验收仍需完成，不自动发送 issue 评论。
 
 ## 致谢与许可
 

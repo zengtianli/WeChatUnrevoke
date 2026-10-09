@@ -102,7 +102,7 @@ Maintainers: validate GUI writes on a WeChat copy, update the version and releas
 python3 scripts/publish.py docs/releases/1.0.5.md
 ```
 
-This runs regression tests, builds, pushes, uploads a draft, verifies the downloaded archive, publishes, updates Homebrew and deploys the product site from the latest public release. A failed site deployment does not undo the published GitHub release; resume with `bash scripts/deploy-site.sh`. This does not replace GUI validation or post issue comments.
+This runs regression tests, builds, pushes, uploads a draft, verifies the downloaded archive, publishes, updates Homebrew and deploys the product site from the latest public release. The product site goes online through Lintel (rebuild, check, review, deploy and public read-back) and carries only the current release archive; earlier versions stay on GitHub Releases. If the site does not go live, the published GitHub release is not undone: the entry point exits with code 3 and prints the resume command. After fixing the cause, run only that command (`~/Dev/.venv/bin/python ~/Apps/lintel/engine/lintel.py site ship --site unrevoke --work ~/Library/Caches/unrevoke-site-ship --json`); do not run the publish entry point again, and do not run `scripts/deploy-site.sh` directly, whose gate rejects a directory Lintel has not reviewed. This does not replace GUI validation or post issue comments.
 
 ## Credits and license
 

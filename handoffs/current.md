@@ -1,5 +1,14 @@
 # Chapter 源码与测试交接（2026-10-08）
 
+## 2026-10-09：发布入口改经 Lintel 上线，站点只带当前版本
+
+本轮只改源码、说明和测试，本机提交；没有发版、推送或部署。
+
+- `scripts/publish.py` 最后一步不再直接跑 `scripts/deploy-site.sh`（它的闸会拒绝未经 Lintel 验收的目录），改为调用 `lintel site ship --site unrevoke --work ~/Library/Caches/unrevoke-site-ship --json` 并读 `shipped`。主页未上线时打印停在哪一步、原因和续接命令，以退出码 3 结束，不抛异常；GitHub Release 与 Homebrew 已公开的部分不动，不要重跑发布入口。工作目录可用 `UNREVOKE_SITE_WORK` 改。
+- `scripts/build-site.py` 每次从空目录生成 `dist/site`，站点只带当前版本安装包。原先目录里的 1.0.3–1.0.10 旧包和 `partial.*` 是历次构建的残留：页面与 Homebrew 都不引用，构建也只核对当前版本的摘要。旧包与 GitHub Releases 上的摘要逐个一致，仍可从那里下载；下次部署后站内旧包地址不再可用。
+- 自查：`lintel site check --site unrevoke --out dist/site` 为 ready，0 项问题；站点目录 21 个公开文件加清单。
+- 未解决（本轮之前就有，非本轮引入）：`tests/test_build_contract.py` 有 3 项失败，都在“新版本已发、资源实测仍是旧版本”的历史实测分支，起因是共享渲染器现在会多输出一张“安装后占用 未测”卡片。当前版本与实测同为 1.0.11，不走这条分支；但发布入口先跑 `tests/run.sh`，这 3 项不修，下次发版会在任何对外动作之前停住。
+
 ## 2026-10-08：当前构建装机
 
 本人授权安装一次后，已装 **1.0.11 (74)**，包内主程序与构建来源回执的 SHA256 一致；bundle ID、原引擎摘要、偏好和既有常驻配置保留，没有操作真实微信写入或退出。
