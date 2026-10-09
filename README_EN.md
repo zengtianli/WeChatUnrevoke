@@ -16,6 +16,8 @@
 
 Real recordings: [Enable anti-recall](https://unrevoke.tianli.cyou/media/enable.mp4) · [Check and restore](https://unrevoke.tianli.cyou/media/restore.mp4) · [Complete tutorial](https://unrevoke.tianli.cyou/media/tutorial.mp4). Recorded with v1.0.4 and a WeChat build 269627 test copy. Independent scenes and shortened waits are labeled. See [recording notes](docs/demo/README.md).
 
+The [status guide](https://unrevoke.tianli.cyou/media/current-guide.mp4) shows the three protection states. The repository's guide renders the v1.0.11 production main view offscreen with fictional states; it does not patch WeChat, manipulate messages, measure performance or demonstrate the configuration and update window. The website labels the version of its deployed guide.
+
 WeChatUnrevoke reads your WeChat build and lets you manage patches through a native interface. The embedded [WeChatTweak engine](https://github.com/zengtianli/WeChatTweak) performs the work and determines protection status.
 
 | What you need | What the app provides |
@@ -39,7 +41,7 @@ The resource measurements below are for local acceptance build 1.0.11 (69); the 
 
 Native SwiftUI with no Python runtime. Reading and patching WeChat is handed to the bundled Swift command-line engine. While the window is open, it compares a file fingerprint of 5 paths in the WeChat bundle once a minute (under a millisecond) and starts the engine only when WeChat was updated, patched or restored, plus a full check every 30 minutes as a backstop; checks stop when the window closes. No resident background service. Release builds are stripped of debug symbols.
 
-<sub>v1.0.11 (69) · Mac16,12 / Apple M4 / macOS 27.2 · An LSUIElement copy of the current installed GUI; read-only WeChat checks and offscreen rendering, with no network, patching or preference writes. · measured 2026-10-05. Measured on the listed device; re-measured for each version. Memory uses phys_footprint; CPU is CPU time ÷ wall time over a 60-second sampling window; sizes in decimal MB. Raw data: [perf/lightweight.json](perf/lightweight.json).</sub>
+<sub>v1.0.11 (69) · Mac16,12 / Apple M4 / macOS 27.2 · An LSUIElement copy of the current installed GUI; read-only WeChat checks and offscreen rendering, with no network, patching or preference writes. · measured 2026-10-05. Measured on the listed version and device; the current version and measurement scope are described on this page. Memory uses phys_footprint; CPU is CPU time ÷ wall time over a 60-second sampling window; sizes in decimal MB. Raw data: [perf/lightweight.json](perf/lightweight.json).</sub>
 <!-- lightweight:end -->
 
 ## Get started

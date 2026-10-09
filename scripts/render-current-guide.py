@@ -6,7 +6,8 @@ The real ContentView uses its model injection seam with automatic startup disabl
 A disposable bundle's doctor-only fixture supplies states; no real WeChat is read.
 """
 from pathlib import Path
-import hashlib, json, plistlib, sys, uuid
+from concurrent.futures import ThreadPoolExecutor
+import hashlib, json, os, plistlib, subprocess, sys, uuid
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / 'accept'))
 from _common import run as common_run, xcode_env
@@ -21,14 +22,21 @@ VERSION = plistlib.loads((ROOT / 'Info.plist').read_bytes())['CFBundleShortVersi
 SOURCE_HASHES = {p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in (ROOT/'Sources').glob('*.swift')}
 
 def run(*args, **kwargs):
-    result = common_run([str(x) for x in args], env=kwargs.pop('env', ENV), **kwargs)
+    try:
+        result = common_run([str(x) for x in args], env=kwargs.pop('env', ENV), **kwargs)
+    except subprocess.CalledProcessError as error:
+        print(error.stdout or str(error), file=sys.stderr, flush=True)
+        raise
     if result.strip():
         print(result.strip())
 
 (WORK / 'Capture.swift').write_text(r'''
 import AppKit
 import SwiftUI
-extension Notification.Name { static let consoleRefresh = Notification.Name("consoleRefresh") }
+extension Notification.Name {
+  static let consoleRefresh = Notification.Name("consoleRefresh")
+  static let unrevokePreferencesChanged = Notification.Name("UnrevokePreferencesChanged")
+}
 @main struct Capture {
   @MainActor static func main() {
     let app = NSApplication.shared
@@ -86,14 +94,21 @@ set -eu
 cat "$UNREVOKE_GUIDE_FIXTURE"
 ''')
 engine.chmod(0o755)
-run('xcrun','swiftc','-parse-as-library',ROOT/'Sources/Models.swift',ROOT/'Sources/Engine.swift',ROOT/'Sources/WriteHistory.swift',ROOT/'Sources/ViewModel.swift',ROOT/'Sources/ContentView.swift',WORK/'Capture.swift','-o',APP/'Contents/MacOS/Guide')
-run('xcrun','swiftc',ROOT/'scripts/demo-caption.swift','-o',WORK/'caption')
+with ThreadPoolExecutor(max_workers=2) as compilers:
+    builds = [
+        compilers.submit(run, 'xcrun','swiftc','-parse-as-library',ROOT/'Sources/Models.swift',ROOT/'Sources/Engine.swift',ROOT/'Sources/WriteHistory.swift',ROOT/'Sources/ViewModel.swift',ROOT/'Sources/ContentView.swift',WORK/'Capture.swift','-o',APP/'Contents/MacOS/Guide'),
+        compilers.submit(run, 'xcrun','swiftc',ROOT/'scripts/demo-caption.swift','-o',WORK/'caption'),
+    ]
+    for build in builds:
+        build.result()
 scenes = [
     ('unprotected','01 · 检查当前状态','未打补丁时，主按钮显示「开启防撤回」','虚构状态 · 仅展示当前界面，不执行写入'),
     ('protected','02 · 两项结果分别说明','防撤回与拦截更新均生效时，可重新检查或还原','虚构状态 · 未操作真实微信或消息'),
     ('antiRevokeOnly','03 · 防撤回已经生效','App Store 版没有可拦截的内置更新器','虚构状态 · 两项功能独立，不必重复打补丁'),
 ]
-segments=[]; cues=['WEBVTT\n']
+segments=[]; cues=['WEBVTT\n']; encoders=ThreadPoolExecutor(max_workers=3); encodings=[]
+def encode(image, overlay, segment):
+    run('ffmpeg','-v','error','-loop','1','-i',image,'-loop','1','-i',overlay,'-filter_complex_threads','1','-filter_complex','[0:v]scale=620:640,pad=720:840:50:65:color=0xf6f8f3,setsar=1[body];[body][1:v]overlay=0:0:shortest=1[v]','-map','[v]','-t','7','-r','24','-an','-c:v','libx264','-threads',str(max(1, (os.cpu_count() or 1)//3)),'-preset','fast','-crf','20','-pix_fmt','yuv420p','-movflags','+faststart','-y',segment)
 for i,(state,title,line1,line2) in enumerate(scenes):
     fixture={'overall':state,'build':'示例版本','app_path':str(target),'config_known':True,'config_targets':['revoke','update'],'running':False,'writable':True,'signature':'valid','sip':'enabled','entitlements_ok':True,'entitlement_key_count':15,'anti_revoke_keeptip':'pristine' if state=='unprotected' else 'patched','update_block':'notApplicable' if state=='antiRevokeOnly' else ('pristine' if state=='unprotected' else 'patched'),'update_source':'App Store' if state=='antiRevokeOnly' else 'config'}
     spec=WORK/f'{state}.json';spec.write_text(json.dumps(fixture,ensure_ascii=False))
@@ -102,9 +117,14 @@ for i,(state,title,line1,line2) in enumerate(scenes):
     caption=WORK/f'{state}-caption.json';caption.write_text(json.dumps({'title':title,'line1':line1,'line2':line2},ensure_ascii=False))
     overlay=WORK/f'{state}-overlay.png';run(WORK/'caption',caption,overlay)
     segment=WORK/f'{state}.mp4'
-    run('ffmpeg','-v','error','-loop','1','-i',image,'-loop','1','-i',overlay,'-filter_complex','[0:v]scale=620:640,pad=720:840:50:65:color=0xf6f8f3,setsar=1[body];[body][1:v]overlay=0:0:shortest=1[v]','-map','[v]','-t','7','-r','24','-an','-c:v','libx264','-preset','fast','-crf','20','-pix_fmt','yuv420p','-movflags','+faststart','-y',segment)
+    encodings.append(encoders.submit(encode, image, overlay, segment))
     segments.append(segment)
     cues.append(f'00:00:{i*7:02}.000 --> 00:00:{(i+1)*7:02}.000\n{line1}\n{line2}\n')
+try:
+    for encoding in encodings:
+        encoding.result()
+finally:
+    encoders.shutdown(wait=True, cancel_futures=True)
 concat=WORK/'concat.txt';concat.write_text(''.join(f"file '{p}'\n" for p in segments))
 run('ffmpeg','-v','error','-f','concat','-safe','0','-i',concat,'-c','copy','-movflags','+faststart','-y',OUT/'current-guide.mp4')
 (OUT/'current-guide.vtt').write_text('\n'.join(cues))

@@ -1,6 +1,6 @@
 # 界面教程与实机演示素材
 
-当前 v1.0.10 的 [界面教程](current-guide.mp4) 与 `current-*.png` 由当前生产 SwiftUI 视图离屏重新渲染，三段各 7 秒。画面使用明确标注的虚构状态，展示未保护、完整保护以及仅防撤回生效三种结果，不代表真实补丁操作、聊天撤回或性能测量。生成入口为 `scripts/render-current-guide.py`，版本、源码与素材 SHA256 见 [current-guide.json](current-guide.json)。本次重新渲染的画面与上次一致，保留实际哈希，不人为改变图像。
+仓内 v1.0.11 的 [界面教程](current-guide.mp4) 与 `current-*.png` 由当前生产 SwiftUI 视图离屏重新渲染，三段各 7 秒。画面使用明确标注的虚构状态，展示未保护、完整保护以及仅防撤回生效三种结果，包含开机自动运行入口；不代表真实补丁操作、聊天撤回或性能测量，也不演示配置与更新窗口。生成入口为 `scripts/render-current-guide.py`，版本、源码与素材 SHA256 见 [current-guide.json](current-guide.json)。线上导览版本以产品页实际标注为准。
 
 下面的实机录像保留各自原始版本和适用范围。
 

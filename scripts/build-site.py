@@ -92,7 +92,8 @@ def lightweight_section(version, download_bytes, installed_bytes, release_build=
     historical = perf_block.standalone_section(source, release_version(recorded["version"]), '#50723c')
     historical = historical.replace("id='light'", "id='historical-performance'").replace(
         "资源占用与响应速度。", f"历史实测 · v{escape(recorded['version'])}，{escape(fields['PERF_DATE'])}。")
-    historical = historical.replace("数字来自所列设备实测，版本更新后重新测量。", "历史实测记录，不代表当前发行版。")
+    historical = historical.replace("<div class='perf-grid'>",
+        "<p class='fine'>历史实测记录，不代表当前发行版。</p><div class='perf-grid'>", 1)
     # The historical installed measurement and the current ZIP's sum of file
     # lengths have different versions and methods; never label both "installed".
     measured_installed = recorded.get("size", {}).get("installed_bytes")

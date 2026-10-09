@@ -1,48 +1,27 @@
 {
-  "version": "1.0.10",
+  "version": "1.0.11",
   "method": "Current production ContentView rendered offscreen with fictional DoctorStatus fixtures using the model injection seam and automaticallyStart:false. Isolated bundle and doctor-only fixture executable; no real WeChat access, patch/restore, network request, system clipboard, input synthesis or foreground window. Not a performance measurement or real patch demonstration.",
   "source_sha256": {
-    "Engine.swift": "b31b8345e5f6f2fa4791342eaa7a25502c837d1c316a76184687e9f09ef44ec2",
-    "ViewModel.swift": "99547baab4f87b525383805d6330f0e9fbf2d3e718023aa7a3034e9c97dc8fe0",
+    "ProductLifecycle.swift": "d3de586c9f38319fc30f61f0672db16226b5f2d1066dfe4f415846f6ad6d06c4",
+    "AppCommandMode.swift": "6f5918fa8b7c909c1c2b1e75ffe77279821a8f4c715e637b0207e5714e6a2621",
+    "LaneSignal.swift": "e7e68ac41417ddd06e7049a7bd4e01a92d52305bc999cd6ddd323178c64a2ce8",
+    "AppConfiguration.swift": "ba4d6aa1f52966159e5b74b1ca2878734c61cad80355ace25e19c0f44626947f",
+    "Engine.swift": "961343b8a30981c315412018380448e3fd9c652b06b9c2eb549f6d5568932a71",
+    "AppLifecycleUI.swift": "fb946d731009b3a797427d706473cf8956c60d0a31a6ada287267f3acbdd7c34",
+    "AppLifecycleCLI.swift": "f33393d954dac50331f4fd650066c6ecea573970d53b50b43e8a86cab708241c",
+    "AppLifecycle.swift": "3033bc6f87a69a2402ff1cda2c8196a4abd677222582c75d21302a65626c2d89",
+    "ViewModel.swift": "77b795d6add9ac9f85be505ecdd7426086141e4b02b9ef7787cd7330e87f91cd",
+    "WriteHistory.swift": "d630bfe96cef9f8d3a0c4959387f8486ac057ba0b5c7bd817baa388091162438",
     "Models.swift": "3c99d58322afb702dac548317c7f26fb1250201cfe13447aad0864fb883df2b2",
-    "ContentView.swift": "e5e693d3ab72438b9c794261cbf099f6d8b8201ee1bda235cef9bac1ba4f5c6f",
-    "UnrevokeApp.swift": "b23fafaa752333be023f30e06b212657e073040943ef310393ac3f95cad2f713"
-  },
-  "reused_for": {
-    "1.0.11": {
-      "build": "54",
-      "release_sha256": "f3d0a9a2de3a2f91cc40edeaff59a4815cd871a920aaa3b425a27b710e7a20db",
-      "historical_reference": true,
-      "not_covered": "新版配置与更新窗口及真实跨设备同步；不是新版性能或补丁操作实测",
-      "reason": "按增量升级保留原1.0.10生产界面离屏导览，页面明确展示原录制版本。新发行包身份、签名、共享更新配置及隐私边界分别核验。",
-      "local_ui_validation": {
-        "build": "69",
-        "check": "native_ui",
-        "input_sha256": "f5a25ad9d0960aeabd4ea5e4054c1ff291550d7c2aba76e7b66b2fc9747b4939",
-        "evidence": "perf/acceptance/run-dcte29yy/native_ui.json",
-        "checks_passed": 9,
-        "offscreen_captures": 5,
-        "reason": "本轮修复Engine子进程退出回调，正常ContentView布局未改；当前原生界面9项检查和5张离屏截图通过。原录像继续标注旧录制版本，不冒充新性能或新配置窗口演示。"
-      },
-      "source_sha256": {
-        "AppConfiguration.swift": "66d1b04072dbcbcbbc556afb79be1181396fc8bd1a6940d5960adea742219edc",
-        "AppLifecycle.swift": "3033bc6f87a69a2402ff1cda2c8196a4abd677222582c75d21302a65626c2d89",
-        "AppLifecycleUI.swift": "c5bfb42bb97555125d3822a98ab0bab71adf368f0de1439f170f0dddb7456974",
-        "ContentView.swift": "131b5b34b5936d72e053e66bd20777aff3c63434f43ebf7285b7cbc6b7f6aae4",
-        "Engine.swift": "961343b8a30981c315412018380448e3fd9c652b06b9c2eb549f6d5568932a71",
-        "LaneSignal.swift": "e7e68ac41417ddd06e7049a7bd4e01a92d52305bc999cd6ddd323178c64a2ce8",
-        "Models.swift": "3c99d58322afb702dac548317c7f26fb1250201cfe13447aad0864fb883df2b2",
-        "UnrevokeApp.swift": "38967c19b19e3c54adbf181eb4542fa850ced1d9210f8f73cf14e29ef5fd1599",
-        "ViewModel.swift": "f180228aa2bd5ff657d18abf5a4c75c0374d3d04dd02ad36d39ed34e679eb6a7"
-      }
-    }
+    "ContentView.swift": "131b5b34b5936d72e053e66bd20777aff3c63434f43ebf7285b7cbc6b7f6aae4",
+    "UnrevokeApp.swift": "8d3e176cd0bdc6f7a11d6f8c51815534ec5e6cf8f00cabe05dba3adff90f7d71"
   },
   "duration_seconds": 21,
   "files": {
-    "current-guide.mp4": "0d881416b13103af5ea3c6c9e0318d9a7b2d9e6891e23ef7fc3ae462c400cc43",
-    "current-unprotected.png": "b4a7bfc0de688e39b1ef2fc5c7ecab0e0c8515a27f6b4c3f3c3519f2e9708ff8",
-    "current-protected.png": "be1253b13639c7982b94f3b38c88a738cef6a46c4e715dde4751498c5700a32a",
+    "current-guide.mp4": "47ee4af410db31a3d678aa7a75c9f514bfed23194ae4108cbe356a683712a458",
+    "current-unprotected.png": "383ccc6595031768e93d1a9d3f9788304b97a832eb33536a3f09558e10fcfd43",
+    "current-protected.png": "c2ef8fbeec9698742719fc3185150dc4213796b5b45c162dec74951363aeb1c8",
     "current-guide.vtt": "1947757cb374d9fbf5c79be8a28a345fab0d8229683c83fd579acafe8eb09a98",
-    "current-antiRevokeOnly.png": "f66c4167df23d9edd9bb1d41f432378593e8375b09776d7988a240c36e71a693"
+    "current-antiRevokeOnly.png": "d037e47cd79de581e7e41049095bdee09bcdad6d76b5319635b41f441fa3bde4"
   }
 }

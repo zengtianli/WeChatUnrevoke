@@ -29,11 +29,11 @@
 
 | 当前界面导览 | 点开就能看 |
 |---|---|
-| 未开启、完整生效、仅防撤回生效 | [播放 v1.0.9 状态导览](https://unrevoke.tianli.cyou/media/current-guide.mp4) |
+| 未开启、完整生效、仅防撤回生效 | [播放状态导览](https://unrevoke.tianli.cyou/media/current-guide.mp4) |
 
 [安装遇到拦截怎么办](https://unrevoke.tianli.cyou/#start) · [常见问题](https://unrevoke.tianli.cyou/#help)
 
-当前导览使用 v1.0.9 生产界面离屏渲染和虚构状态，不执行真实微信补丁或消息操作，不代表性能。产品页另保留 v1.0.4 与 build 269627 测试副本的历史实录，并明确标注旧版按钮差异。[历史录制与验证说明](docs/demo/README.md)。
+仓内导览使用 v1.0.11 生产主界面离屏渲染和虚构状态，不执行真实微信补丁或消息操作，不代表性能，也不演示配置与更新窗口。线上导览版本以产品页实际标注为准；产品页另保留 v1.0.4 与 build 269627 测试副本的历史实录，并明确标注旧版按钮差异。[录制与验证说明](docs/demo/README.md)。
 
 ## 把命令行留给引擎
 
@@ -61,7 +61,7 @@
 
 原生 SwiftUI 界面，无 Python 运行时；读写微信交给包内的 Swift 命令行引擎。窗口打开时每 60 秒只比对一次微信安装包里 5 个路径的文件指纹（不到 1 毫秒），微信没被更新、打补丁或还原就不启动引擎，另每 30 分钟完整检查一次兜底；关窗即停，无常驻后台服务。发布包剥离调试符号。
 
-<sub>v1.0.11 (69) · Mac16,12 / Apple M4 / macOS 27.2 · 当前装机GUI的LSUIElement隔离副本；只读本机微信体检并离屏绘制首屏，不联网、不打补丁、不写偏好。 · 2026-10-05。数字来自所列设备实测，版本更新后重新测量。内存口径为 phys_footprint；CPU 为 60 秒采样窗内 CPU 时间 ÷ 墙钟；大小按十进制 MB。原始数据见 [perf/lightweight.json](perf/lightweight.json)。</sub>
+<sub>v1.0.11 (69) · Mac16,12 / Apple M4 / macOS 27.2 · 当前装机GUI的LSUIElement隔离副本；只读本机微信体检并离屏绘制首屏，不联网、不打补丁、不写偏好。 · 2026-10-05。数字来自所列版本与设备的测量记录；当前版本与测量范围以本页说明为准。内存口径为 phys_footprint；CPU 为 60 秒采样窗内 CPU 时间 ÷ 墙钟；大小按十进制 MB。原始数据见 [perf/lightweight.json](perf/lightweight.json)。</sub>
 <!-- lightweight:end -->
 
 ## 三步开始
