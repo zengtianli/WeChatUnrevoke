@@ -1,5 +1,35 @@
 # Chapter 源码与测试交接（2026-10-08）
 
+## 2026-10-10：v35 前置收尾，登记八个历史包并保留当前发行
+
+本轮接续 `201b4d3`，固定预算 20 分钟，仅完成站点构建、发行清单、适用测试与本交接；2026-10-10 00:13（上海）校验完成。原提交保留，下面 2026-10-09 的“只带当前版本”处理已由本节修正。没有部署、push、重跑发版、变更 GitHub Release/Homebrew，也没有新公开安装包或源码；后续由 **Lintel 原 task2** 接续合并与统一发布。本轮构建/发行清单源码已完成并冻结，发布阶段使用完成后的候选，不边发布边改源码。
+
+- `scripts/build-site.py` 的显式历史白名单只含已公开的 **1.0.3–1.0.10**，SHA256/字节数以对应 GitHub Release 资产核验结果固定；当前发行仍从最新稳定 Release 校验，唯一当前版本为 **1.0.11 (54)**。保留每次清空 `dist/site` 的干净构建，只复制这 8 个历史 ZIP 与当前 ZIP；不 glob 纳入 `dist/` 残留，不依赖旧站点目录。
+- `dist/site/release.json assets` 登记 9 包各自的版本、文件名、下载路径、真实 SHA256/字节数、Release 来源与 `current`；仅 1.0.11 标记当前。顶层 `version/build/download/sha256` 仍只描述当前发行。`downloads/SHA256SUMS.txt` 同步列全 9 包；生成 `site-manifest.json` 前校验 ZIP 集合和登记恰好一致，历史摘要/大小必须匹配固定白名单，拒绝漏登记、重复、额外包、缺包及篡改（即使文件与资产清单摘要同时被改也会拒绝）。
+- `tests/test_build_contract.py` 修复共享渲染器新增“安装后占用 未测”的三项失配：当前区有 installed/memory/cpu/speed 四个未测项，当前展开字节数与旧版安装实测数字继续分开；Chapter 分区读到当前未测与历史实测，全页 `numbers_on_page` 仍无混写问题。
+- 新增 `tests/test_site_release_assets.py`：10 项临时 ZIP 回归，无联网、大包下载或真实微信操作，覆盖正常清单/manifest SHA+bytes、未登记 ZIP、漏登记历史、历史/当前文件篡改、文件与历史清单同步伪造、缺历史 ZIP、重复登记、当前资产与顶层失配、历史误标当前。
+- 在 **Mac mini** 按文件并行执行全部 6 个 Python 测试文件：`test_build_contract.py` 18、`test_functionality_runner.py` 2、`test_publish_engine.py` 4、`test_publish_preflight.py` 2、`test_release_manifest.py` 1、`test_site_release_assets.py` 10，**共 37 项全部通过**。本轮没有 App/Swift 源码改动，未重编或重跑真实微信写入验收；`git diff --check` 通过。
+- `python3 scripts/build-site.py` 退出 0。向旧输出注入 `partial.contract-test` 与未登记 ZIP 后再走同一入口，两项残留均被清除；最终目录只有批准的 9 个 ZIP。全部 **29 个公开文件 + site-manifest.json** 实际回读，29 个文件 SHA256/bytes 与 manifest 一致，9 包同时匹配 `release.json assets` 和 `SHA256SUMS.txt`。
+- 最终 `lintel site check --site unrevoke --out /Users/tianli/Apps/unrevoke/dist/site --json`：退出 0，`ok=true/ready=true`，`issues=[]/warnings=[]`。这次仅静态检查，`visual_verified=false/playback_verified=false`，视觉/播放与统一发布仍交原 task2；没有运行 `lintel site ship` 或 `deploy-site.sh`。
+- 交付目录：`/Users/tianli/Apps/unrevoke/dist/site`（生成物不入 Git）。最终 `release.json` SHA256：`bbd399242bf2f9207e9392a954ad18a3b9d3faedf93fc60eedaca2165fecbd17`；`site-manifest.json` SHA256：`783319d2146cf3ecfd8f1d8bbc35bbd5ccf7a29bcaa6510cb4d969e21dc416c7`。
+- 写前逐路径使用 Chapter 原 `--pid 19232 --session chapter-task:e49443ddfc434986b708d77c60a66630` claims check，通过；子 agent 复用同一身份，没有新增或释放声明。限定提交 `scripts/build-site.py`、`tests/test_build_contract.py`、`tests/test_site_release_assets.py`、`handoffs/current.md`，其余路径不纳入提交。
+
+### 九包 SHA256 证据
+
+2026-10-10 00:10:19（上海）以官方 `gh api repos/zengtianli/WeChatUnrevoke/releases/tags/v<版本>` 现场核验：下列本地 `dist/WeChatUnrevoke-<版本>.zip` 的 SHA256、bytes 均与同名 GitHub 资产的 `digest/size` 一致；9 个 Release 均 `draft=false/prerelease=false`，仓库 public。本轮未重新下载远端 ZIP；证据范围是官方资产摘要/大小与本地文件一致，随后又校验站点复制文件。资产下载地址统一为 `https://github.com/zengtianli/WeChatUnrevoke/releases/download/v<版本>/WeChatUnrevoke-<版本>.zip`。
+
+| Release | bytes | SHA256 | GitHub asset ID |
+| --- | ---: | --- | ---: |
+| [1.0.3](https://github.com/zengtianli/WeChatUnrevoke/releases/tag/v1.0.3) | 2759288 | `ffa9a0aba790fc9f13eee5f6d899225b1353e9484dd9246b0dacfa9d6a5bfac6` | 554436968 |
+| [1.0.4](https://github.com/zengtianli/WeChatUnrevoke/releases/tag/v1.0.4) | 2760244 | `ca508683522418171f718ff6d9e8a3b6c454ab4821a0a4e77570e2097b7c5f8f` | 554537155 |
+| [1.0.5](https://github.com/zengtianli/WeChatUnrevoke/releases/tag/v1.0.5) | 2798239 | `fd3c4ae4da5c022e234a5e9b34fa7a1183bc4e4453db187e2d4165e183df2921` | 570567742 |
+| [1.0.6](https://github.com/zengtianli/WeChatUnrevoke/releases/tag/v1.0.6) | 2806701 | `05b66067822cc7f3631eb32ddb6a3bbeacab76468f65f9ced24144190749a1ee` | 585402999 |
+| [1.0.7](https://github.com/zengtianli/WeChatUnrevoke/releases/tag/v1.0.7) | 2816468 | `531af8e88f8e5afcf2b145e08888ec986b8a4b057f9ff8c8d2d807d533473e53` | 585453386 |
+| [1.0.8](https://github.com/zengtianli/WeChatUnrevoke/releases/tag/v1.0.8) | 2817589 | `d8308bbce97a7c52893d6518ddb3ded6b51c8434dd0a063a337fe10ff5bfb1c8` | 586517567 |
+| [1.0.9](https://github.com/zengtianli/WeChatUnrevoke/releases/tag/v1.0.9) | 2392417 | `6a1774c06efa832c70bb8e7feb8ef4c7a752096170829b1ebdeb3a3d77ed1f47` | 589701260 |
+| [1.0.10](https://github.com/zengtianli/WeChatUnrevoke/releases/tag/v1.0.10) | 2449790 | `25d1a22fe526dda96635d15707fbc1eeec41ed3d76c89dc94503e4bbed1e8b56` | 594603693 |
+| [1.0.11 当前](https://github.com/zengtianli/WeChatUnrevoke/releases/tag/v1.0.11) | 2670275 | `f3d0a9a2de3a2f91cc40edeaff59a4815cd871a920aaa3b425a27b710e7a20db` | 608339924 |
+
 ## 2026-10-09：发布入口改经 Lintel 上线，站点只带当前版本
 
 本轮只改源码、说明和测试，本机提交；没有发版、推送或部署。

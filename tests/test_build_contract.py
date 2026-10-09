@@ -115,7 +115,9 @@ class SiteResourceContractTests(unittest.TestCase):
         self.assertIn("当前 v99.0.0：运行性能待测", current)
         self.assertIn("<strong>9.0</strong>", current)
         self.assertIn("15 MB", current)
-        self.assertEqual(current.count("<strong>未测</strong>"), 3)
+        self.assertEqual(current.count("<strong>未测</strong>"), 4)
+        for metric in ("installed", "memory", "cpu", "speed"):
+            self.assertIn(f"data-perf-metric='{metric}'><strong>未测</strong>", current)
         self.assertNotIn("<strong>33.6</strong>", current)
         self.assertIn(f"历史实测 · v{data['version']}，{data['measured_at']}", historical)
         self.assertIn("历史实测记录，不代表当前发行版", historical)
@@ -130,7 +132,9 @@ class SiteResourceContractTests(unittest.TestCase):
         self.assertIn("<h3>当前发行 ZIP</h3>", current)
         self.assertIn("包内展开文件合计 <span data-release-metric='unpacked-file-size'>4.402604 MB</span>", current)
         self.assertIn("4,402,604 字节，不含文件系统分配开销", current)
-        self.assertNotIn("data-perf-metric='installed'", current)
+        self.assertIn("data-perf-metric='installed'><strong>未测</strong>", current)
+        self.assertIn("尚无本版本的安装后体积实测。", current)
+        self.assertNotIn(f"{installed} MB", current)
         self.assertNotIn("装好后", current)
         self.assertIn(f"历史实测 · v{data['version']}，{data['measured_at']}", historical)
         self.assertIn(f"装好后 <span data-perf-metric='installed'>{installed} MB</span>", historical)
@@ -146,7 +150,9 @@ class SiteResourceContractTests(unittest.TestCase):
         raw = json.loads((self.root / "perf/lightweight.json").read_text())
         html = self.site.lightweight_section("99.0.1", 2_449_790, 4_402_604)
         installed = f"{raw['size']['installed_bytes'] / 1_000_000:.6f}".rstrip("0").rstrip(".")
-        self.assertEqual(sop.measured_fields(raw, html)["安装后占用"], [installed + " MB"])
+        current, historical = html.split("id='historical-performance'", 1)
+        self.assertEqual([value.strip() for value in sop.measured_fields(raw, current)["安装后占用"]], ["未测"])
+        self.assertEqual(sop.measured_fields(raw, historical)["安装后占用"], [installed + " MB"])
         self.assertEqual(sop.numbers_on_page(raw, html), [])
 
     def test_bilingual_readmes_identify_measured_version(self):

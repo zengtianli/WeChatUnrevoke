@@ -20,6 +20,61 @@ import perf_block
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "dist/site"
 REPO = "zengtianli/WeChatUnrevoke"
+# Already-public site download URLs must survive rsync --delete. These eight
+# archives were checked against GitHub Release asset digests and sizes; never
+# discover public packages by globbing dist/ or copying an old site directory.
+HISTORICAL_RELEASES = (
+    {"version": "1.0.3", "download_bytes": 2759288, "sha256": "ffa9a0aba790fc9f13eee5f6d899225b1353e9484dd9246b0dacfa9d6a5bfac6"},
+    {"version": "1.0.4", "download_bytes": 2760244, "sha256": "ca508683522418171f718ff6d9e8a3b6c454ab4821a0a4e77570e2097b7c5f8f"},
+    {"version": "1.0.5", "download_bytes": 2798239, "sha256": "fd3c4ae4da5c022e234a5e9b34fa7a1183bc4e4453db187e2d4165e183df2921"},
+    {"version": "1.0.6", "download_bytes": 2806701, "sha256": "05b66067822cc7f3631eb32ddb6a3bbeacab76468f65f9ced24144190749a1ee"},
+    {"version": "1.0.7", "download_bytes": 2816468, "sha256": "531af8e88f8e5afcf2b145e08888ec986b8a4b057f9ff8c8d2d807d533473e53"},
+    {"version": "1.0.8", "download_bytes": 2817589, "sha256": "d8308bbce97a7c52893d6518ddb3ded6b51c8434dd0a063a337fe10ff5bfb1c8"},
+    {"version": "1.0.9", "download_bytes": 2392417, "sha256": "6a1774c06efa832c70bb8e7feb8ef4c7a752096170829b1ebdeb3a3d77ed1f47"},
+    {"version": "1.0.10", "download_bytes": 2449790, "sha256": "25d1a22fe526dda96635d15707fbc1eeec41ed3d76c89dc94503e4bbed1e8b56"},
+)
+
+
+def release_asset_records(version, sha256, download_bytes):
+    """Register the pinned historical downloads and exactly one current release."""
+    if version in {item["version"] for item in HISTORICAL_RELEASES}:
+        raise SystemExit("Current release cannot also be a historical download")
+    records = []
+    for item in (*HISTORICAL_RELEASES,
+                 {"version": version, "sha256": sha256, "download_bytes": download_bytes}):
+        filename = f"WeChatUnrevoke-{item['version']}.zip"
+        records.append({**item, "filename": filename, "download": f"downloads/{filename}",
+                        "current": item["version"] == version,
+                        "source": f"https://github.com/{REPO}/releases/tag/v{item['version']}"})
+    return records
+
+
+def verify_release_assets(out, release):
+    """Refuse missing, unregistered or altered packages before sealing the site."""
+    expected = release_asset_records(release["version"], release["sha256"], release["download_bytes"])
+    expected_by_path = {item["download"]: item for item in expected}
+    current = next(item for item in expected if item["current"])
+    if release.get("download") != current["download"]:
+        raise SystemExit("Current release download path mismatch")
+    registered = release.get("assets", [])
+    if not isinstance(registered, list) or len(registered) != len(expected):
+        raise SystemExit("Release assets must register every approved archive exactly once")
+    by_path = {item.get("download"): item for item in registered if isinstance(item, dict)}
+    if len(by_path) != len(registered) or by_path.keys() != expected_by_path.keys():
+        raise SystemExit("Release assets contain missing, duplicate or unapproved archives")
+    actual_paths = {p.relative_to(out).as_posix() for p in out.rglob("*")
+                    if p.suffix.lower() == ".zip" and (p.is_file() or p.is_symlink())}
+    if actual_paths != expected_by_path.keys():
+        raise SystemExit("Site ZIP files differ from registered release assets")
+    for relative, approved in expected_by_path.items():
+        item = by_path[relative]
+        if any(item.get(field) != approved[field] for field in approved):
+            raise SystemExit("Release asset differs from approved record: " + relative)
+        path = out / relative
+        if path.is_symlink() or path.stat().st_size != approved["download_bytes"]:
+            raise SystemExit("Release archive size or file type mismatch: " + relative)
+        if hashlib.sha256(path.read_bytes()).hexdigest() != approved["sha256"]:
+            raise SystemExit("Release archive checksum mismatch: " + relative)
 
 
 def release_version(label):
@@ -107,6 +162,8 @@ def lightweight_section(version, download_bytes, installed_bytes, release_build=
 
 def write_site_manifest(out, version, build):
     """Enumerate every public file with its SHA256; the portal publishes only what is listed here."""
+    if (out / "release.json").is_file():
+        verify_release_assets(out, json.loads((out / "release.json").read_text()))
     manifest = out / "site-manifest.json"
     manifest.unlink(missing_ok=True)
     for junk in out.rglob(".DS_Store"):
@@ -168,8 +225,17 @@ def main():
         if reuse.get('source_sha256') != sources:
             raise SystemExit('Historical guide review is stale for the current UI sources')
 
-    # Start empty: the site carries this release only. Earlier ZIPs stay on GitHub Releases, where
-    # their digests are recorded; anything a previous build left here would be published again unlisted.
+    assets = release_asset_records(version, expected, download_bytes)
+    # Check all explicit inputs before replacing the previous build. A corrupt
+    # historical archive must never be repaired by trusting an old site copy.
+    for item in assets:
+        path = ROOT / "dist" / item["filename"]
+        if path.is_symlink() or not path.is_file():
+            raise SystemExit("Approved release archive is missing or not a regular file: " + item["filename"])
+        if path.stat().st_size != item["download_bytes"] or hashlib.sha256(path.read_bytes()).hexdigest() != item["sha256"]:
+            raise SystemExit("Approved release archive checksum/size mismatch: " + item["filename"])
+    # Start empty, then copy only verified inputs. Preserve public historical
+    # addresses without carrying arbitrary build remnants into the manifest.
     if OUT.exists():
         shutil.rmtree(OUT)
     OUT.mkdir(parents=True)
@@ -213,12 +279,14 @@ def main():
             shutil.copy2(ROOT / f"docs/demo/{clip}.{suffix}", OUT / f"media/{clip}.{suffix}")
         shutil.copy2(ROOT / f"docs/demo/{clip}.png", OUT / f"assets/{clip}.png")
     shutil.copy2(ROOT / "docs/demo/tutorial.mp4", OUT / "media/tutorial.mp4")
-    shutil.copy2(archive, OUT / "downloads" / name)
-    (OUT / "downloads/SHA256SUMS.txt").write_text(f"{expected}  {name}\n")
+    for item in assets:
+        shutil.copy2(ROOT / "dist" / item["filename"], OUT / item["download"])
+    (OUT / "downloads/SHA256SUMS.txt").write_text("".join(
+        f"{item['sha256']}  {item['filename']}\n" for item in assets))
     (OUT / "release.json").write_text(json.dumps({"version": version, "build": info['CFBundleVersion'],
         "source_commit": source_commit, "executable_sha256": executable_sha256, "sha256": expected,
         "download_bytes": download_bytes, "installed_file_bytes": installed_bytes,
-        "download": f"downloads/{name}", "source": release["html_url"]}, indent=2) + "\n")
+        "download": f"downloads/{name}", "source": release["html_url"], "assets": assets}, indent=2) + "\n")
     (OUT / "robots.txt").write_text("User-agent: *\nAllow: /\nSitemap: https://unrevoke.tianli.cyou/sitemap.xml\n")
     (OUT / "sitemap.xml").write_text('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://unrevoke.tianli.cyou/</loc></url></urlset>\n')
     # Portal/Chapter read published numbers from facts.json. It must follow the release.json
