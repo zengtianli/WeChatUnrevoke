@@ -12,6 +12,8 @@
 
 ## Leave the commands to the engine
 
+For feedback and patch release notes, include WeChat's full version, build and installation channel; identify original installers by SHA256. See [WeChat versions and installer checksums](docs/wechat-versions.md#english) for the fields and read-only helper.
+
 **[Visit the product website](https://unrevoke.tianli.cyou/)** for direct downloads, illustrated installation instructions and playable tutorials. No GitHub account is needed to download or use the app. The website and video captions are in Chinese; English instructions follow below.
 
 Real recordings: [Enable anti-recall](https://unrevoke.tianli.cyou/media/enable.mp4) · [Check and restore](https://unrevoke.tianli.cyou/media/restore.mp4) · [Complete tutorial](https://unrevoke.tianli.cyou/media/tutorial.mp4). Recorded with v1.0.4 and a WeChat build 269627 test copy. Independent scenes and shortened waits are labeled. See [recording notes](docs/demo/README.md).
