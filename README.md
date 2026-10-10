@@ -37,6 +37,8 @@
 
 ## 把命令行留给引擎
 
+反馈与适配记录请带上微信的完整版本、build 和安装渠道；原版安装包可按 SHA256 校验。字段对应与只读提取方法见 [微信版本与安装包校验](docs/wechat-versions.md)。
+
 不用手动查构建号，也不用记住补丁命令。WeChatUnrevoke 读取你的微信状态，告诉你能做什么，再把操作交给内嵌的 [WeChatTweak 引擎](https://github.com/zengtianli/WeChatTweak)。适合希望保留聊天消息、又想用图形界面检查和管理补丁的 Mac 用户。
 
 | 你想做的事 | 应用怎么帮你 |
