@@ -18,7 +18,7 @@ For feedback and patch release notes, include WeChat's full version, build and i
 
 Real recordings: [Enable anti-recall](https://unrevoke.tianli.cyou/media/enable.mp4) · [Check and restore](https://unrevoke.tianli.cyou/media/restore.mp4) · [Complete tutorial](https://unrevoke.tianli.cyou/media/tutorial.mp4). Recorded with v1.0.4 and a WeChat build 269627 test copy. Independent scenes and shortened waits are labeled. See [recording notes](docs/demo/README.md).
 
-The [status guide](https://unrevoke.tianli.cyou/media/current-guide.mp4) shows the three protection states. The repository's guide renders the v1.0.11 production main view offscreen with fictional states; it does not patch WeChat, manipulate messages, measure performance or demonstrate the configuration and update window. The website labels the version of its deployed guide.
+The [status guide](https://unrevoke.tianli.cyou/media/current-guide.mp4) shows the three protection states. The repository's guide renders the v1.0.12 production main view offscreen with fictional states; it does not patch WeChat, manipulate messages, measure performance or demonstrate the configuration and update window. The website labels the version of its deployed guide.
 
 WeChatUnrevoke reads your WeChat build and lets you manage patches through a native interface. The embedded [WeChatTweak engine](https://github.com/zengtianli/WeChatTweak) performs the work and determines protection status.
 
@@ -32,7 +32,7 @@ WeChatUnrevoke reads your WeChat build and lets you manage patches through a nat
 
 **No activation codes, no need to disable SIP, no kernel extension or persistent root helper.** Native SwiftUI with an embedded Swift CLI; no Python runtime. Patch configuration can update online; engine and interface changes still require app updates.
 
-The resource measurements below are for local acceptance build 1.0.11 (69); the public download remains 1.0.11 (54). They use an isolated copy of the installed GUI, with read-only WeChat checks and offscreen rendering. The version, device and date appear under the table. The download page reads package and unpacked sizes from the SHA256-verified release ZIP; original measurements stay in `perf/lightweight.json`.
+The current public download is v1.0.12; its memory, CPU and launch time are not yet measured. Historical measurements for v1.0.11 (69) follow and do not describe v1.0.12. They used an isolated copy of the installed GUI, with read-only WeChat checks and offscreen rendering. The version, device and date appear under the table. The download page reads package and unpacked sizes from the SHA256-verified release ZIP; original measurements stay in `perf/lightweight.json`.
 
 <!-- lightweight:start -->
 ## Resource use
