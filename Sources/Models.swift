@@ -41,6 +41,8 @@ struct DoctorStatus: Decodable, Equatable {
     let archSupported: Bool
     /// 引擎从文件系统读到的写入障碍（needsAdmin / immutable / aclDeny / readOnlyVolume）。
     let writeBlockers: [String]
+    /// 这个 build 在本机架构上有补丁点的防撤回方式；旧引擎不提供时为 nil（两种都照常提供）。
+    let availableVariants: [String]?
     let appPath: String
     let configKnown: Bool
     let configTargets: [String]
@@ -62,7 +64,7 @@ struct DoctorStatus: Decodable, Equatable {
 
     private enum CodingKeys: String, CodingKey {
         case overall, build, fullVersion, shortVersion, installChannel
-        case hostArch, archSupported, writeBlockers
+        case hostArch, archSupported, writeBlockers, availableVariants
         case appPath, configKnown, configTargets, sip, running, writable
         case signature, entitlementsOk, entitlementKeyCount
         case antiRevokeSilent, antiRevokeKeeptip, updateBlock, updateSource, verdict, nextCommand
@@ -78,6 +80,7 @@ struct DoctorStatus: Decodable, Equatable {
         hostArch = try c.decodeIfPresent(String.self, forKey: .hostArch)
         archSupported = try c.decodeIfPresent(Bool.self, forKey: .archSupported) ?? true
         writeBlockers = try c.decodeIfPresent([String].self, forKey: .writeBlockers) ?? []
+        availableVariants = try c.decodeIfPresent([String].self, forKey: .availableVariants)
         appPath = try c.decode(String.self, forKey: .appPath)
         configKnown = try c.decode(Bool.self, forKey: .configKnown)
         configTargets = try c.decodeIfPresent([String].self, forKey: .configTargets) ?? []
@@ -103,6 +106,12 @@ struct DoctorStatus: Decodable, Equatable {
         if antiRevokeSilent == "patched" { return .silent }
         if antiRevokeKeeptip == "patched" { return .keeptip }
         return nil
+    }
+
+    /// 引擎说这台 Mac 上只有一种防撤回方式可用时，就是那一种；否则 nil（由用户选）。
+    var onlyVariant: PatchVariant? {
+        guard let list = availableVariants, list.count == 1 else { return nil }
+        return PatchVariant(rawValue: list[0])
     }
 
     /// 打补丁需要提权（4.1.13 之前的包是 root 所有）。
@@ -261,6 +270,9 @@ enum L {
 
     // 变体
     static var variant_title: String { t("防撤回方式", "Anti-recall style") }
+    static func variant_onlyNote(_ arch: String) -> String { t(
+        "这个微信版本在本机的处理器架构（\(arch)）上只有这一种方式可用。",
+        "On this Mac's processor architecture (\(arch)), this WeChat build offers this style only.") }
     static var variant_keeptip: String { t("保留提示（推荐）", "Keep the tip (recommended)") }
     static var variant_keeptipNote: String { t(
         "消息留着，私聊里仍然显示「对方撤回了一条消息」——你知道对方撤了什么，也知道对方撤过。群聊目前只保留消息、不出提示。",

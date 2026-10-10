@@ -207,7 +207,7 @@ final class AppModel: ObservableObject {
         if !fresh.needsAdmin && !fresh.running && fresh.configKnown {
             let succeeded = await write(action: "automaticPatch", message: L.flow_resigning) { current in
                 guard !current.needsAdmin else { throw EngineError.launchFailed(L.det_admin) }
-                return try await self.engine.patch(variant: self.variant, admin: false)
+                return try await self.engine.patch(variant: current.onlyVariant ?? self.variant, admin: false)
             }
             if succeeded && (status?.overall == .protected || status?.overall == .antiRevokeOnly) {
                 notify(L.notif_repatched(fresh.build ?? "?"))
@@ -237,7 +237,7 @@ final class AppModel: ObservableObject {
         }
         let shouldReopen = current.running
         let succeeded = await write(action: "patch", message: L.flow_resigning) { fresh in
-            try await self.engine.patch(variant: self.variant, admin: fresh.needsAdmin)
+            try await self.engine.patch(variant: fresh.onlyVariant ?? self.variant, admin: fresh.needsAdmin)
         }
         if succeeded && (status?.overall == .protected || status?.overall == .antiRevokeOnly) {
             defaults.set(true, forKey: Keys.everProtected)

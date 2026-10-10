@@ -180,13 +180,21 @@ struct ContentView: View {
     private var variantPicker: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(L.variant_title).font(.headline)
-            Picker("", selection: $model.variant) {
-                Text(L.variant_keeptip).tag(PatchVariant.keeptip)
-                Text(L.variant_silent).tag(PatchVariant.silent)
+            if let only = model.status?.onlyVariant {
+                // The engine has patch points for one style only on this architecture: show it, offer no choice.
+                Text(only == .keeptip ? L.variant_keeptip : L.variant_silent).font(.callout.weight(.medium))
+                Text((only == .keeptip ? L.variant_keeptipNote : L.variant_silentNote) + " "
+                     + L.variant_onlyNote(model.status?.hostArch ?? "?"))
+                    .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            } else {
+                Picker("", selection: $model.variant) {
+                    Text(L.variant_keeptip).tag(PatchVariant.keeptip)
+                    Text(L.variant_silent).tag(PatchVariant.silent)
+                }
+                .pickerStyle(.segmented).labelsHidden()
+                Text(model.variant == .keeptip ? L.variant_keeptipNote : L.variant_silentNote)
+                    .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
-            .pickerStyle(.segmented).labelsHidden()
-            Text(model.variant == .keeptip ? L.variant_keeptipNote : L.variant_silentNote)
-                .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
         }
     }
 

@@ -44,6 +44,7 @@ struct WriteFailureTests {
         let legacy = try decoder.decode(DoctorStatus.self, from: Data(contentsOf: fixture))
         precondition(legacy.fullVersion == nil && legacy.shortVersion == nil && legacy.installChannel == nil)
         precondition(legacy.hostArch == nil && legacy.archSupported && legacy.writeBlockers.isEmpty)
+        precondition(legacy.availableVariants == nil && legacy.onlyVariant == nil)
         var reported = try JSONSerialization.jsonObject(with: Data(contentsOf: fixture)) as! [String: Any]
         reported["build"] = "269602"
         reported["full_version"] = "4.1.13.11"
@@ -63,6 +64,12 @@ struct WriteFailureTests {
         reported["arch_supported"] = false
         reported["write_blockers"] = ["needsAdmin", "immutable"]
         let diagnosed = try decoder.decode(DoctorStatus.self, from: JSONSerialization.data(withJSONObject: reported))
+        reported["available_variants"] = ["keeptip"]
+        let intel = try decoder.decode(DoctorStatus.self, from: JSONSerialization.data(withJSONObject: reported))
+        precondition(intel.onlyVariant == .keeptip)
+        reported["available_variants"] = ["keeptip", "silent"]
+        let both = try decoder.decode(DoctorStatus.self, from: JSONSerialization.data(withJSONObject: reported))
+        precondition(both.onlyVariant == nil)
         precondition(diagnosed.hostArch == "x86_64" && !diagnosed.archSupported
                      && diagnosed.writeBlockers == ["needsAdmin", "immutable"])
         let locked = EngineError.writeFailure(code: 1, output: """
