@@ -46,7 +46,7 @@
 <section id="help" class="section wrap faq"><div class="section-title"><p class="eyebrow">卡住了？找对应的情况</p><h2>把问题说清楚，<br>也把下一步写清楚。</h2></div><div class="faq-list">
 <details><summary>提示拦不住自动更新（XAppUpdateManager not found）怎么办？</summary><p>不用处理，防撤回照常开启。防撤回与拦截自动更新是两个独立功能：App Store 版微信由 App Store 负责更新，没有可拦截的内置更新器，想保住补丁请在 App Store 设置里关闭自动更新；其他版本的更新器暂未收录时，微信更新后按应用提醒重新开启。1.0.6 及更早版本会在这一步整体失败，请更新到最新版。</p></details>
 <details><summary>应用说微信还在运行，但我已经关掉窗口了。</summary><p>点击屏幕顶部微信菜单，选择「退出微信」，或在微信里按 <kbd>⌘Q</kbd>。回到 WeChatUnrevoke 点「重新检查」。关闭聊天窗口不等于退出微信。</p></details>
-<details><summary>我的 Mac／微信版本支持吗？</summary><p>需要 macOS 15 或更新版本，安装包同时支持 Apple Silicon 和 Intel。微信补丁按具体构建号和架构适配，由应用自动检查。应用能运行，不代表每个微信版本都支持；看到「还没收录」时请等待适配，不要反复强行开启。</p><p>查询 macOS 版本：点屏幕左上角  →「关于本机」。</p></details>
+<details><summary>我的 Mac／微信版本支持吗？</summary><p>需要 macOS 13 或更新版本（1.0.11 及更早为 macOS 15），安装包同时支持 Apple Silicon 和 Intel。微信补丁按具体构建号和架构适配，由应用自动检查。应用能运行，不代表每个微信版本都支持；看到「还没收录」时请等待适配，不要反复强行开启。</p><p>查询 macOS 版本：点屏幕左上角  →「关于本机」。</p></details>
 <details><summary>微信更新以后，还需要做什么？</summary><p>再打开本应用检查一次。自动重打只有在曾完整保护成功、不需要密码、微信已退出等条件满足时才执行；其余情况只提醒。仅防撤回模式不会阻止自动更新。</p></details>
 <details><summary>群聊会显示「对方撤回了一条消息」吗？</summary><p>目前群聊只保留消息，不显示撤回提示。私聊的「保留提示」模式会保留提示，但位置不保证紧贴原消息。「静默」模式则不显示提示。</p></details>
 <details><summary>怎样撤销？会上传我的聊天记录吗？</summary><p>在应用右下角点「还原微信」，确认后等待完成。还原会撤销补丁，不是帮你找回过去被撤回的消息。工具不读取或上传聊天内容；联网用于获取 GitHub 上的补丁配置。</p></details>

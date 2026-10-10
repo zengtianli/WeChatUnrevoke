@@ -24,6 +24,7 @@ DEFAULT_ENGINE = ROOT.parent / "vendor" / "WeChatTweak"
 # scripts/deploy-site.sh and reads the public address back. Its plan and evidence stay outside the repo.
 LINTEL = (Path.home() / "Dev/.venv/bin/python", Path.home() / "Apps/lintel/engine/lintel.py")
 SITE_WORK = Path.home() / "Library/Caches/unrevoke-site-ship"
+MACOS_NAMES = {"13": "ventura", "14": "sonoma", "15": "sequoia", "26": "tahoe"}
 
 
 def run(*args, capture=False, input=None):
@@ -100,6 +101,14 @@ def main():
     cask_text, versions = re.subn(r'^  version "[^"]+"$', f'  version "{version}"', cask_text, flags=re.M)
     cask_text, hashes = re.subn(r'^  sha256 "[^"]+"$', f'  sha256 "{digest}"', cask_text, flags=re.M)
     if (versions, hashes) != (1, 1):
+        raise SystemExit("Unexpected cask layout; refusing an ambiguous update")
+    # The cask's minimum system follows the app's own LSMinimumSystemVersion. A bare symbol
+    # would pin the cask to exactly that release; ">=" is what "this version and later" needs.
+    macos = MACOS_NAMES.get(str(info.get("LSMinimumSystemVersion", "")).split(".")[0])
+    if not macos:
+        raise SystemExit("Info.plist LSMinimumSystemVersion has no known Homebrew macOS name")
+    cask_text, systems = re.subn(r'^  depends_on macos: .*$', f'  depends_on macos: ">= :{macos}"', cask_text, flags=re.M)
+    if systems != 1:
         raise SystemExit("Unexpected cask layout; refusing an ambiguous update")
     cask_text = cask_text.replace('/Unrevoke-#{version}.zip', f'/{name}-#{{version}}.zip')
     cask_text = re.sub(r'(?<!WeChat)Unrevoke\.app', f'{name}.app', cask_text)

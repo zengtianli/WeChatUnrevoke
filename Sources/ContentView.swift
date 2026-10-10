@@ -144,8 +144,11 @@ struct ContentView: View {
         case .unprotected:
             return Look(symbol: "shield", tint: .accentColor, title: L.st_unprotected, subtitle: L.st_unprotectedSub)
         case .unsupportedBuild:
-            return Look(symbol: "questionmark.circle", tint: .orange, title: L.st_unsupported,
-                        subtitle: L.st_unsupportedSub(model.status?.build ?? "?"))
+            let build = model.status?.build ?? "?"
+            let sub = model.status?.archSupported == false
+                ? L.st_unsupportedArchSub(build, model.status?.hostArch ?? "?")
+                : L.st_unsupportedSub(build)
+            return Look(symbol: "questionmark.circle", tint: .orange, title: L.st_unsupported, subtitle: sub)
         case .brokenBundle:
             return Look(symbol: "xmark.octagon.fill", tint: .red, title: L.st_broken, subtitle: L.st_brokenSub)
         case .mixed:
@@ -229,6 +232,8 @@ struct ContentView: View {
             (L.det_build, s.fullVersion ?? s.shortVersion ?? s.build ?? "?"),
             ("Build", s.build ?? "?"),
             (L.det_channel, s.installChannel ?? L.det_unknown),
+            (L.det_arch, s.hostArch ?? L.det_unknown),
+            (L.det_writeAccess, s.writeBlockers.isEmpty ? L.det_none : s.writeBlockers.map(L.blockerName).joined(separator: "、")),
             (L.det_antiRevoke, revoke),
             (L.det_updateBlock, patchState(s.updateBlock)),
             (L.det_entitlements, s.entitlementsOK ? "\(L.det_intact) (\(s.entitlementKeyCount))" : L.det_lost),

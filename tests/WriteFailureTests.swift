@@ -43,6 +43,7 @@ struct WriteFailureTests {
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         let legacy = try decoder.decode(DoctorStatus.self, from: Data(contentsOf: fixture))
         precondition(legacy.fullVersion == nil && legacy.shortVersion == nil && legacy.installChannel == nil)
+        precondition(legacy.hostArch == nil && legacy.archSupported && legacy.writeBlockers.isEmpty)
         var reported = try JSONSerialization.jsonObject(with: Data(contentsOf: fixture)) as! [String: Any]
         reported["build"] = "269602"
         reported["full_version"] = "4.1.13.11"
@@ -57,6 +58,25 @@ struct WriteFailureTests {
         let reportedError = EngineError.writeFailure(code: 1, output:
             "Anti-revoke: NOT applied — You don’t have permission to save the file “wechat.dylib” in the folder “Resources”.")
         precondition(reportedError.localizedDescription == L.err_writePermissionDenied)
+        // A newer engine names the cause itself; the GUI shows that cause's fix and no other.
+        reported["host_arch"] = "x86_64"
+        reported["arch_supported"] = false
+        reported["write_blockers"] = ["needsAdmin", "immutable"]
+        let diagnosed = try decoder.decode(DoctorStatus.self, from: JSONSerialization.data(withJSONObject: reported))
+        precondition(diagnosed.hostArch == "x86_64" && !diagnosed.archSupported
+                     && diagnosed.writeBlockers == ["needsAdmin", "immutable"])
+        let locked = EngineError.writeFailure(code: 1, output: """
+            Anti-revoke: NOT applied — You don’t have permission to save the file “wechat.dylib” in the folder “Resources”.
+            Write blocked: immutable
+              Locked (immutable flag) on: /Applications/WeChat.app/Contents/Resources/wechat.dylib.
+            """)
+        guard case .writeBlocked(let codes, _) = locked, codes == ["immutable"] else { preconditionFailure("\(locked)") }
+        precondition(locked.localizedDescription == L.err_writeBlocked(["immutable"]))
+        precondition(!locked.localizedDescription.contains("App Management") && !locked.localizedDescription.contains("App 管理"))
+        precondition(locked.diagnosticOutput.contains("Write blocked: immutable"))
+        let tcc = EngineError.writeFailure(code: 1, output: "Write blocked: appManagement\n  Owner, permission bits ...")
+        precondition(tcc.localizedDescription == L.err_writeBlocked(["appManagement"]))
+        print("PASS: engine-named write blockers map to their own fix; arch/blocker fields decode with legacy fallback")
         print("PASS: optional version/channel fields decode; older engines fall back; App Store write access stays separate from entitlements")
         try engine("echo 'update locator failed for 269136' >&2; exit 42")
         // Short-lived processes and concurrent exits must complete without a

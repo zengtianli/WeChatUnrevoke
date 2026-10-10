@@ -346,6 +346,8 @@ final class AppModel: ObservableObject {
         full version   : \(s.fullVersion ?? "unknown")
         short version  : \(s.shortVersion ?? "unknown")
         install channel: \(s.installChannel ?? "unknown")
+        host arch      : \(s.hostArch ?? "unknown")  arch supported: \(s.archSupported)
+        write blockers : \(s.writeBlockers.isEmpty ? "none" : s.writeBlockers.joined(separator: ", "))
         config known   : \(s.configKnown)  targets: \(s.configTargets.joined(separator: ", "))
         sip            : \(s.sip)
         running        : \(s.running)

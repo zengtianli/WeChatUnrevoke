@@ -34,6 +34,13 @@ struct DoctorStatus: Decodable, Equatable {
     let fullVersion: String?
     let shortVersion: String?
     let installChannel: String?
+    /// 微信在这台 Mac 上实际执行的架构（"arm64" / "x86_64"）；旧引擎不提供时为 nil。
+    let hostArch: String?
+    /// false → 补丁库认识这个 build，但没有本机架构的防撤回补丁点。判决仍是引擎的
+    /// `overall`（此时为 unsupportedBuild），这个字段只用来把原因说清楚。
+    let archSupported: Bool
+    /// 引擎从文件系统读到的写入障碍（needsAdmin / immutable / aclDeny / readOnlyVolume）。
+    let writeBlockers: [String]
     let appPath: String
     let configKnown: Bool
     let configTargets: [String]
@@ -55,6 +62,7 @@ struct DoctorStatus: Decodable, Equatable {
 
     private enum CodingKeys: String, CodingKey {
         case overall, build, fullVersion, shortVersion, installChannel
+        case hostArch, archSupported, writeBlockers
         case appPath, configKnown, configTargets, sip, running, writable
         case signature, entitlementsOk, entitlementKeyCount
         case antiRevokeSilent, antiRevokeKeeptip, updateBlock, updateSource, verdict, nextCommand
@@ -67,6 +75,9 @@ struct DoctorStatus: Decodable, Equatable {
         fullVersion = try c.decodeIfPresent(String.self, forKey: .fullVersion)
         shortVersion = try c.decodeIfPresent(String.self, forKey: .shortVersion)
         installChannel = try c.decodeIfPresent(String.self, forKey: .installChannel)
+        hostArch = try c.decodeIfPresent(String.self, forKey: .hostArch)
+        archSupported = try c.decodeIfPresent(Bool.self, forKey: .archSupported) ?? true
+        writeBlockers = try c.decodeIfPresent([String].self, forKey: .writeBlockers) ?? []
         appPath = try c.decode(String.self, forKey: .appPath)
         configKnown = try c.decode(Bool.self, forKey: .configKnown)
         configTargets = try c.decodeIfPresent([String].self, forKey: .configTargets) ?? []
@@ -132,6 +143,41 @@ enum L {
     static var err_writePermissionDenied: String { t(
         "微信文件的读写被拒绝；仅凭这条错误不能确定原因。请逐项检查：\n1. 管理员权限：文件属于 root 或当前用户无写权限时，需要在本次操作中完成管理员授权。\n2. 文件权限与锁定：检查报错文件及其目录的所有者、访问权限、ACL 和不可变标记（uchg/schg）；管理员授权不一定能解除锁定。\n3. App 管理：若上述权限正常，到「系统设置 → 隐私与安全性 → App 管理」允许当前 WeChatUnrevoke 修改其他 App，然后完全退出并重开。本项系统授权与管理员授权是两回事。\n签名权限是否完好见详情，与文件写权限分开判断。复制诊断报告时请保留原始引擎日志。",
         "Access to WeChat files was denied; this error alone does not identify the cause. Check each item:\n1. Administrator access: root-owned files or missing user write access require administrator authorization for this operation.\n2. File permissions and locks: check the reported file and its directory for ownership, access permissions, ACLs and immutable flags (uchg/schg). Administrator authorization may not remove a lock.\n3. App Management: if file permissions are correct, allow the current WeChatUnrevoke in System Settings → Privacy & Security → App Management, then quit and reopen it. This system permission is separate from administrator authorization.\nEntitlements are shown in Details and are separate from file write permissions. Keep the original engine log when copying diagnostics.") }
+    /// 引擎在写入被拒后给出的原因代码（`Write blocked: <codes>`）→ 对应的恢复办法。
+    /// 原因由引擎判定，这里只负责把每个代码翻成一句能照做的话。
+    static func err_writeBlocked(_ codes: [String]) -> String {
+        let lines = codes.map { code -> String in
+            switch code {
+            case "needsAdmin": return t(
+                "微信文件属于其他用户（通常是 root），当前用户没有写权限。再点一次并在弹出的系统对话框里完成管理员授权。",
+                "WeChat's files belong to another user (usually root) and this user cannot write them. Try again and complete the administrator authorization in the system dialog.")
+            case "immutable": return t(
+                "微信文件被锁定（不可变标记，访达「显示简介」里的「已锁定」）。管理员密码绕不过锁定。先在访达取消「已锁定」，或在终端执行 chflags -R nouchg /Applications/WeChat.app，然后再试。",
+                "WeChat's files are locked (immutable flag — \"Locked\" in Finder's Get Info). An administrator password does not bypass a lock. Untick Locked in Finder, or run chflags -R nouchg /Applications/WeChat.app in Terminal, then retry.")
+            case "aclDeny": return t(
+                "微信文件上有一条拒绝写入的访问控制规则（ACL）。在终端用 ls -le 查看，去掉那条 deny 规则后再试。",
+                "An access-control entry (ACL) denies writing to WeChat's files. Inspect it with ls -le in Terminal and remove the deny entry, then retry.")
+            case "readOnlyVolume": return t(
+                "微信在只读位置（直接从磁盘映像里打开，或被系统隔离转移）。把微信拖进「应用程序」文件夹，再对那一份操作。",
+                "WeChat is on a read-only location (opened straight from the disk image, or translocated). Drag WeChat into Applications and use that copy.")
+            case "appManagement": return t(
+                "文件的所有者、权限、锁定和访问控制都允许写入，但 macOS 仍然拒绝了：多半是缺少「App 管理」授权。到「系统设置 → 隐私与安全性 → App 管理」打开 WeChatUnrevoke（列表里没有就用 + 添加当前这份），完全退出并重开本应用再试。管理员密码不能代替这项授权；保护 App 的安全软件也会造成同样的拒绝。",
+                "Owner, permissions, locks and access control all allow the write, yet macOS refused it — most likely the App Management permission is missing. In System Settings → Privacy & Security → App Management, enable WeChatUnrevoke (use + to add this copy if it is not listed), quit and reopen this app, then retry. An administrator password does not replace this permission; security software that protects apps can cause the same refusal.")
+            default: return t("引擎报告的写入障碍：\(code)", "Write blocker reported by the engine: \(code)")
+            }
+        }
+        return ([t("没能写入微信文件。原因与办法：", "Could not write WeChat's files. Cause and fix:")] + lines).joined(separator: "\n")
+    }
+    static func blockerName(_ code: String) -> String {
+        switch code {
+        case "needsAdmin": return t("需要管理员授权", "Needs administrator authorization")
+        case "immutable": return t("文件被锁定", "Files are locked")
+        case "aclDeny": return t("访问控制规则拒绝写入", "An ACL denies writing")
+        case "readOnlyVolume": return t("只读位置", "Read-only location")
+        case "appManagement": return t("缺少 App 管理授权", "App Management permission missing")
+        default: return code
+        }
+    }
     static var err_wechatStillRunning: String { t(
         "微信还没完全退出。它的辅助进程会比主进程多活几秒，等一下再点一次就好。",
         "WeChat has not fully quit yet. Its helper processes linger a few seconds after the main one — wait a moment and try again.") }
@@ -162,6 +208,9 @@ enum L {
     static func st_unsupportedSub(_ build: String) -> String { t(
         "补丁库尚未支持 build \(build)。配置会联网更新；如果需要新的引擎规则，请安装新版 WeChatUnrevoke。",
         "The patch configuration does not yet support build \(build). Configuration updates arrive online; new engine rules may require a WeChatUnrevoke update.") }
+    static func st_unsupportedArchSub(_ build: String, _ arch: String) -> String { t(
+        "补丁库有 build \(build) 的补丁点，但只有另一种处理器架构的；这台 Mac 上微信运行的是 \(arch) 代码，照着打不会有任何效果，所以不提供开启。该架构的补丁点收录后会随配置联网更新。",
+        "The patch configuration has build \(build), but only for the other processor architecture. On this Mac WeChat runs \(arch) code, so applying those points would change nothing — the switch is not offered. Points for this architecture arrive with online configuration updates once they are covered.") }
     static var st_broken: String { t("微信的签名权限掉了", "WeChat lost its entitlements") }
     static var st_brokenSub: String { t(
         "曾经有工具用错误的方式重签过它。这种状态下微信在开着 SIP 的机器上根本起不来，只能从 mac.weixin.qq.com 重装一次，再来打补丁。",
@@ -225,6 +274,9 @@ enum L {
     static var det_build: String { t("微信版本", "WeChat version") }
     static var det_channel: String { t("安装渠道", "Install channel") }
     static var det_unknown: String { t("未知（旧引擎未提供）", "Unknown (not supplied by older engines)") }
+    static var det_arch: String { t("处理器架构", "Architecture") }
+    static var det_writeAccess: String { t("写入障碍", "Write blockers") }
+    static var det_none: String { t("无", "None") }
     static var det_antiRevoke: String { t("防撤回", "Anti-recall") }
     static var det_updateBlock: String { t("拦截自动更新", "Update block") }
     static var det_sip: String { t("系统完整性保护", "SIP") }

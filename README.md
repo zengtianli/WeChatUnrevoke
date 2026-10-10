@@ -15,7 +15,7 @@
 </p>
 <p align="center">
   <a href="https://github.com/zengtianli/WeChatUnrevoke/releases/latest"><img src="https://img.shields.io/github/v/release/zengtianli/WeChatUnrevoke?style=flat-square&amp;color=648569" alt="最新版本"></a>
-  <img src="https://img.shields.io/badge/macOS-13%2B-252b26?style=flat-square&amp;logo=apple" alt="macOS 13 及以上（当前源码）">
+  <img src="https://img.shields.io/badge/macOS-13%2B-252b26?style=flat-square&amp;logo=apple" alt="macOS 13 及以上">
   <img src="https://img.shields.io/badge/Apple_Silicon_%2B_Intel-Universal-648569?style=flat-square" alt="支持 Apple Silicon 与 Intel">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-648569?style=flat-square" alt="AGPL-3.0"></a>
 </p>
@@ -103,7 +103,7 @@ xattr -dr com.apple.quarantine /Applications/WeChatUnrevoke.app
 
 ## 运行要求与边界
 
-- **当前源码最低 macOS 13，Apple Silicon / Intel。** 已公开的 v1.0.11 ZIP 最低仍为 macOS 15；macOS 13 兼容改动待新版发布。双架构部署与链接检查不等于 macOS 13 或原生 Intel 实机验证。补丁支持按微信 build 和架构而异，以引擎实际检查结果为准；universal 安装包不代表所有微信版本均有双架构补丁。
+- **最低 macOS 13，Apple Silicon / Intel。** v1.0.12 起最低系统为 macOS 13（v1.0.11 及更早为 macOS 15）。双架构部署与链接检查不等于 macOS 13 或原生 Intel 实机验证，这两类机器上的实际表现以使用者反馈为准。补丁支持按微信 build 和架构而异，以引擎实际检查结果为准；universal 安装包不代表所有微信版本均有双架构补丁。
 - **适配以微信官网最新稳定版为准。** 版本覆盖由[补丁库](https://github.com/zengtianli/WeChatTweak/blob/master/config.json)决定；缺失的旧构建建议先更新到[支持表](https://github.com/zengtianli/WeChatTweak#支持的版本)列出的官网稳定版。App Store 版的 build 可能不同。微信更新后需要重新打补丁；联网退出并重开 WeChatUnrevoke 可刷新补丁库。没有收录的版本会明确提示，不猜地址写入。
 - **群聊暂不显示撤回提示。** 即使选「保留提示」，群聊也只保留消息。私聊提示位置也不保证紧贴原消息。
 - **仅防撤回不拦截自动更新。** 此模式不等于完整保护；更新后需要重新检查。

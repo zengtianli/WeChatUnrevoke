@@ -6,7 +6,7 @@
 <h1 align="center">WeChatUnrevoke</h1>
 <p align="center"><strong>Keep the message. Even after recall.</strong><br>A native SwiftUI app to check, apply and restore WeChat anti-recall patches on Mac.</p>
 <p align="center"><a href="https://unrevoke.tianli.cyou/">Product website · Direct download</a> · <a href="#get-started">Get started</a> · <a href="https://github.com/zengtianli/WeChatUnrevoke/issues">Report an issue</a> · <a href="README.md">中文</a></p>
-<p align="center">Current source: macOS 13+ · Apple Silicon + Intel · Free and open source · AGPL-3.0</p>
+<p align="center">macOS 13+ · Apple Silicon + Intel · Free and open source · AGPL-3.0</p>
 <p align="center"><img src="docs/screenshots/main-en.png" width="620" alt="Actual WeChatUnrevoke interface"></p>
 <p align="center"><sub>Actual app screenshot using a WeChat build 269627 test copy, with anti-recall and update blocking active. Compatibility with other builds varies.</sub></p>
 
@@ -75,7 +75,7 @@ For problems, copy diagnostics into an [issue](https://github.com/zengtianli/WeC
 
 ## Requirements and limits
 
-- **Current source targets macOS 13+, Apple Silicon or Intel.** The published v1.0.11 ZIP still requires macOS 15; macOS 13 compatibility awaits the next release. Deployment and link checks for both architectures are not physical macOS 13 or native Intel validation. Patch coverage depends on the WeChat build and architecture. A universal app does not imply every WeChat build has patches for both architectures.
+- **macOS 13+, Apple Silicon or Intel.** From v1.0.12 the minimum system is macOS 13 (v1.0.11 and earlier required macOS 15). Deployment and link checks for both architectures are not physical macOS 13 or native Intel validation; behaviour on those machines rests on user reports. Patch coverage depends on the WeChat build and architecture. A universal app does not imply every WeChat build has patches for both architectures.
 - Compatibility work targets the latest stable release from WeChat's official website. Supported builds come from the [patch configuration](https://github.com/zengtianli/WeChatTweak/blob/master/config.json). If an older build is missing, update to the official stable build listed in the [support table](https://github.com/zengtianli/WeChatTweak#支持的版本); the App Store may distribute a different build. Reapply the patch after updating WeChat. Quit and reopen WeChatUnrevoke while online to refresh its patch configuration. Unsupported builds are reported explicitly.
 - Group chats preserve messages without recall notices. Private-chat notices may not appear immediately next to the original message.
 - Anti-recall-only mode leaves automatic updates enabled. Updates can remove patches.

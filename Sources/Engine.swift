@@ -20,6 +20,8 @@ enum EngineError: LocalizedError {
     case launchFailed(String)
     case failed(code: Int32, output: String)
     case writePermissionDenied(output: String)
+    /// 引擎已判明写入被拒的原因（`Write blocked: <codes>`）。
+    case writeBlocked(codes: [String], output: String)
     case decodeFailed(String, raw: String)
     case timeout(TimeInterval)
     case authCanceled
@@ -35,6 +37,8 @@ enum EngineError: LocalizedError {
             return output.trimmingCharacters(in: .whitespacesAndNewlines)
         case .writePermissionDenied:
             return L.err_writePermissionDenied
+        case .writeBlocked(let codes, _):
+            return L.err_writeBlocked(codes)
         case .decodeFailed(let m, let raw):
             return L.err_decode(m, String(raw.prefix(300)))
         case .timeout(let t):
@@ -48,7 +52,7 @@ enum EngineError: LocalizedError {
     /// replaces it with recovery instructions.
     var diagnosticOutput: String {
         switch self {
-        case .failed(_, let output), .writePermissionDenied(let output):
+        case .failed(_, let output), .writePermissionDenied(let output), .writeBlocked(_, let output):
             return output
         default:
             return localizedDescription
@@ -56,6 +60,14 @@ enum EngineError: LocalizedError {
     }
 
     static func writeFailure(code: Int32, output: String) -> EngineError {
+        // 新引擎在写入被拒后自己判明原因并打印 `Write blocked: a,b`；有这一行就照它说，
+        // 不在这里猜。旧引擎没有这一行，回落到下面的逐项排查文案。
+        if let line = output.split(whereSeparator: \.isNewline).map({ $0.trimmingCharacters(in: .whitespaces) })
+            .first(where: { $0.hasPrefix("Write blocked: ") }) {
+            let codes = line.dropFirst("Write blocked: ".count).split(separator: ",")
+                .map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+            if !codes.isEmpty { return .writeBlocked(codes: codes, output: output) }
+        }
         // A permission error alone cannot distinguish App Management from file
         // ownership, ACLs or locked files. Offer checks, not a claimed TCC verdict.
         let text = output.lowercased().replacingOccurrences(of: "’", with: "'")
