@@ -66,6 +66,42 @@ class StartupRegression(unittest.TestCase):
                     self.assertIn("safe before NSApp exists", result.stdout)
                     print(result.stdout.strip(), flush=True)
 
+    def test_configuration_in_product_bundle(self):
+        """A real launch builds the configuration under the product's own bundle identifier."""
+        env = dict(os.environ)
+        selector = Path(env.get("XCODE_ENV_SH", Path.home() / "Dev/tools/dev/lib/tools/macapp/xcode_env.sh"))
+        if selector.is_file():
+            selected = subprocess.run(
+                ["bash", "-c", 'source "$1" && xcode_env_use macosx && printf "%s" "$DEVELOPER_DIR"',
+                 "bash", str(selector)], capture_output=True, text=True, check=True)
+            env["DEVELOPER_DIR"] = selected.stdout.strip().splitlines()[-1]
+        sdk = subprocess.check_output(["xcrun", "--sdk", "macosx", "--show-sdk-path"], env=env, text=True).strip()
+        import platform
+        info = plistlib.loads((ROOT / "Info.plist").read_bytes())
+        with tempfile.TemporaryDirectory(prefix="unrevoke-configuration-") as scratch:
+            scratch = Path(scratch)
+            env["APP_LIFECYCLE_SUPPORT_DIR"] = str(scratch / "configuration")
+            app = scratch / "Product.app"
+            macos = app / "Contents/MacOS"
+            macos.mkdir(parents=True)
+            (app / "Contents/Info.plist").write_bytes(plistlib.dumps({
+                "CFBundleIdentifier": info["CFBundleIdentifier"],
+                "CFBundleExecutable": "ProductConfigurationTests", "CFBundlePackageType": "APPL", "LSUIElement": True,
+            }))
+            executable = macos / "ProductConfigurationTests"
+            entry = scratch / "UnrevokeApp.swift"
+            # The test owns main, while the production sources are unchanged.
+            entry.write_text((ROOT / "Sources/UnrevokeApp.swift").read_text().replace("@main\n", "", 1))
+            subprocess.run(["xcrun", "swiftc", "-parse-as-library", "-sdk", sdk,
+                            "-target", f"{platform.machine()}-apple-macos13.0",
+                            *map(str, sorted(p for p in (ROOT / "Sources").glob("*.swift") if p.name != "UnrevokeApp.swift")),
+                            str(entry), str(ROOT / "tests/ProductConfigurationTests.swift"),
+                            "-o", str(executable)], env=env, capture_output=True, text=True, check=True, timeout=180)
+            result = subprocess.run([str(executable)], env=env, capture_output=True, text=True, timeout=20)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("PASS: configuration is built", result.stdout)
+            print(result.stdout.strip(), flush=True)
+
     def test_deployment_contract(self):
         info = plistlib.loads((ROOT / "Info.plist").read_bytes())
         self.assertEqual(info["LSMinimumSystemVersion"], "13.0")
