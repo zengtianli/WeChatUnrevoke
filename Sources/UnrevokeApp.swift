@@ -65,8 +65,15 @@ enum UnrevokeQuietMeasure {
     }
 }
 
-struct UnrevokeApp: App {
-    init() {
+/// SwiftUI constructs App before NSApp exists on macOS 15. Install AppKit UI
+/// only after launch; App.init must remain safe with NSApp == nil.
+@MainActor
+final class UnrevokeAppDelegate: NSObject, NSApplicationDelegate {
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        LaneSignal.enterQuietIfAsked()
+    }
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
         let configuration = ProductLifecycle.makeConfiguration()
         configuration.onChange = {
             NotificationCenter.default.post(name: .unrevokePreferencesChanged, object: nil)
@@ -75,6 +82,11 @@ struct UnrevokeApp: App {
         AppLifecycleUI.install(name: ProductLifecycle.name, configuration: configuration,
                                updateSource: ProductLifecycle.updateSource())
     }
+}
+
+struct UnrevokeApp: App {
+    @NSApplicationDelegateAdaptor(UnrevokeAppDelegate.self) private var delegate
+
     var body: some Scene {
         WindowGroup {
             ContentView()

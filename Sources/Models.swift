@@ -31,6 +31,9 @@ struct DoctorStatus: Decodable, Equatable {
 
     let overall: Overall
     let build: String?
+    let fullVersion: String?
+    let shortVersion: String?
+    let installChannel: String?
     let appPath: String
     let configKnown: Bool
     let configTargets: [String]
@@ -51,7 +54,8 @@ struct DoctorStatus: Decodable, Equatable {
     let nextCommand: String?
 
     private enum CodingKeys: String, CodingKey {
-        case overall, build, appPath, configKnown, configTargets, sip, running, writable
+        case overall, build, fullVersion, shortVersion, installChannel
+        case appPath, configKnown, configTargets, sip, running, writable
         case signature, entitlementsOk, entitlementKeyCount
         case antiRevokeSilent, antiRevokeKeeptip, updateBlock, updateSource, verdict, nextCommand
     }
@@ -60,6 +64,9 @@ struct DoctorStatus: Decodable, Equatable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         overall = try c.decode(Overall.self, forKey: .overall)
         build = try c.decodeIfPresent(String.self, forKey: .build)
+        fullVersion = try c.decodeIfPresent(String.self, forKey: .fullVersion)
+        shortVersion = try c.decodeIfPresent(String.self, forKey: .shortVersion)
+        installChannel = try c.decodeIfPresent(String.self, forKey: .installChannel)
         appPath = try c.decode(String.self, forKey: .appPath)
         configKnown = try c.decode(Bool.self, forKey: .configKnown)
         configTargets = try c.decodeIfPresent([String].self, forKey: .configTargets) ?? []
@@ -123,8 +130,8 @@ enum L {
         "The engine did not finish within \(s)s and was terminated. Re-signing a large WeChat bundle is slow — try again.") }
     static var err_authCanceled: String { t("你取消了授权，什么都没改。", "You canceled the authorization — nothing was changed.") }
     static var err_writePermissionDenied: String { t(
-        "macOS 拒绝修改微信文件。请到「系统设置 → 隐私与安全性 → App 管理」允许 WeChatUnrevoke 修改其他 App；列表里没有时可用 + 添加当前使用的 WeChatUnrevoke.app。完全退出并重开本应用，再试一次。管理员密码不能代替这项授权。若仍失败，请检查微信文件的所有者、访问权限和锁定状态，并复制诊断报告反馈。",
-        "macOS denied changes to WeChat files. In System Settings → Privacy & Security → App Management, allow WeChatUnrevoke to modify other apps; use + to add the WeChatUnrevoke.app you are running if it is missing. Quit and reopen this app, then retry. An administrator password does not replace this permission. If it still fails, check WeChat file ownership, access permissions and locked status, then copy diagnostics when reporting the problem.") }
+        "微信文件的读写被拒绝；仅凭这条错误不能确定原因。请逐项检查：\n1. 管理员权限：文件属于 root 或当前用户无写权限时，需要在本次操作中完成管理员授权。\n2. 文件权限与锁定：检查报错文件及其目录的所有者、访问权限、ACL 和不可变标记（uchg/schg）；管理员授权不一定能解除锁定。\n3. App 管理：若上述权限正常，到「系统设置 → 隐私与安全性 → App 管理」允许当前 WeChatUnrevoke 修改其他 App，然后完全退出并重开。本项系统授权与管理员授权是两回事。\n签名权限是否完好见详情，与文件写权限分开判断。复制诊断报告时请保留原始引擎日志。",
+        "Access to WeChat files was denied; this error alone does not identify the cause. Check each item:\n1. Administrator access: root-owned files or missing user write access require administrator authorization for this operation.\n2. File permissions and locks: check the reported file and its directory for ownership, access permissions, ACLs and immutable flags (uchg/schg). Administrator authorization may not remove a lock.\n3. App Management: if file permissions are correct, allow the current WeChatUnrevoke in System Settings → Privacy & Security → App Management, then quit and reopen it. This system permission is separate from administrator authorization.\nEntitlements are shown in Details and are separate from file write permissions. Keep the original engine log when copying diagnostics.") }
     static var err_wechatStillRunning: String { t(
         "微信还没完全退出。它的辅助进程会比主进程多活几秒，等一下再点一次就好。",
         "WeChat has not fully quit yet. Its helper processes linger a few seconds after the main one — wait a moment and try again.") }
@@ -215,13 +222,15 @@ enum L {
         "The message stays and no recall tip is shown at all.") }
 
     // 详情
-    static var det_build: String { t("微信版本", "WeChat build") }
+    static var det_build: String { t("微信版本", "WeChat version") }
+    static var det_channel: String { t("安装渠道", "Install channel") }
+    static var det_unknown: String { t("未知（旧引擎未提供）", "Unknown (not supplied by older engines)") }
     static var det_antiRevoke: String { t("防撤回", "Anti-recall") }
     static var det_updateBlock: String { t("拦截自动更新", "Update block") }
     static var det_sip: String { t("系统完整性保护", "SIP") }
     static var det_signature: String { t("签名", "Signature") }
     static var det_entitlements: String { t("签名权限", "Entitlements") }
-    static var det_admin: String { t("需要管理员密码", "Needs an admin password") }
+    static var det_admin: String { t("引擎请求管理员授权", "Engine requests administrator authorization") }
     static var det_yes: String { t("是", "Yes") }
     static var det_no: String { t("否", "No") }
     static var det_on: String { t("已生效", "Applied") }

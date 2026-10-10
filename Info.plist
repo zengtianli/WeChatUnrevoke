@@ -21,7 +21,7 @@
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>LSMinimumSystemVersion</key>
-	<string>15.0</string>
+	<string>13.0</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>WeChatUnrevoke · zengtianli · AGPL-3.0</string>
 	<key>NSPrincipalClass</key>

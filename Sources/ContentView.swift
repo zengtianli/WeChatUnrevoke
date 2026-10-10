@@ -55,7 +55,7 @@ struct ContentView: View {
                 }
                 .padding(24)
             }
-            .defaultScrollAnchor(.top)
+            .topScrollAnchorIfAvailable()
             Divider()
             footer
         }
@@ -83,8 +83,9 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(look.title).font(.title2.weight(.semibold))
                 Text(look.subtitle).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-                if let build = model.status?.build {
-                    Text("\(L.det_build) \(build)").font(.caption).foregroundStyle(.tertiary).padding(.top, 2)
+                if let status = model.status {
+                    Text("\(L.det_build) \(status.fullVersion ?? status.shortVersion ?? status.build ?? "?")")
+                        .font(.caption).foregroundStyle(.tertiary).padding(.top, 2)
                 }
                 actionRow.padding(.top, 10)
             }
@@ -225,7 +226,9 @@ struct ContentView: View {
             return patchState(s.antiRevokeSilent ?? s.antiRevokeKeeptip)
         }()
         return [
-            (L.det_build, s.build ?? "?"),
+            (L.det_build, s.fullVersion ?? s.shortVersion ?? s.build ?? "?"),
+            ("Build", s.build ?? "?"),
+            (L.det_channel, s.installChannel ?? L.det_unknown),
             (L.det_antiRevoke, revoke),
             (L.det_updateBlock, patchState(s.updateBlock)),
             (L.det_entitlements, s.entitlementsOK ? "\(L.det_intact) (\(s.entitlementKeyCount))" : L.det_lost),
@@ -273,6 +276,17 @@ struct ContentView: View {
                     try? await Task.sleep(nanoseconds: 2_500_000_000)
                     model.toast = nil
                 }
+        }
+    }
+}
+
+private extension View {
+    @ViewBuilder func topScrollAnchorIfAvailable() -> some View {
+        if #available(macOS 14.0, *) {
+            defaultScrollAnchor(.top)
+        } else {
+            // macOS 13 ScrollView starts at the top without this newer API.
+            self
         }
     }
 }

@@ -39,6 +39,25 @@ struct WriteFailureTests {
             try fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: cli.path)
         }
         try doctor()
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let legacy = try decoder.decode(DoctorStatus.self, from: Data(contentsOf: fixture))
+        precondition(legacy.fullVersion == nil && legacy.shortVersion == nil && legacy.installChannel == nil)
+        var reported = try JSONSerialization.jsonObject(with: Data(contentsOf: fixture)) as! [String: Any]
+        reported["build"] = "269602"
+        reported["full_version"] = "4.1.13.11"
+        reported["short_version"] = "4.1.13"
+        reported["install_channel"] = "appStore"
+        reported["writable"] = false
+        reported["update_block"] = "notApplicable"
+        let appStore = try decoder.decode(DoctorStatus.self, from: JSONSerialization.data(withJSONObject: reported))
+        precondition(appStore.overall == .unprotected && appStore.entitlementsOK && appStore.needsAdmin)
+        precondition(appStore.fullVersion == "4.1.13.11" && appStore.shortVersion == "4.1.13"
+                     && appStore.installChannel == "appStore" && appStore.build == "269602")
+        let reportedError = EngineError.writeFailure(code: 1, output:
+            "Anti-revoke: NOT applied — You don’t have permission to save the file “wechat.dylib” in the folder “Resources”.")
+        precondition(reportedError.localizedDescription == L.err_writePermissionDenied)
+        print("PASS: optional version/channel fields decode; older engines fall back; App Store write access stays separate from entitlements")
         try engine("echo 'update locator failed for 269136' >&2; exit 42")
         // Short-lived processes and concurrent exits must complete without a
         // waiter missing the exit notification; use the production Engine.
