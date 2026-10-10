@@ -170,8 +170,8 @@ enum L {
                 "微信在只读位置（直接从磁盘映像里打开，或被系统隔离转移）。把微信拖进「应用程序」文件夹，再对那一份操作。",
                 "WeChat is on a read-only location (opened straight from the disk image, or translocated). Drag WeChat into Applications and use that copy.")
             case "appManagement": return t(
-                "文件的所有者、权限、锁定和访问控制都允许写入，但 macOS 仍然拒绝了：多半是缺少「App 管理」授权。到「系统设置 → 隐私与安全性 → App 管理」打开 WeChatUnrevoke（列表里没有就用 + 添加当前这份），完全退出并重开本应用再试。管理员密码不能代替这项授权；保护 App 的安全软件也会造成同样的拒绝。",
-                "Owner, permissions, locks and access control all allow the write, yet macOS refused it — most likely the App Management permission is missing. In System Settings → Privacy & Security → App Management, enable WeChatUnrevoke (use + to add this copy if it is not listed), quit and reopen this app, then retry. An administrator password does not replace this permission; security software that protects apps can cause the same refusal.")
+                "文件的所有者、权限、锁定和访问控制都允许写入，但 macOS 仍然拒绝了：多半是缺少「App 管理」授权。到「系统设置 → 隐私与安全性 → App 管理」打开 WeChatUnrevoke（列表里没有就用 + 添加当前这份），完全退出并重开本应用再试。列表里已经打开却仍被拒绝（更新本应用后会这样：这项授权只认授权时的那一版）：选中 WeChatUnrevoke 用 − 移除，再用 + 添加当前这份。管理员密码不能代替这项授权；保护 App 的安全软件也会造成同样的拒绝。",
+                "Owner, permissions, locks and access control all allow the write, yet macOS refused it — most likely the App Management permission is missing. In System Settings → Privacy & Security → App Management, enable WeChatUnrevoke (use + to add this copy if it is not listed), quit and reopen this app, then retry. If it is already enabled there and the write is still refused (this happens after updating this app — the permission is tied to the version that was granted): select WeChatUnrevoke, remove it with −, then add this copy with +. An administrator password does not replace this permission; security software that protects apps can cause the same refusal.")
             default: return t("引擎报告的写入障碍：\(code)", "Write blocker reported by the engine: \(code)")
             }
         }

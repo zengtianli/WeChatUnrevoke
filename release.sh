@@ -79,6 +79,11 @@ for BIN in "$TMP/$NAME.app/Contents/MacOS/Unrevoke" "$TMP/$NAME.app/Contents/Res
     *) echo "❌ $(basename "$BIN") 不是 universal（${A}）—— Intel Mac 上打不开，拒绝发布"; rm -rf "$TMP"; exit 1 ;;
   esac
 done
+# 真实启动门：单测、离屏自检和上面的引擎冒烟都到不了「用户双击之后」那条路径，1.0.11 的两处启动即崩
+# 就是在它们全绿的情况下发出去的。对解压出来的这一份按架构各启动一次，过几秒仍在运行才放行。
+# 启动的是静默副本（不进 Dock、窗口不上屏、不碰任何真实微信），详见脚本头注释。
+python3 "$DIR/scripts/launch-check.py" "$TMP/$NAME.app" \
+  || { echo "❌ 打出来的包启动后没能存活 —— 用户一打开就会崩，拒绝发布"; rm -rf "$TMP"; exit 1; }
 rm -rf "$TMP"
 
 echo "✅ $ZIP  ($(du -h "$ZIP" | cut -f1))"

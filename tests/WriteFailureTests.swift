@@ -83,6 +83,27 @@ struct WriteFailureTests {
         precondition(locked.diagnosticOutput.contains("Write blocked: immutable"))
         let tcc = EngineError.writeFailure(code: 1, output: "Write blocked: appManagement\n  Owner, permission bits ...")
         precondition(tcc.localizedDescription == L.err_writeBlocked(["appManagement"]))
+        // Issue #8 as reported (1.0.12, App Store 269602): the administrator prompt was passed, the root write
+        // was still refused, and the engine named App Management. The osascript prefix and the per-feature
+        // summary must not hide that verdict, and the fix must cover a grant left over from an older version:
+        // an ad-hoc build is identified by its code hash, so the switch can read "on" for a previous update.
+        let issue8 = EngineError.writeFailure(code: 1, output: """
+            0:365: execution error: Error: Nothing was patched:
+              Anti-revoke: NOT applied — You don’t have permission to save the file “wechat.dylib” in the folder “Resources”.
+              Update block: NOT applied — App Store install: this build has no in-app updater (the App Store updates it), so there is nothing to block. Turn off App Store automatic updates to keep the patch.
+              Write blocked: appManagement
+                Owner, permission bits, lock flags and ACLs all allow this write, yet macOS refused it. (1)
+            """)
+        guard case .writeBlocked(let issue8Codes, _) = issue8, issue8Codes == ["appManagement"] else {
+            preconditionFailure("\(issue8)")
+        }
+        let appManagementFix = issue8.localizedDescription
+        precondition(appManagementFix.contains(L.t("App 管理", "App Management")))
+        precondition(appManagementFix.contains(L.t("用 − 移除，再用 + 添加当前这份", "remove it with −, then add this copy with +")),
+                     "A stale grant from an earlier version needs its own step")
+        precondition(!appManagementFix.contains("chflags") && !appManagementFix.contains("ls -le"))
+        precondition(issue8.diagnosticOutput.contains("0:365: execution error"))
+        print("PASS: issue #8 report maps to App Management, including the re-grant step after an update")
         print("PASS: engine-named write blockers map to their own fix; arch/blocker fields decode with legacy fallback")
         print("PASS: optional version/channel fields decode; older engines fall back; App Store write access stays separate from entitlements")
         try engine("echo 'update locator failed for 269136' >&2; exit 42")
