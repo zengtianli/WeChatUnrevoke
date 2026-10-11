@@ -1,5 +1,33 @@
 # GitHub Release 下载收尾 · 2026-10-11
 
+## 16:17 当前 build 99 性能收口，候选待统一发布
+
+Bark 主会话 `01a129e6-0029-7861-8546-6f69f1bc685d` 的追加授权。原失败 job `b4271a44e4d64687b4cf13c34452c6bd` 只有登记下载包路径不存在这一项起点错误；本地 `project.yaml` 的 `sop.measure.download` 已改为 **`dist/WeChatUnrevoke-{short}.zip`**，保留真实装机回执、os_log、静默启动与只读参数。该舰队登记文件原已由 `.gitignore` 排除，修改留在本地原文件，没有强制纳入公开仓。
+
+沿原 `chapter enqueue --app unrevoke-mac --action perf --retry` 入队，再由原 `work --app unrevoke-mac --until-idle` 接续同一 job **`e9802847f53647828784c350a12c504c`**：先因共享 SOP 锁忙等待，16:11:28 实际启动、**16:13:51 succeeded / 当前性能证据通过**。原日志为 `~/Library/Logs/app-sop/unrevoke-mac-measure-20261011-161130.log`，原队列日志为 `~/Library/Application Support/app-sop/workbench/logs/e9802847f53647828784c350a12c504c.log`。没有另造调度、测量或通过回执。
+
+实际新指标来自 **1.0.13 (99) 当前装机 GUI 的 LSUIElement 隔离副本**：
+
+| 项目 | 原实测 |
+| --- | --- |
+| 下载包 | 正式 Release ZIP，2812556 bytes（2.812556 MB） |
+| 安装后占用 | 本机装机 GUI，5914624 bytes（5.914624 MB） |
+| 空闲内存 | phys_footprint 合计峰值 28 MiB（页面十进制 29.4 MB） |
+| 空闲 CPU | 60 秒窗口 CPU 时间 / 墙钟，0.00% |
+| 冷启动到首屏就绪 | os_log 五次中位数 2211 ms；样本 2828/2202/2251/2043/2211 ms |
+
+静置 45 秒后采样 60 秒，按原辅助/子进程合计口径；本次采样窗只见主进程。五个实际启动样本均为 version 1.0.13/build 99、quiet=true、window_on_screen=false、focus_taken=false、errors=[]。实际装机主程序、真实构建回执、当前源码输入与测量原件摘要已逐项回读，未只凭输入绑定写通过。当前原件为 `~/Library/Caches/app-lightweight/measurement-candidates/ebf2f160342d47079a1c9b2522ce09d0.raw.json`，SHA256 **`b4f9e66063fe5d9676a0042745597e61d67b56b6040febcf4f99eb890e0631b8`**；原件逐字节保留，公开轻量文件只把本机路径表示为 `~`/`<scratch>`，不改任何历史或本次实测数值。
+
+来源边界：装机 GUI 的主程序与正式 ZIP 不同，运行指标仅描述上述装机 GUI；**不把本次测量称为正式 ZIP 同一主程序的运行实测**。ZIP 内独立核为 1.0.13 (99)，GitHub 官方 asset ID 629593980、size 2812556、digest 与本地原件相符，SHA256 仍为 **`99389c8448375282f0bb555ca6716b07c80d059615d55dd788026af02ef1839d`**。下载大小与本机装机占用分别标注；中英 README 的旧历史前言已修正范围，版本/日期/指标仍由原渲染器从单一轻量证据生成。没有构建、装机、重签、公证、改版本或写微信补丁。本轮未改变原 App 与安装包。
+
+原 SOP 自动本地提交 **`f8e9311`**（真实新性能数据）；既有后台另生成 **`6f41a09`**（中英 README 表格数字），两机 `git_follow` 随后产生 **`77a2960`** 合并，均保留。本次手工限定提交 **`736c88b`** 只含轻量证据路径归一和中英测量范围说明，保留凭证与提交消息检查、单次关闭自动 post-commit。GitHub `origin/main` 仍为 `42a4690`；本会话未执行 push 或 deploy，没有改共享脚本。
+
+源码完成后按原入口重建 **`/Users/tianli/Apps/unrevoke/dist/site`**，20 个站点文件、安装包 **0**，下载按钮仍为对应 GitHub Release 页。37 项相关回归（build_contract 18、site_release_assets 12、verify_site 7）通过，`git diff --check` 通过。两条原 check 均 exit 0 / **ready=true**：apps 产品入口 issues=[]；独立站 issues=[]、warnings=[]、pending=[]。这次候选未发布，visual_verified/playback_verified=false，主会话最终冻结后统一复查与 site ship。
+
+当前候选 SHA256：index.html **`2767e491009dba27781416e5bf596860a6406f4217f19e3458c11794d912d7b2`**；release.json **`4caa3f3f1cc7198966742877922921d1c44143fda20cd932c4b46cd6474257be`**；site-manifest.json **`6690043595b4bdb03c6067627a16d959cc856843fd08373219dfb1776213cb9c`**；perf/lightweight.json **`d8ba63c61be9470e8a2a1c71e0e4ff6cc4399605d6fe7bc42db32df988453a03`**。本节候选取代下文旧冻结 SHA；线上仍是主会话此前已发布的页面。
+
+本次写前按 Chapter **`--pid 84330 --session chapter-task:28e33a42258540759caf867f2927fa8a`** 逐路径核 claims；未另开、未释放。剩余边界：本轮固定 perf 的当前装机 GUI 范围已通过，正式 ZIP 同一主程序的运行实测仍不能由此替代；若主会话要求该更窄范围，需沿其正式产物来源另续，不伪造回执或扩其他平台。
+
 ## 16:07 部署回读修复完成，待主会话收尾原 ship 回执
 
 同一任务的 10 分钟接续，源码提交 **`b92afbb`**：仅修改原 `scripts/verify-site.py` 与新增专项 `tests/test_verify_site.py`。原 `scripts/deploy-site.sh` 不变，Lintel gate、rsync `--delete`、备份、原子交换、回滚原件与原有 SHA 闸均保留。本次没有部署、重建页面、修改公开 release.json/安装包/版本/素材、推送或新增 GitHub 发行动作，也未改共享 Lintel/Portal。
