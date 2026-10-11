@@ -38,7 +38,9 @@ mkdir -p "$OUT"
 # Homebrew cask 的 url 是 "…/Unrevoke-#{version}.zip" 模板，多一段 build 号就套不上。
 ZIP="$OUT/$NAME-$VERSION.zip"
 rm -f "$ZIP"
-ditto -c -k --sequesterRsrc --keepParent "$APP" "$ZIP"
+# 不带扩展属性打包：包里的 12 项就是全部内容，签名不依赖任何扩展属性。构建进程给文件打上的
+# 系统标记（如 com.apple.provenance）否则会被存成 __MACOSX/._* 旁文件，随构建环境而变，被下面的清单门拒绝。
+ditto -c -k --norsrc --noextattr --keepParent "$APP" "$ZIP"
 
 # 自检：解出来的那份必须仍带得动引擎。压坏的包和没打包一样糟，且更难发现。
 TMP="$(mktemp -d)"
