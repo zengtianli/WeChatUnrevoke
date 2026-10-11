@@ -1,5 +1,5 @@
 {
-  "version": "1.0.12",
+  "version": "1.0.13",
   "method": "Current production ContentView rendered offscreen with fictional DoctorStatus fixtures using the model injection seam and automaticallyStart:false. Isolated bundle and doctor-only fixture executable; no real WeChat access, patch/restore, network request, system clipboard, input synthesis or foreground window. Not a performance measurement or real patch demonstration.",
   "source_sha256": {
     "ProductLifecycle.swift": "7813f1b5169ec2fdddf1cbbd1cfe9e4c6c3d29a0987b3184933f13ae99847739",
@@ -12,16 +12,16 @@
     "AppLifecycle.swift": "3033bc6f87a69a2402ff1cda2c8196a4abd677222582c75d21302a65626c2d89",
     "ViewModel.swift": "586ca76bd7873f36ab2414d1f5e78fc76cb314289f04f7f8dcf8cdd2b4d304f7",
     "WriteHistory.swift": "d630bfe96cef9f8d3a0c4959387f8486ac057ba0b5c7bd817baa388091162438",
-    "Models.swift": "7b14ed9f9f7f337411eaa2a11f647c2d013a3cb669d474de58458c147337fb54",
+    "Models.swift": "26dce40bc91a0c1f4175ea0e0abd1505215f290e73ab95309695b5c4e4774038",
     "ContentView.swift": "01ba87e78306ca74c6e9a911f22adfd492f99eff00f36c6f373fcb5a72772ef1",
     "UnrevokeApp.swift": "3caa32d2adbda93def1b159ee756baf23f3588a5b3ecc0c72ae3f86b286e82bb"
   },
   "duration_seconds": 21,
   "files": {
-    "current-guide.mp4": "a54b43abf801afbee3eb7eb448ab886f848da747a979495d2873176028bc1878",
-    "current-unprotected.png": "b4a7bfc0de688e39b1ef2fc5c7ecab0e0c8515a27f6b4c3f3c3519f2e9708ff8",
-    "current-protected.png": "be1253b13639c7982b94f3b38c88a738cef6a46c4e715dde4751498c5700a32a",
+    "current-guide.mp4": "8123a2dc9934ee9b328dd3a316a1c614c4f98904e4f7f1d87b63e71f6c89ad9f",
+    "current-unprotected.png": "16bd182315b3f60f8e52979853e02fb01c21e05dd5e9951b671a520fc2de7287",
+    "current-protected.png": "c0e181bf20699ba3c3a98f18a4ff3e83bfe2a6fe93a6f1bbca83c7f54b1e8e42",
     "current-guide.vtt": "1947757cb374d9fbf5c79be8a28a345fab0d8229683c83fd579acafe8eb09a98",
-    "current-antiRevokeOnly.png": "f66c4167df23d9edd9bb1d41f432378593e8375b09776d7988a240c36e71a693"
+    "current-antiRevokeOnly.png": "425c3168c8e81cafaa91600ca31e507ec4e6f8ef9bdac4f4c71f314596359260"
   }
 }

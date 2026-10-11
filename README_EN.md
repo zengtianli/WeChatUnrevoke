@@ -18,7 +18,7 @@ For feedback and patch release notes, include WeChat's full version, build and i
 
 Real recordings: [Enable anti-recall](https://unrevoke.tianli.cyou/media/enable.mp4) · [Check and restore](https://unrevoke.tianli.cyou/media/restore.mp4) · [Complete tutorial](https://unrevoke.tianli.cyou/media/tutorial.mp4). Recorded with v1.0.4 and a WeChat build 269627 test copy. Independent scenes and shortened waits are labeled. See [recording notes](docs/demo/README.md).
 
-The [status guide](https://unrevoke.tianli.cyou/media/current-guide.mp4) shows the three protection states. The repository's guide renders the v1.0.12 production main view offscreen with fictional states; it does not patch WeChat, manipulate messages, measure performance or demonstrate the configuration and update window. The website labels the version of its deployed guide.
+The [status guide](https://unrevoke.tianli.cyou/media/current-guide.mp4) shows the three protection states. The repository's guide renders the v1.0.13 production main view offscreen with fictional states; it does not patch WeChat, manipulate messages, measure performance or demonstrate the configuration and update window. The website labels the version of its deployed guide.
 
 WeChatUnrevoke reads your WeChat build and lets you manage patches through a native interface. The embedded [WeChatTweak engine](https://github.com/zengtianli/WeChatTweak) performs the work and determines protection status.
 

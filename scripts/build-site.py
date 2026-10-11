@@ -20,9 +20,11 @@ import perf_block
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "dist/site"
 REPO = "zengtianli/WeChatUnrevoke"
-# Already-public site download URLs must survive rsync --delete. These eight
+# Already-public site download URLs must survive rsync --delete. These nine
 # archives were checked against GitHub Release asset digests and sizes; never
 # discover public packages by globbing dist/ or copying an old site directory.
+# 1.0.11 is left out on purpose: it crashed at launch and its site download was
+# withdrawn when 1.0.12 replaced it (the GitHub Release keeps the file).
 HISTORICAL_RELEASES = (
     {"version": "1.0.3", "download_bytes": 2759288, "sha256": "ffa9a0aba790fc9f13eee5f6d899225b1353e9484dd9246b0dacfa9d6a5bfac6"},
     {"version": "1.0.4", "download_bytes": 2760244, "sha256": "ca508683522418171f718ff6d9e8a3b6c454ab4821a0a4e77570e2097b7c5f8f"},
@@ -32,6 +34,7 @@ HISTORICAL_RELEASES = (
     {"version": "1.0.8", "download_bytes": 2817589, "sha256": "d8308bbce97a7c52893d6518ddb3ded6b51c8434dd0a063a337fe10ff5bfb1c8"},
     {"version": "1.0.9", "download_bytes": 2392417, "sha256": "6a1774c06efa832c70bb8e7feb8ef4c7a752096170829b1ebdeb3a3d77ed1f47"},
     {"version": "1.0.10", "download_bytes": 2449790, "sha256": "25d1a22fe526dda96635d15707fbc1eeec41ed3d76c89dc94503e4bbed1e8b56"},
+    {"version": "1.0.12", "download_bytes": 2812205, "sha256": "644c8e0cc1cf4e7a85a83100c9b4fa3870fb30f8d4c0c56e9aa43d49aeb49b96"},
 )
 
 
