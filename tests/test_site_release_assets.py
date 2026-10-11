@@ -1,3 +1,5 @@
+import copy
+from contextlib import redirect_stdout
 import hashlib
 import importlib.util
 import io
@@ -11,219 +13,216 @@ import zipfile
 
 
 class SiteReleaseAssetTests(unittest.TestCase):
-    BUILDS = dict(zip((f"1.0.{n}" for n in range(3, 12)), ("12", "13", "19", "21", "22", "23", "26", "34", "54")))
-
-    @staticmethod
-    def package(version, build):
-        buffer = io.BytesIO()
-        with zipfile.ZipFile(buffer, "w") as archive:
-            archive.writestr("WeChatUnrevoke.app/Contents/Info.plist", plistlib.dumps({
-                "CFBundleShortVersionString": version, "CFBundleVersion": build,
-                "CFBundleExecutable": "Unrevoke"}))
-            archive.writestr("WeChatUnrevoke.app/Contents/MacOS/Unrevoke", (version + build).encode())
-        return buffer.getvalue()
-
     @classmethod
     def setUpClass(cls):
         if not (Path.home() / "Apps/apps-portal/site/perf_block.py").is_file():
             raise unittest.SkipTest("Shared product-site renderer is not installed")
-        root = Path(__file__).resolve().parents[1]
-        spec = importlib.util.spec_from_file_location("build_site_assets", root / "scripts/build-site.py")
+        cls.repo = Path(__file__).resolve().parents[1]
+        spec = importlib.util.spec_from_file_location("build_site_assets", cls.repo / "scripts/build-site.py")
         cls.site = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(cls.site)
+
+    @staticmethod
+    def package():
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w") as archive:
+            archive.writestr("WeChatUnrevoke.app/Contents/Info.plist", plistlib.dumps({
+                "CFBundleShortVersionString": "9.9.9", "CFBundleVersion": "77",
+                "CFBundleExecutable": "Unrevoke"}))
+            archive.writestr("WeChatUnrevoke.app/Contents/MacOS/Unrevoke", b"verified executable")
+        return buffer.getvalue()
 
     def setUp(self):
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
-        self.out = Path(directory.name) / "site"
-        (self.out / "downloads").mkdir(parents=True)
-        self.archives = {}
-        for version, build in self.BUILDS.items():
-            data = self.package(version, build)
-            self.archives[version] = data
-            (self.out / "downloads" / f"WeChatUnrevoke-{version}.zip").write_bytes(data)
-        self.history = tuple({"version": version, "sha256": hashlib.sha256(data).hexdigest(),
-                              "download_bytes": len(data)}
-                             for version, data in self.archives.items() if version != "1.0.11")
-        history_patch = patch.object(self.site, "HISTORICAL_RELEASES", self.history)
-        history_patch.start()
-        self.addCleanup(history_patch.stop)
-        current = self.archives["1.0.11"]
-        self.release = {"version": "1.0.11", "build": "54", "source_commit": "current-only-commit",
-                        "sha256": hashlib.sha256(current).hexdigest(), "download_bytes": len(current),
-                        "download": "downloads/WeChatUnrevoke-1.0.11.zip"}
-        self.release["assets"] = self.site.release_asset_records(
-            self.release["version"], self.release["sha256"], self.release["download_bytes"],
-            self.release["build"], self.release["source_commit"])
-        for item in self.release["assets"]:
-            item.update(self.site.verify_release_archive(self.out / item["download"], item))
+        self.root = Path(directory.name)
+        self.out = self.root / "output"
+        self.out.mkdir()
+        self.data = self.package()
+        self.archive = self.root / "verified.zip"
+        self.archive.write_bytes(self.data)
+        self.digest = hashlib.sha256(self.data).hexdigest()
+        self.github = {"tag_name": "v9.9.9", "draft": False, "prerelease": False,
+                       "html_url": self.site.github_release_url("9.9.9"), "target_commitish": "main",
+                       "assets": [{"name": "WeChatUnrevoke-9.9.9.zip", "id": 123,
+                                   "digest": "sha256:" + self.digest, "size": len(self.data),
+                                   "browser_download_url": self.site.github_asset_url("9.9.9")}]}
+        self.approved = {"version": "9.9.9", "build": "77", "sha256": self.digest,
+                         "download_bytes": len(self.data)}
+        self.metadata = self.site.verify_release_archive(self.archive, self.approved)
+        self.record = self.site.release_record(self.github, self.metadata, "a" * 40)
 
     def manifest(self):
-        (self.out / "release.json").write_text(json.dumps(self.release))
-        return self.site.write_site_manifest(self.out, self.release["version"], self.release["build"])
+        (self.out / "release.json").write_text(json.dumps(self.record))
+        return self.site.write_site_manifest(self.out, "9.9.9", "77")
 
-    def historical_asset(self):
-        return next(asset for asset in self.release["assets"] if asset["version"] == "1.0.3")
+    def test_release_links_follow_the_version_without_site_packages(self):
+        for version in ("1.0.13", "9.9.9"):
+            self.assertEqual(self.site.github_release_url(version),
+                             f"https://github.com/{self.site.REPO}/releases/tag/v{version}")
+        for version in ("latest", "../main", "1.0.13?x=1", "1.0.13-beta"):
+            with self.subTest(version=version), self.assertRaises(SystemExit):
+                self.site.github_release_url(version)
 
-    def test_all_registered_archives_have_matching_manifest_hashes(self):
-        assets = self.release["assets"]
-        self.assertEqual([asset["version"] for asset in assets], list(self.archives))
-        self.assertEqual([asset["version"] for asset in assets if asset["current"]], ["1.0.11"])
-        for asset in assets:
-            version = asset["version"]
-            data = self.archives[version]
-            self.assertEqual(asset["filename"], f"WeChatUnrevoke-{version}.zip")
-            self.assertEqual(asset["download"], "downloads/" + asset["filename"])
-            self.assertEqual(asset["source"], f"https://github.com/{self.site.REPO}/releases/tag/v{version}")
-            self.assertEqual(asset["sha256"], hashlib.sha256(data).hexdigest())
-            self.assertEqual(asset["download_bytes"], len(data))
-            with zipfile.ZipFile(io.BytesIO(data)) as package:
-                info = plistlib.loads(package.read("WeChatUnrevoke.app/Contents/Info.plist"))
-            with self.subTest(version=version):
-                self.assertEqual(asset["version"], info["CFBundleShortVersionString"])
-                self.assertEqual(asset["build"], info["CFBundleVersion"])
-                self.assertEqual(asset["build"], self.BUILDS[version])
-                self.assertEqual(asset["source_commit"], "current-only-commit" if asset["current"] else None)
-        files = {record["path"]: record for record in self.manifest()}
-        for asset in assets:
-            self.assertEqual(files[asset["download"]]["sha256"], asset["sha256"])
-            self.assertEqual(files[asset["download"]]["bytes"], asset["download_bytes"])
-        self.assertEqual(set(path for path in files if path.endswith(".zip")),
-                         {asset["download"] for asset in assets})
+    def test_github_identity_rejects_unstable_or_wrong_repository_release(self):
+        for field, value in (("draft", True), ("prerelease", True),
+                             ("html_url", "https://github.com/other/App/releases/tag/v9.9.9"),
+                             ("tag_name", "v9.9.9-beta")):
+            release = copy.deepcopy(self.github)
+            release[field] = value
+            with self.subTest(field=field), self.assertRaises(SystemExit):
+                self.site.github_release_identity(release)
 
-    def test_unregistered_extra_archive_is_rejected(self):
-        (self.out / "downloads/WeChatUnrevoke-7.9.9.zip").write_bytes(b"leftover")
+    def test_github_asset_digest_size_identity_and_version_are_required(self):
+        for field, value in (("digest", None), ("digest", "sha256:unverified"), ("size", 0),
+                             ("size", "123"), ("id", 0), ("name", "WeChatUnrevoke-9.9.8.zip"),
+                             ("browser_download_url", "https://github.com/other/App/releases/download/v9.9.9/App.zip")):
+            release = copy.deepcopy(self.github)
+            release["assets"][0][field] = value
+            with self.subTest(field=field, value=value), self.assertRaises(SystemExit):
+                self.site.github_release_identity(release)
+        release = copy.deepcopy(self.github)
+        release["assets"].append(dict(release["assets"][0]))
+        with self.assertRaises(SystemExit):
+            self.site.github_release_identity(release)
+
+    def test_external_record_keeps_real_package_facts(self):
+        self.assertEqual(self.record["source"], self.github["html_url"])
+        self.assertEqual(self.record["download"], self.github["assets"][0]["browser_download_url"])
+        self.assertEqual(self.record["sha256"], self.digest)
+        self.assertEqual(self.record["download_bytes"], len(self.data))
+        self.assertEqual(self.record["build"], "77")
+        self.assertEqual(self.record["repo"], self.site.REPO)
+        self.assertEqual(self.record["asset_id"], 123)
+        self.assertEqual(len(self.record["assets"]), 1)
+        self.assertEqual(self.record["assets"][0]["executable_sha256"],
+                         hashlib.sha256(b"verified executable").hexdigest())
+        self.assertEqual({item["path"] for item in self.manifest()}, {"release.json"})
+
+    def test_external_record_cannot_claim_a_local_or_other_repository_download(self):
+        for field, value in (("repo", "other/App"), ("tag", "v9.9.8"),
+                             ("download", "downloads/WeChatUnrevoke-9.9.9.zip"),
+                             ("source", self.site.github_release_url("9.9.8")),
+                             ("sha256", "unverified"), ("download_bytes", 0)):
+            original = self.record[field]
+            self.record[field] = value
+            with self.subTest(field=field), self.assertRaises(SystemExit):
+                self.manifest()
+            self.record[field] = original
+
+    def test_asset_facts_must_match_verified_release_record(self):
+        for field, value in (("version", "9.9.8"), ("build", "54"), ("sha256", "0" * 64),
+                             ("asset_id", 321), ("source_commit", "inherited")):
+            original = self.record["assets"][0][field]
+            self.record["assets"][0][field] = value
+            with self.subTest(field=field), self.assertRaises(SystemExit):
+                self.manifest()
+            self.record["assets"][0][field] = original
+
+    def test_unlinked_installers_are_rejected_before_manifest(self):
+        for filename, data in (("WeChatUnrevoke-1.0.3.zip", b"old package"),
+                               ("renamed.zip", self.data), ("unused.dmg", b"image"), ("unused.pkg", b"installer")):
+            path = self.out / filename
+            path.write_bytes(data)
+            with self.subTest(filename=filename), self.assertRaises(SystemExit):
+                self.manifest()
+            path.unlink()
+        (self.out / "Unused.app").mkdir()
         with self.assertRaises(SystemExit):
             self.manifest()
 
-    def test_missing_historical_registration_is_rejected(self):
-        self.release["assets"].remove(self.historical_asset())
-        with self.assertRaises(SystemExit):
-            self.manifest()
+    def test_tutorial_video_and_example_archive_remain_publishable(self):
+        (self.out / "tutorial.mp4").write_bytes(b"video")
+        with zipfile.ZipFile(self.out / "examples.zip", "w") as examples:
+            examples.writestr("example/input.txt", "tutorial data")
+        self.assertEqual({item["path"] for item in self.manifest()},
+                         {"release.json", "tutorial.mp4", "examples.zip"})
 
-    def test_tampered_historical_archive_is_rejected(self):
-        (self.out / self.historical_asset()["download"]).write_bytes(b"tampered")
-        with self.assertRaises(SystemExit):
-            self.manifest()
+    def test_archive_checksum_and_packaged_version_build_remain_verified(self):
+        for change in ({"sha256": "0" * 64}, {"download_bytes": 1},
+                       {"version": "9.9.8"}, {"build": "54"}):
+            with self.subTest(change=change), self.assertRaises(SystemExit):
+                self.site.verify_release_archive(self.archive, {**self.approved, **change})
 
-    def test_file_and_asset_forgery_still_fails_historical_anchor(self):
-        asset = self.historical_asset()
-        replacement = b"replacement archive"
-        (self.out / asset["download"]).write_bytes(replacement)
-        asset.update(sha256=hashlib.sha256(replacement).hexdigest(), download_bytes=len(replacement))
-        with self.assertRaises(SystemExit):
-            self.manifest()
-
-    def test_missing_historical_archive_is_rejected(self):
-        (self.out / self.historical_asset()["download"]).unlink()
-        with self.assertRaises(SystemExit):
-            self.manifest()
-
-    def test_duplicate_asset_is_rejected(self):
-        self.release["assets"].append(dict(self.historical_asset()))
-        with self.assertRaises(SystemExit):
-            self.manifest()
-
-    def test_current_asset_must_match_top_level_release(self):
-        current = next(asset for asset in self.release["assets"] if asset["current"])
-        for field, value in (("sha256", "0" * 64), ("download_bytes", 1),
-                             ("download", "downloads/other.zip")):
-            with self.subTest(field=field):
-                original = current[field]
-                current[field] = value
-                with self.assertRaises(SystemExit):
-                    self.manifest()
-                current[field] = original
-
-    def test_tampered_current_archive_is_rejected(self):
-        (self.out / self.release["download"]).write_bytes(b"tampered current")
-        with self.assertRaises(SystemExit):
-            self.manifest()
-
-    def test_historical_asset_cannot_be_marked_current(self):
-        self.historical_asset()["current"] = True
-        with self.assertRaises(SystemExit):
-            self.manifest()
-
-    def test_each_asset_version_and_build_must_match_its_zip(self):
-        for asset in self.release["assets"]:
-            for field, wrong in (("version", "99.0.0"), ("build", "999")):
-                with self.subTest(version=asset["version"], field=field):
-                    original = asset[field]
-                    asset[field] = wrong
-                    with self.assertRaises(SystemExit):
-                        self.manifest()
-                    asset[field] = original
-
-    def test_historical_asset_cannot_inherit_current_commit_or_package_facts(self):
-        historical = self.historical_asset()
-        current = next(item for item in self.release["assets"] if item["current"])
-        for field in ("source_commit", "executable_sha256", "installed_file_bytes"):
-            with self.subTest(field=field):
-                original = historical[field]
-                historical[field] = current[field]
-                if original == current[field]:
-                    historical[field] = "wrong" if isinstance(original, str) else -1
-                with self.assertRaises(SystemExit):
-                    self.manifest()
-                historical[field] = original
-
-    def restore(self, root, data=None):
+    def run_build(self, root, *, corrupt_download=False):
+        import product_facts
+        for folder in ("site", "icon", "docs/demo"):
+            (root / folder).mkdir(parents=True, exist_ok=True)
+        (root / "site/index.html").write_text((self.repo / "site/index.html").read_text())
+        for filename in ("style.css", "app.js"):
+            (root / "site" / filename).write_text("")
+        (root / "icon/AppIcon.png").write_bytes(b"icon")
+        media = ["current-protected.png", "current-guide.mp4", "current-guide.vtt", "tutorial.mp4"]
+        media += [f"{clip}.{suffix}" for clip in ("enable", "restore") for suffix in ("mp4", "vtt", "png")]
+        for filename in media:
+            (root / "docs/demo" / filename).write_bytes(filename.encode())
+        (root / "docs/demo/current-guide.json").write_text(json.dumps({"version": "9.9.9", "files": {
+            filename: hashlib.sha256((root / "docs/demo" / filename).read_bytes()).hexdigest() for filename in media}}))
+        for filename in ("README.md", "README_EN.md"):
+            (root / filename).write_text("**1.0 MB** **0%** v9.9.9 2026-10-11 **0.0 MB**")
         calls = []
+        def api(command, text):
+            self.assertTrue(text)
+            if command == ["gh", "api", f"repos/{self.site.REPO}/releases/latest"]:
+                return json.dumps(self.github)
+            self.assertEqual(command, ["gh", "api", f"repos/{self.site.REPO}/commits/main", "--jq", ".sha"])
+            return "a" * 40
         def download(command, check):
             self.assertTrue(check)
-            self.assertEqual(command[:3], ["gh", "release", "download"])
-            version = command[3].removeprefix("v")
-            self.assertEqual(command, ["gh", "release", "download", "v" + version,
-                                      "--repo", self.site.REPO, "--pattern", f"WeChatUnrevoke-{version}.zip",
-                                      "--dir", str(root / "dist")])
-            calls.append(version)
-            (root / "dist" / f"WeChatUnrevoke-{version}.zip").write_bytes(
-                data if data is not None else self.archives[version])
-        with patch.object(self.site, "ROOT", root), patch.object(self.site.subprocess, "run", side_effect=download):
-            records = self.site.prepare_release_assets(self.release["version"], self.release["sha256"],
-                self.release["download_bytes"], self.release["build"], self.release["source_commit"])
-        return records, calls
+            self.assertEqual(command, ["gh", "release", "download", "v9.9.9", "--repo", self.site.REPO,
+                                      "--pattern", "WeChatUnrevoke-9.9.9.zip", "--dir", str(root / "dist")])
+            calls.append(command)
+            (root / "dist/WeChatUnrevoke-9.9.9.zip").write_bytes(b"corrupt" if corrupt_download else self.data)
+        fields = {"PERF_VERSION": "9.9.9", "PERF_MEM": "1.0", "PERF_CPU": "0", "PERF_DATE": "2026-10-11", "PERF_NOTICE": "fixture"}
+        with patch.object(self.site, "ROOT", root), patch.object(self.site, "OUT", root / "dist/site"), \
+             patch.object(self.site.subprocess, "check_output", side_effect=api), \
+             patch.object(self.site.subprocess, "run", side_effect=download), \
+             patch.object(self.site, "lightweight_section", return_value="<section id='light'>fixture</section>"), \
+             patch.object(self.site, "perf_fields", return_value=fields), \
+             patch.object(product_facts, "from_repo", return_value={"version": "9.9.9"}), redirect_stdout(io.StringIO()):
+            self.site.main()
+        return calls
 
-    def test_isolated_root_without_dist_restores_only_fixed_release_archives(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            self.assertFalse((root / "dist").exists())
-            records, calls = self.restore(root)
-            self.assertEqual(calls, list(self.BUILDS))
-            self.assertEqual({p.name for p in (root / "dist").iterdir()},
-                             {item["filename"] for item in records})
-            for item in records:
-                with self.subTest(version=item["version"]):
-                    self.assertEqual(item["build"], self.BUILDS[item["version"]])
-                    self.assertEqual(item["sha256"], hashlib.sha256((root / "dist" / item["filename"]).read_bytes()).hexdigest())
-            with patch.object(self.site, "ROOT", root), patch.object(self.site.subprocess, "run") as download:
-                self.site.prepare_release_assets(self.release["version"], self.release["sha256"],
-                    self.release["download_bytes"], self.release["build"], self.release["source_commit"])
-                download.assert_not_called()
+    def test_clean_build_removes_site_mirrors_preserves_originals_and_media(self):
+        root = self.root / "build"
+        (root / "dist/site/downloads").mkdir(parents=True)
+        (root / "dist/site/downloads/WeChatUnrevoke-1.0.3.zip").write_bytes(b"old mirror")
+        (root / "dist/site/unlinked.dmg").write_bytes(b"old mirror")
+        (root / "dist/WeChatUnrevoke-9.9.9.zip").write_bytes(self.data)
+        historical = root / "dist/WeChatUnrevoke-1.0.3.zip"
+        historical.write_bytes(b"keep original")
+        self.assertEqual(self.run_build(root), [])
+        out = root / "dist/site"
+        self.assertFalse((out / "downloads").exists())
+        self.assertFalse(any(self.site.is_installation_artifact(path) for path in out.rglob("*")))
+        self.assertEqual(historical.read_bytes(), b"keep original")
+        self.assertEqual((root / "dist/WeChatUnrevoke-9.9.9.zip").read_bytes(), self.data)
+        self.assertTrue((out / "media/tutorial.mp4").is_file())
+        html = (out / "index.html").read_text()
+        self.assertEqual(html.count('href="' + self.site.github_release_url("9.9.9") + '"'), 4)
+        self.assertNotIn('href="downloads/', html)
+        self.assertNotIn(self.site.github_asset_url("9.9.9"), html)
+        self.assertIn('href="media/current-guide.mp4" download', html)
+        self.assertIn("GitHub 发行记录与 SHA256 校验", html)
+        record = json.loads((out / "release.json").read_text())
+        self.assertEqual(record["sha256"], self.digest)
+        for item in json.loads((out / "site-manifest.json").read_text())["files"]:
+            self.assertEqual(hashlib.sha256((out / item["path"]).read_bytes()).hexdigest(), item["sha256"])
 
-    def test_corrupt_download_is_rejected(self):
-        with tempfile.TemporaryDirectory() as directory:
-            with self.assertRaises(SystemExit):
-                self.restore(Path(directory), b"broken download")
+    def test_isolated_build_needs_only_current_release_not_historical_archives(self):
+        root = self.root / "isolated"
+        self.assertFalse((root / "dist").exists())
+        self.assertEqual(len(self.run_build(root)), 1)
+        self.assertEqual({path.name for path in (root / "dist").iterdir()}, {"site", "WeChatUnrevoke-9.9.9.zip"})
+        self.assertFalse((root / "dist/site/downloads").exists())
 
-    def test_same_size_corrupt_download_is_rejected(self):
-        data = bytearray(self.archives["1.0.3"])
-        data[-1] ^= 1
-        with tempfile.TemporaryDirectory() as directory:
-            with self.assertRaises(SystemExit):
-                self.restore(Path(directory), bytes(data))
-
-    def test_verified_bytes_still_require_packaged_release_version_and_build(self):
-        for version, build in (("99.0.0", "54"), ("1.0.11", "55")):
-            with self.subTest(version=version, build=build):
-                data = self.package(version, build)
-                path = self.out / "wrong-identity.zip"
-                path.write_bytes(data)
-                approved = {"version": "1.0.11", "build": "54", "sha256": hashlib.sha256(data).hexdigest(),
-                            "download_bytes": len(data)}
-                with self.assertRaises(SystemExit):
-                    self.site.verify_release_archive(path, approved)
+    def test_corrupt_download_stops_before_replacing_site_output(self):
+        root = self.root / "corrupt"
+        (root / "dist/site").mkdir(parents=True)
+        (root / "dist/site/previous.txt").write_text("previous build")
+        with self.assertRaises(SystemExit):
+            self.run_build(root, corrupt_download=True)
+        self.assertEqual((root / "dist/site/previous.txt").read_text(), "previous build")
 
 
 if __name__ == "__main__":

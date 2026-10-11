@@ -186,19 +186,19 @@ class SiteResourceContractTests(unittest.TestCase):
     def test_site_manifest_lists_every_public_file(self):
         with tempfile.TemporaryDirectory() as directory:
             out = Path(directory)
-            (out / "downloads").mkdir()
+            (out / "media").mkdir()
             (out / "index.html").write_text("page")
-            (out / "downloads/app.zip").write_bytes(b"zip")
-            (out / "downloads/.DS_Store").write_bytes(b"finder")
+            (out / "media/tutorial.mp4").write_bytes(b"vid")
+            (out / "media/.DS_Store").write_bytes(b"finder")
             (out / "site-manifest.json").write_text("stale")
             files = self.site.write_site_manifest(out, "9.9.9", 7)
             manifest = json.loads((out / "site-manifest.json").read_text())
             self.assertEqual(manifest["files"], files)
-            self.assertEqual([row["path"] for row in files], ["downloads/app.zip", "index.html"])
-            self.assertEqual(files[0], {"path": "downloads/app.zip", "bytes": 3,
-                                        "sha256": hashlib.sha256(b"zip").hexdigest()})
+            self.assertEqual([row["path"] for row in files], ["index.html", "media/tutorial.mp4"])
+            self.assertEqual(files[1], {"path": "media/tutorial.mp4", "bytes": 3,
+                                        "sha256": hashlib.sha256(b"vid").hexdigest()})
             self.assertEqual((manifest["version"], manifest["build"], manifest["preview"]), ("9.9.9", "7", False))
-            self.assertFalse((out / "downloads/.DS_Store").exists())
+            self.assertFalse((out / "media/.DS_Store").exists())
             (out / ".env").write_text("secret")
             with self.assertRaises(SystemExit):
                 self.site.write_site_manifest(out, "9.9.9", 7)
