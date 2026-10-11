@@ -166,7 +166,7 @@ def perf_fields(version, download_bytes, installed_bytes=None, release_build=Non
 
 
 def lightweight_section(version, download_bytes, installed_bytes, release_build=None):
-    """Render current archive facts and explicitly separate older runtime evidence."""
+    """Render the measured block; label it as historical when the release is newer than the evidence."""
     source = ROOT / "perf/lightweight.json"
     recorded = json.loads(source.read_text())
     fields = perf_fields(version, download_bytes, installed_bytes, release_build)
@@ -176,36 +176,26 @@ def lightweight_section(version, download_bytes, installed_bytes, release_build=
             section = section.replace("<div class='perf-grid'>",
                 "<p class='fine'>" + escape(fields["PERF_NOTICE"]) + "</p><div class='perf-grid'>", 1)
         return section
-    # This view exists only in memory; the measured evidence is never rewritten.
-    current = {
-        "version": version, "measured_at": datetime.now().date().isoformat(),
-        "device": "已校验 SHA256 的发行 ZIP", "size": {
-            "download_bytes": download_bytes},
-        "data": "仅核对安装包及包内展开文件总字节数（不含文件系统分配开销）；内存、CPU 与速度待测。",
-    }
+    # A newer release without its own measurement: the page keeps exactly one resources module, the
+    # recorded measurement as the shared renderer prints it, and says above the numbers which version
+    # they belong to and that they do not describe the current download. (Lintel accepts one module
+    # whose figures match the evidence verbatim; a second "not measured" block next to it does not.)
+    # The current archive's own sizes come from the verified ZIP and never reuse the measured labels.
+    build = f" ({release_build})" if release_build is not None else ""
+    download_mb = f"{download_bytes / 1_000_000:.1f}"
     expanded_mb = f"{installed_bytes / 1_000_000:.6f}".rstrip("0").rstrip(".")
-    current_html = perf_block.section(perf_block.summarize(current, source)).replace(
-        "class='section wrap perf'", "class='lw-perf'").replace(
-        "资源占用与响应速度。", f"当前 v{escape(version)}：运行性能待测。").replace(
-        "data-perf-metric='download'", "data-release-metric='download'").replace(
-        "<h3>安装包</h3>", "<h3>当前发行 ZIP</h3>").replace(
-        "下载文件大小。",
-        f"发行 ZIP；包内展开文件合计 <span data-release-metric='unpacked-file-size'>{expanded_mb} MB</span>"
-        f"（{installed_bytes:,} 字节，不含文件系统分配开销）。")
-    historical = perf_block.standalone_section(source, release_version(recorded["version"]), '#50723c')
-    historical = historical.replace("id='light'", "id='historical-performance'").replace(
-        "资源占用与响应速度。", f"历史实测 · v{escape(recorded['version'])}，{escape(fields['PERF_DATE'])}。")
-    historical = historical.replace("<div class='perf-grid'>",
-        "<p class='fine'>历史实测记录，不代表当前发行版。</p><div class='perf-grid'>", 1)
-    # The historical installed measurement and the current ZIP's sum of file
-    # lengths have different versions and methods; never label both "installed".
-    measured_installed = recorded.get("size", {}).get("installed_bytes")
-    if measured_installed:
-        measured_mb = f"{measured_installed / 1_000_000:.6f}".rstrip("0").rstrip(".")
-        historical = re.sub(r"(<span data-perf-metric='installed'>)[^<]+(</span>)",
-                            lambda match: match[1] + measured_mb + " MB" + match[2], historical)
-    css, _, historical_body = historical.partition("</style>")
-    return css + "</style>" + current_html + historical_body
+    notice = (f"历史实测：以下是 v{escape(recorded['version'])} 的测量记录（{escape(fields['PERF_DATE'])}），"
+              f"不代表当前公开下载 v{escape(version)}{escape(build)}；"
+              f"v{escape(version)} 的内存、CPU、启动速度与安装后占用待测。"
+              f"当前发行 ZIP <span data-release-metric='download'>{download_mb} MB</span>"
+              f"（{download_bytes:,} 字节），包内展开文件合计 "
+              f"<span data-release-metric='unpacked-file-size'>{expanded_mb} MB</span>"
+              f"（{installed_bytes:,} 字节，不含文件系统分配开销）。")
+    section = perf_block.standalone_section(source, release_version(recorded["version"]), '#50723c')
+    if "<div class='perf-grid'>" not in section:
+        raise SystemExit("Shared resource block changed shape; the historical notice has no place to go")
+    return section.replace("<div class='perf-grid'>",
+                           "<p class='fine' data-measurement-scope='historical'>" + notice + "</p><div class='perf-grid'>", 1)
 
 
 def write_site_manifest(out, version, build):
