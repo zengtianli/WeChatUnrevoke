@@ -559,7 +559,7 @@
       "replaced_on": "2026-10-05",
       "reason": "版本变化；仅本次实测可作为当前证据",
       "value": {
-        "process": "/private/var/folders/x7/qptxw08j00v__67yzr3gcd000000gp/T/sim-lane-mac.zj2u0vqc/WeChatUnrevoke.app",
+        "process": "<scratch>/WeChatUnrevoke.app",
         "footprint_mb": 29.0,
         "main_footprint_mb": 29.0,
         "cpu_pct": 0.0,
@@ -610,7 +610,7 @@
       "reason": "版本变化；仅本次实测可作为当前证据",
       "value": {
         "environment": "native",
-        "evidence": "/Users/tianli/Library/Caches/app-lightweight/measurement-candidates/fc793de569b1476aa3bc0b765dae99db.raw.json",
+        "evidence": "~/Library/Caches/app-lightweight/measurement-candidates/fc793de569b1476aa3bc0b765dae99db.raw.json",
         "evidence_sha256": "35fd11af2a56d9465db805e5ec8506b13aa6362e795be6ae194389f11d20f8a3",
         "input_sha256": "3e9bda8f9f3099566ab714e06acafecec29e18a705a88a0746ba5407ae26eca2",
         "ready_signal": "os_log"
@@ -660,7 +660,7 @@
       "replaced_on": "2026-10-10",
       "reason": "版本变化；仅本次实测可作为当前证据",
       "value": {
-        "process": "/private/var/folders/x7/qptxw08j00v__67yzr3gcd000000gp/T/sim-lane-mac.xva_vak3/WeChatUnrevoke.app",
+        "process": "<scratch>/WeChatUnrevoke.app",
         "footprint_mb": 29.0,
         "main_footprint_mb": 29.0,
         "cpu_pct": 0.0,
@@ -711,7 +711,7 @@
       "reason": "版本变化；仅本次实测可作为当前证据",
       "value": {
         "environment": "native",
-        "evidence": "/Users/tianli/Library/Caches/app-lightweight/measurement-candidates/701c3779e48f47d7ba9e0681b82838ee.raw.json",
+        "evidence": "~/Library/Caches/app-lightweight/measurement-candidates/701c3779e48f47d7ba9e0681b82838ee.raw.json",
         "evidence_sha256": "d9d19d086e445933976ae73953e584faeff4c9d2b9aa50a60eaac24d83651601",
         "input_sha256": "63cf23cf78e067712071e5b76ca54ede05791a6c3d71c62c0abec731158e6917",
         "ready_signal": "os_log"
@@ -761,7 +761,7 @@
       "replaced_on": "2026-10-11",
       "reason": "版本变化；仅本次实测可作为当前证据",
       "value": {
-        "process": "/private/var/folders/x7/qptxw08j00v__67yzr3gcd000000gp/T/sim-lane-mac._z3z4fux/WeChatUnrevoke.app",
+        "process": "<scratch>/WeChatUnrevoke.app",
         "footprint_mb": 27.0,
         "main_footprint_mb": 27.0,
         "cpu_pct": 0.02,
@@ -812,7 +812,7 @@
       "reason": "版本变化；仅本次实测可作为当前证据",
       "value": {
         "environment": "native",
-        "evidence": "/Users/tianli/Library/Caches/app-lightweight/measurement-candidates/cd1749cb19da445ea56024dc121ed915.raw.json",
+        "evidence": "~/Library/Caches/app-lightweight/measurement-candidates/cd1749cb19da445ea56024dc121ed915.raw.json",
         "evidence_sha256": "d71db338e8e33c1587525f43f681cf9ace50a39b7acfb5190b74c1fbcdd18aec",
         "input_sha256": "ec22c3e1d1724c2a0c4f3062bfcb832f6e7e54e0360675e883b7118187f83b6c",
         "ready_signal": "os_log"
@@ -895,7 +895,7 @@
     }
   ],
   "idle": {
-    "process": "/private/var/folders/6_/r0ygnj7s41g013d21kpwlph80000gp/T/sim-lane-mac.ecntf75l/WeChatUnrevoke.app",
+    "process": "<scratch>/WeChatUnrevoke.app",
     "footprint_mb": 28.0,
     "main_footprint_mb": 28.0,
     "cpu_pct": 0.0,
@@ -916,7 +916,7 @@
   },
   "runtime_measurement": {
     "environment": "native",
-    "evidence": "/Users/tianli/Library/Caches/app-lightweight/measurement-candidates/ebf2f160342d47079a1c9b2522ce09d0.raw.json",
+    "evidence": "~/Library/Caches/app-lightweight/measurement-candidates/ebf2f160342d47079a1c9b2522ce09d0.raw.json",
     "evidence_sha256": "b4f9e66063fe5d9676a0042745597e61d67b56b6040febcf4f99eb890e0631b8",
     "input_sha256": "6922e8bb1082315a08068564fab0e52ec54d0d908f6322498f79cda7f6b35213",
     "ready_signal": "os_log"
