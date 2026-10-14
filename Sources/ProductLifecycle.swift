@@ -6,7 +6,10 @@ import Foundation
 enum ProductLifecycle {
     static let productID = "io.github.zengtianli.unrevoke"
     static let name = "WeChatUnrevoke"
-    static let portableKeys = ["variant", "autoRepatch", "appUpdateOptions"] + AppShortcuts.portableKeys
+    // Configuration schema is shared with the companion CLI, which has no AppKit
+    // menu adapter. The GUI acceptance checks these names against AppShortcuts.
+    static let portableKeys = ["variant", "autoRepatch", "appUpdateOptions",
+                               "appShortcuts.refresh.enabled", "appShortcuts.refresh.binding"]
 
     static func preferences() -> UserDefaults {
         let env = ProcessInfo.processInfo.environment
@@ -43,12 +46,4 @@ enum ProductLifecycle {
         return .github(repository: "zengtianli/WeChatUnrevoke")
     }
 
-    @MainActor
-    static func commandMode(_ words: [String]) -> Int32? {
-        if AppLifecycleCLI.handles(words.first) {
-            return AppLifecycleCLI.run(words, product: .init(command: "WeChatUnrevoke", name: name,
-                configuration: makeConfiguration(), updateSource: updateSource()))
-        }
-        return ProductSettings.commandMode(words)
-    }
 }

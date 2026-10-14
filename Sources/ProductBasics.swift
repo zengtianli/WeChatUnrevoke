@@ -1,6 +1,19 @@
 import AppKit
 import Foundation
 
+// App entry only; the shared product configuration factory also compiles into
+// the companion CLI without requiring GUI controls or the app entry point.
+extension ProductLifecycle {
+    @MainActor
+    static func commandMode(_ words: [String]) -> Int32? {
+        if AppLifecycleCLI.handles(words.first) {
+            return AppLifecycleCLI.run(words, product: .init(command: "WeChatUnrevoke", name: name,
+                configuration: makeConfiguration(), updateSource: updateSource()))
+        }
+        return ProductSettings.commandMode(words)
+    }
+}
+
 /// Product controls use the same preference domain and allowlist as the window,
 /// configuration transfer and command readback. No patch is performed here.
 @MainActor
@@ -140,6 +153,7 @@ enum ProductBasicsSelfTest {
             let directory = URL(fileURLWithPath: output, isDirectory: true)
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             let settings = ProductSettings.current!
+            checks["settings.shortcut_migration_schema"] = Set(AppShortcuts.portableKeys).isSubset(of: Set(ProductLifecycle.portableKeys))
             func act(_ control: NSControl) { _ = app.sendAction(control.action!, to: control.target, from: control) }
             settings.variant.selectItem(at: 1); act(settings.variant)
             settings.autoRepatch.state = .off; act(settings.autoRepatch)

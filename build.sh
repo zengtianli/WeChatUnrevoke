@@ -81,7 +81,7 @@ if [ "${UNIVERSAL:-0}" = "1" ]; then
 fi
 echo "→ 构建 Unrevoke（$CONFIG${UNIVERSAL:+, universal}）…"
 mkdir -p "$DIR/build"
-BUILD_LOG="$(mktemp "$DIR/build/unrevoke-compile.XXXXXX.log")"
+BUILD_LOG="$(mktemp "$DIR/build/unrevoke-compile.XXXXXX")"
 echo "   编译日志 → $BUILD_LOG"
 xcodebuild -project Unrevoke.xcodeproj -scheme Unrevoke -configuration "$CONFIG" ${XCARGS[@]+"${XCARGS[@]}"} build 2>&1 | tee "$BUILD_LOG" | tail -3
 
