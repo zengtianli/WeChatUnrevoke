@@ -1,5 +1,42 @@
 # Unrevoke · 四项基础能力收口
 
+## 已装版接续 · 2026-10-15 06:03（上海）
+
+本阶段得到 Chapter 的一次本机快装授权，派出身份更新为 `--pid 3831 --session chapter-task:6c6b1b7f0463531e9420239d4c2972f5`；沿原 claims 逐路径核写入，没有另开或释放声明。只改产品配置核心/GUI 接线、原构建日志模板和本 handoff；没有改共享实现、引擎、站点、正式发行版本或更新源，没有推送、发布、部署、公证或上传。本节是当前已装结果，下文保留前一阶段候选的历史事实。
+
+源码提交：**`0ca4033`**，仅 `Sources/ProductLifecycle.swift`、`Sources/ProductBasics.swift`、`build.sh`。配置核心继续由原 CLI 构建复用，GUI 命令接线移到原 GUI 文件；快捷键迁移键通过实际 App 自检核总部 schema 一致。修正 macOS `mktemp` 要求模板末尾为 `XXXXXX` 的重复构建故障，原旧日志保留，没有删除其他会话产物。
+
+沿原快构建入口产出当前源码候选，再沿原本机装机入口保留现有组件完成 **一次安装**。实际 `/Applications/WeChatUnrevoke.app` 为 **1.0.13 (113)**、bundle ID `io.github.zengtianli.unrevoke`，原生 arm64；113 是本机原入口的构建号，正式公开发行未变。最终包使用本机可用的 **Apple Development 稳定开发者证书**，`codesign --verify --deep --strict` 通过，designated requirement 绑定证书身份与原 bundle ID，未以 ad-hoc 包替换正式运行版；测试副本继续仅在隔离目录签名。
+
+原 `app_sop.py build-receipt` 包围实际签名与原装机步骤写出 `perf/build-receipt.json`，装后及源码提交后按原 verifier 核实际可执行文件、图标和当前输入；候选编译回执也保留。没有手写来源回执。
+
+| 当前已装对象 | SHA256 |
+| --- | --- |
+| Contents/MacOS/Unrevoke | `f26ab3a776ffd50e26ed7324b0f8efc2d768c96d7de54e5c612644a43bb67a77` |
+| 实际源码输入 | `d79143da5c518bb997aa25c0bf49d5d397158019306dd123d9ac98bfb3e5f909` |
+| 原装机 build-receipt | `0baeef016b2fe98a0bd8bedf198041c912cd0dd36b70ccc687eae55141d21949` |
+| 已装版固定验收 raw.json | `3b1e904ab6ea0ad01cb2fbdfc5ddf0d3a44c5b52b4185e1c84550362c00be968` |
+
+实际执行默认已装版入口、退出 **0**（未指定候选环境变量）：
+
+```sh
+cd /Users/tianli/Apps/unrevoke
+env -u UNREVOKE_BASICS_APP -u UNREVOKE_BASICS_RECEIPT \
+chapter sop accept --app unrevoke-mac --check product_basics --json
+```
+
+Chapter 返回 `ok=true`、`passed`、`method=real_product`，原件 `artifact_scope=installed`；**14 项必测行为全部严格 true，32 项实际断言、45 次实际产品进程调用**。原记录 `perf/acceptance/run-7ti0_1r9/product_basics.json`，SHA256 `90e5c32315805c2855645cc2eab6f089cb83941f3edaf0194b8e3b596a79153f`；raw 原件 `perf/acceptance/product-basics-70aad27071d94f14a662b48728a31e30/raw.json`。`perf/delivery-evidence.json` 仍由 Chapter 写入，没有手写通过证据；另一轮 app_sop 正在运行的提示仅说明总报告刷新由原任务回读，不影响本次已写出的验收原件。
+
+安装后核原用户配置项 SHA 与装前一致、原引擎 SHA 未变、原命令链接未变、原后台仍为原 PID/启动时间，旧版与旧 receipt 保留可回溯。登录项用正确的 `--login status --json` 读取，返回与装前一致的 `notFound/service_unavailable`，未调用注册/注销；系统 TCC 只读查询无本 bundle 的既有辅助功能/App 管理授权记录，未写权限数据库。
+
+读回注意事项：一次登录项读回误用了 `login`，进入普通 App 启动路径，发现后仅终止本轮进程；它新增了 `appUpdateState` 检查缓存。先核从当前偏好去掉这一新增键后可精确恢复装前 SHA，再只移除本轮新增缓存，当时完整偏好摘要一致；没有合成输入。随后观察到该进程退出后仍有新的更新检查历史写入，最终保留这份动态缓存，没有继续覆盖其他后台动作；排除仅这一运行历史键后，全部原用户配置的 SHA 仍与装前精确一致。固定 product_basics 验收自身全部为隔离离屏窗口，`no_visible_windows_or_dock` 为 true，不把这次读回误启动称作离屏验收。
+
+回归：本阶段 `bash tests/run.sh` 退出 0，**60 项 Python 测试、三组 Swift 回归、登录 CLI 83 个 fixture 断言**通过；当前源码 GUI 与原 CLI 实际构建均通过，`bash -n build.sh`、`git diff --check` 通过。只提交三个源码路径与本说明；本机登记/回执/证据沿原忽略策略保留，单次提交保留原凭证扫描与消息钩子，省掉自动推送 post-commit，没有修改全局配置。
+
+**本产品四项实现和默认已装版验收已完成，无需用户补测。** iCloud 已验证真实产品在本机隔离目录的同步往返、不可用回落和损坏恢复；**Apple 服务器跨设备传输未验证**。本轮只执行获授权的一次本机安装，仍未公开发布或部署，不扩大其他旧 SOP。
+
+## 前一阶段 · 当前源码候选（历史记录）
+
 2026-10-15 05:46（上海）；本轮仅 `unrevoke-mac` 的 product_basics 代码与候选验收阶段。派出身份 `--pid 52799 --session chapter-task:6c6b1b7f0463531e9420239d4c2972f5`，写前逐路径核 Chapter 原 claims，未另开、未释放。开工暂存/工作区为空，保留现有提交、后台和其他产品工作；没有推送、部署、发版、公证、上传更新源或安装应用。
 
 源码提交：**`a59b679`**，精确 12 个路径：四份总部生命周期副本、AppShortcuts 副本、ProductLifecycle 产品工厂、ProductBasics 产品设置与进程内自检、UnrevokeApp 接线、pbxproj 两个新增源的四处接线、原 build.sh、固定 product_basics 验收器、startup 隔离域回归。共享生产实现仅经原 vendor-lifecycle 分发，未改总部、Chapter、其他产品或微信补丁引擎；发布物/站点/版本源未改。
