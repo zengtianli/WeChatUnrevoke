@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		BF0000000000000000000119 /* AppShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000219 /* AppShortcuts.swift */; };
+		BF0000000000000000000120 /* ProductBasics.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000220 /* ProductBasics.swift */; };
 		BF0000000000000000000115 /* AppLifecycleCLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000215 /* AppLifecycleCLI.swift */; };
 		BF0000000000000000000116 /* ProductLifecycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000216 /* ProductLifecycle.swift */; };
 		BF0000000000000000000117 /* AppCommandMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000217 /* AppCommandMode.swift */; };
@@ -24,6 +26,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		BF0000000000000000000219 /* AppShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShortcuts.swift; sourceTree = "<group>"; };
+		BF0000000000000000000220 /* ProductBasics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductBasics.swift; sourceTree = "<group>"; };
 		BF0000000000000000000215 /* AppLifecycleCLI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLifecycleCLI.swift; sourceTree = "<group>"; };
 		BF0000000000000000000216 /* ProductLifecycle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductLifecycle.swift; sourceTree = "<group>"; };
 		BF0000000000000000000217 /* AppCommandMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCommandMode.swift; sourceTree = "<group>"; };
@@ -77,6 +81,8 @@
 				BF0000000000000000000211 /* AppLifecycle.swift */,
 				BF0000000000000000000215 /* AppLifecycleCLI.swift */,
 				BF0000000000000000000216 /* ProductLifecycle.swift */,
+				BF0000000000000000000219 /* AppShortcuts.swift */,
+				BF0000000000000000000220 /* ProductBasics.swift */,
 				BF0000000000000000000217 /* AppCommandMode.swift */,
 				BF0000000000000000000218 /* WriteHistory.swift */,
 				BF0000000000000000000214 /* LaneSignal.swift */,
@@ -163,6 +169,8 @@
 				BF0000000000000000000111 /* AppLifecycle.swift in Sources */,
 				BF0000000000000000000115 /* AppLifecycleCLI.swift in Sources */,
 				BF0000000000000000000116 /* ProductLifecycle.swift in Sources */,
+				BF0000000000000000000119 /* AppShortcuts.swift in Sources */,
+				BF0000000000000000000120 /* ProductBasics.swift in Sources */,
 				BF0000000000000000000117 /* AppCommandMode.swift in Sources */,
 				BF0000000000000000000118 /* WriteHistory.swift in Sources */,
 				BF0000000000000000000114 /* LaneSignal.swift in Sources */,

@@ -13,7 +13,8 @@ set -euo pipefail
 DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$DIR"
 LIFECYCLE_VENDOR="${APP_LIFECYCLE_VENDOR:-$HOME/Dev/tools/dev/lib/tools/macapp/swift-shared/vendor-lifecycle.py}"
-if [ -f "$LIFECYCLE_VENDOR" ]; then python3 "$LIFECYCLE_VENDOR" --platform mac --cli --target-source-dir "$DIR/Sources"; fi
+if [ -f "$LIFECYCLE_VENDOR" ]; then python3 "$LIFECYCLE_VENDOR" --platform mac --cli --shortcuts --target-source-dir "$DIR/Sources"; fi
+if [ "${BUILD_ONLY:-0}" = "1" ]; then INSTALL_APP=0; fi
 
 # 随仓检查，不依赖维护者的私有工具目录或 Homebrew 安装位置。
 # 保留旧的显式跳过开关，但正常构建仍必须通过 CodingKeys 契约检查。
@@ -74,11 +75,15 @@ esac
 # Intel Mac 上根本打不开，而构建、签名、自检全绿。所以下面有一道 lipo 门。
 CONFIG="${CONFIG:-Debug}"
 XCARGS=()
+if [ -n "${UNREVOKE_DERIVED_DATA:-}" ]; then XCARGS+=(-derivedDataPath "$UNREVOKE_DERIVED_DATA"); fi
 if [ "${UNIVERSAL:-0}" = "1" ]; then
-  XCARGS=(ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO)
+  XCARGS+=(ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO)
 fi
 echo "→ 构建 Unrevoke（$CONFIG${UNIVERSAL:+, universal}）…"
-xcodebuild -project Unrevoke.xcodeproj -scheme Unrevoke -configuration "$CONFIG" ${XCARGS[@]+"${XCARGS[@]}"} build | tail -3
+mkdir -p "$DIR/build"
+BUILD_LOG="$(mktemp "$DIR/build/unrevoke-compile.XXXXXX.log")"
+echo "   编译日志 → $BUILD_LOG"
+xcodebuild -project Unrevoke.xcodeproj -scheme Unrevoke -configuration "$CONFIG" ${XCARGS[@]+"${XCARGS[@]}"} build 2>&1 | tee "$BUILD_LOG" | tail -3
 
 BUILT="$(xcodebuild -project Unrevoke.xcodeproj -scheme Unrevoke -configuration "$CONFIG" ${XCARGS[@]+"${XCARGS[@]}"} -showBuildSettings 2>/dev/null | awk -F' = ' '/ BUILT_PRODUCTS_DIR =/{print $2; exit}')"
 APP="$BUILT/Unrevoke.app"
@@ -124,6 +129,12 @@ fi
 echo "   引擎 OK（${ARCHS}）· app ${APP_ARCHS} · 补丁库收录 ${BUILDS} 个微信 build"
 
 if [ "${INSTALL_APP:-1}" = "0" ]; then
+  if [ -n "${UNREVOKE_OUTPUT_APP:-}" ]; then
+    [ ! -e "$UNREVOKE_OUTPUT_APP" ] || rm -rf "$UNREVOKE_OUTPUT_APP"
+    mkdir -p "$(dirname "$UNREVOKE_OUTPUT_APP")"
+    ditto "$APP" "$UNREVOKE_OUTPUT_APP"
+    APP="$UNREVOKE_OUTPUT_APP"
+  fi
   echo "✅ 构建完成 → $APP"
   exit 0
 fi

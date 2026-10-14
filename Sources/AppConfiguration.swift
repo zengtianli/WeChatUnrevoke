@@ -11,8 +11,10 @@ struct AppConfigurationFile {
     let url: URL
     let keys: [String]
     let validateValue: ((Any) throws -> Void)?
-    init(url: URL, keys: [String]) { self.url = url; self.keys = keys; self.validateValue = nil }
-    init(url: URL, keys: [String], validateValue: @escaping (Any) throws -> Void) { self.url = url; self.keys = keys; self.validateValue = validateValue }
+    let validateField: ((String, Any) throws -> Void)?
+    init(url: URL, keys: [String]) { self.url = url; self.keys = keys; self.validateValue = nil;self.validateField = nil }
+    init(url: URL, keys: [String], validateValue: @escaping (Any) throws -> Void) { self.url = url; self.keys = keys; self.validateValue = validateValue;self.validateField = nil }
+    init(url: URL, keys: [String], validateField: @escaping (String, Any) throws -> Void) { self.url = url;self.keys = keys;self.validateValue = nil;self.validateField = validateField }
 }
 
 /// Opt-in settings sync; permissions, credentials and business data need explicit product exclusion.
@@ -25,6 +27,7 @@ final class AppConfiguration: NSObject {
     private(set) var status = "iCloud 配置同步已关闭"
     private let productID: String
     private let defaultsKeys: [String]
+    private let validateDefault: ((String, Any) throws -> Void)?
     private let files: [AppConfigurationFile]
     private let defaults: UserDefaults
     private let worker = DispatchQueue(label: "cyou.tianli.configuration", qos: .utility)
@@ -42,6 +45,7 @@ final class AppConfiguration: NSObject {
     #endif
     private let enabledKey = "appLifecycle.configuration.enabled"
     private let localDirectory: URL
+    var updateDownloadDirectory:URL { localDirectory.appendingPathComponent("update-downloads",isDirectory:true) }
     private var stateURL: URL { localDirectory.appendingPathComponent("state.json") }
     private var importedURL: URL { localDirectory.appendingPathComponent("pending-import.json") }
     #if os(macOS)
@@ -68,9 +72,11 @@ final class AppConfiguration: NSObject {
     #endif
     private let isolated: Bool
 
-    init(productID: String, defaultsKeys: [String] = [], files: [AppConfigurationFile] = [], defaults: UserDefaults = .standard) {
+    init(productID: String, defaultsKeys: [String] = [], files: [AppConfigurationFile] = [], defaults: UserDefaults = .standard,
+         validateDefault: ((String, Any) throws -> Void)? = nil) {
         self.productID = productID
         self.defaultsKeys = Array(Set(defaultsKeys)).sorted()
+        self.validateDefault = validateDefault
         self.files = files
         self.defaults = defaults
         let env = ProcessInfo.processInfo.environment
@@ -230,7 +236,7 @@ final class AppConfiguration: NSObject {
             let object = try Self.readObject(file.url)
             for key in file.keys {
                 for path in Self.paths(key, in: object) {
-                    if let value = Self.get(path, from: object) { try file.validateValue?(value); values["file.\(index)." + path] = value }
+                    if let value = Self.get(path, from: object) { try file.validateValue?(value);try file.validateField?(path,value); values["file.\(index)." + path] = value }
                 }
             }
         }
@@ -250,11 +256,11 @@ final class AppConfiguration: NSObject {
         }
         guard values.keys.allSatisfy(allowedKey) else { throw Failure.message("配置含此 App 未允许同步的字段") }
         for key in defaultsKeys {
-            if let value = values["defaults." + key] { _ = try Self.unpack(value) }
+            if let value = values["defaults." + key] { try validateDefault?(key, Self.unpack(value)) }
         }
         for (index, file) in files.enumerated() {
             let prefix = "file.\(index)."
-            for (key, value) in values where key.hasPrefix(prefix) { try file.validateValue?(value) }
+            for (key, value) in values where key.hasPrefix(prefix) { try file.validateValue?(value);try file.validateField?(String(key.dropFirst(prefix.count)),value) }
         }
         return values
     }

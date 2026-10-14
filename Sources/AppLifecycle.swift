@@ -18,6 +18,8 @@ struct AppRelease {
     var channel: String? = nil
     var bundleID: String? = nil
     var installation: String? = nil
+    var notes: String? = nil
+    var publishedAt: String? = nil
 
     func isNewer(than version: String, build: String) -> Bool {
         let versions = AppVersion.compare(self.version, version)
@@ -52,6 +54,90 @@ struct AppUpdateError: LocalizedError {
     init(_ message: String) { self.message = message }
 }
 
+struct AppUpdateOptions: Codable {
+    var automaticCheck = false
+    var intervalHours = 24
+    var automaticDownload = false
+    var automaticInstall = false
+    var channel: String? = nil
+    var skippedBuild: String? = nil
+    var remindAfter: Double? = nil
+    init() {}
+    private enum CodingKeys:String,CodingKey { case automaticCheck,intervalHours,automaticDownload,automaticInstall,channel,skippedBuild,remindAfter }
+    init(from decoder:Decoder) throws {
+        let c = try decoder.container(keyedBy:CodingKeys.self)
+        automaticCheck = try c.decodeIfPresent(Bool.self,forKey:.automaticCheck) ?? false
+        intervalHours = try c.decodeIfPresent(Int.self,forKey:.intervalHours) ?? 24
+        automaticDownload = try c.decodeIfPresent(Bool.self,forKey:.automaticDownload) ?? false
+        automaticInstall = try c.decodeIfPresent(Bool.self,forKey:.automaticInstall) ?? false
+        channel = try c.decodeIfPresent(String.self,forKey:.channel)
+        skippedBuild = try c.decodeIfPresent(String.self,forKey:.skippedBuild)
+        remindAfter = try c.decodeIfPresent(Double.self,forKey:.remindAfter)
+    }
+}
+
+/// Preferences and check history shared by the native window and short-lived CLI.
+/// Only appUpdateOptions is portable; local timestamps and staged packages stay per Mac.
+enum AppUpdatePreferences {
+    static func defaults(_ bundleID:String) -> UserDefaults {
+        if bundleID == Bundle.main.bundleIdentifier { return .standard }
+        return UserDefaults(suiteName:bundleID.isEmpty ? "test.tianli.shared-update" : bundleID) ?? .standard
+    }
+    static func options(_ bundleID:String) -> AppUpdateOptions {
+        guard let value = defaults(bundleID).dictionary(forKey:"appUpdateOptions"),
+              let data = try? JSONSerialization.data(withJSONObject:value),let result = try? JSONDecoder().decode(AppUpdateOptions.self,from:data) else { return AppUpdateOptions() }
+        guard (try? validate(result)) != nil else { return AppUpdateOptions() };return result
+    }
+    static func validate(_ options:AppUpdateOptions) throws {
+        guard (1...720).contains(options.intervalHours),options.remindAfter?.isFinite != false else { throw AppUpdateError("检查间隔应为 1–720 小时") }
+        if let channel = options.channel { guard validChannel(channel) else { throw AppUpdateError("无效的更新渠道") } }
+    }
+    static func save(_ options:AppUpdateOptions,_ bundleID:String) throws {
+        try validate(options)
+        let data = try JSONEncoder().encode(options)
+        let value = try JSONSerialization.jsonObject(with:data)
+        let store = defaults(bundleID)
+        if self.options(bundleID).channel != options.channel { store.removeObject(forKey:"appUpdateState") }
+        store.set(value,forKey:"appUpdateOptions");store.synchronize()
+        #if os(macOS)
+        DistributedNotificationCenter.default().postNotificationName(Notification.Name("cyou.tianli.update-options." + bundleID),object:nil,userInfo:nil,deliverImmediately:true)
+        #endif
+    }
+    static func validChannel(_ s:String) -> Bool { !s.isEmpty && s.count <= 79 && !s.contains("..") && s.allSatisfy{$0.isASCII && ($0.isLetter || $0.isNumber || "_.-".contains($0))} }
+    static func source(_ fallback:AppUpdateSource,_ bundleID:String) -> AppUpdateSource {
+        if case .privateCloud = fallback,let channel = options(bundleID).channel { return .privateCloud(channel:channel) };return fallback
+    }
+    static func describe(_ source:AppUpdateSource) -> String {
+        switch source {
+        case .privateCloud(let channel):return "iCloud 私有渠道 · " + channel
+        case .github(let repository):return "GitHub · " + repository
+        case .manifest(let url):return url.host ?? "HTTPS 发行源"
+        case .appStore(let id):return "App Store · " + id
+        }
+    }
+    static func record(_ bundleID:String,_ result:Result<AppRelease,Error>,source:AppUpdateSource) {
+        guard describe(self.source(source,bundleID)) == describe(source) else { return }
+        let store = defaults(bundleID);var state = store.dictionary(forKey:"appUpdateState") ?? [:]
+        state["last_attempt_at"] = Date().timeIntervalSince1970
+        switch result {
+        case .success(let release):state["last_success_at"] = Date().timeIntervalSince1970;state["last_error"] = "";state["latest_version"] = release.version;state["latest_build"] = release.build
+        case .failure(let error):state["last_error"] = error.localizedDescription
+        }
+        store.set(state,forKey:"appUpdateState");store.synchronize()
+    }
+    static func status(_ bundleID:String,source:AppUpdateSource) -> [String:Any] {
+        let options = options(bundleID)
+        let data = (try? JSONEncoder().encode(options)) ?? Data("{}".utf8)
+        return ["options":(try? JSONSerialization.jsonObject(with:data)) ?? [:],"history":defaults(bundleID).dictionary(forKey:"appUpdateState") ?? [:],"source":describe(self.source(source,bundleID))]
+    }
+    static func due(_ bundleID:String,at:Date = Date()) -> Bool {
+        let settings = options(bundleID)
+        guard settings.automaticCheck,(settings.remindAfter ?? 0) <= at.timeIntervalSince1970 else { return false }
+        let last = defaults(bundleID).dictionary(forKey:"appUpdateState")?["last_attempt_at"] as? Double ?? 0
+        return at.timeIntervalSince1970 - last >= Double(settings.intervalHours) * 3600
+    }
+}
+
 enum AppUpdateChecker {
     static let maximumFeedSize = 262_144
 
@@ -77,6 +163,8 @@ enum AppUpdateChecker {
 
     static func check(source: AppUpdateSource, bundleID: String, version: String, build: String,
                       completion: @escaping (Result<AppRelease, Error>) -> Void) {
+        let source = AppUpdatePreferences.source(source,bundleID)
+        let finish: (Result<AppRelease,Error>) -> Void = { result in AppUpdatePreferences.record(bundleID,result,source:source);completion(result) }
         switch source {
         case .privateCloud(let channel):
             DispatchQueue.global(qos: .utility).async {
@@ -92,39 +180,39 @@ enum AppUpdateChecker {
                         result = Result { try manifest(Data(contentsOf: url), at: file, bundleID: bundleID, channel: channel) }
                     }
                     if let error { throw error }
-                    completion(result ?? .failure(AppUpdateError("无法读取 iCloud 发行记录。")))
-                } catch { completion(.failure(error)) }
+                    finish(result ?? .failure(AppUpdateError("无法读取 iCloud 发行记录。")))
+                } catch { finish(.failure(error)) }
             }
         case .manifest(let url):
             fetch(url) { result in
-                completion(result.flatMap { data in Result { try manifest(data, at: url, bundleID: bundleID) } })
+                finish(result.flatMap { data in Result { try manifest(data, at: url, bundleID: bundleID) } })
             }
         case .github(let repository):
             #if APP_LIFECYCLE_LOCAL_ONLY
-            completion(.failure(AppUpdateError("此 App 只读取 iCloud 已下载到本机的私有发行包。")))
+            finish(.failure(AppUpdateError("此 App 只读取 iCloud 已下载到本机的私有发行包。")))
             #else
             guard repository.split(separator: "/").count == 2,
                   repository.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber || "-_/ .".contains($0)) }),
                   !repository.contains(" "), !repository.contains(".."),
                   let url = URL(string: "https://api.github.com/repos/\(repository)/releases/latest") else {
-                completion(.failure(AppUpdateError("无效的发行仓库。"))); return
+                finish(.failure(AppUpdateError("无效的发行仓库。"))); return
             }
             fetch(url) { result in
-                completion(result.flatMap { data in Result { try github(data, bundleID: bundleID) } })
+                finish(result.flatMap { data in Result { try github(data, bundleID: bundleID) } })
             }
             #endif
         case .appStore(let id):
             #if APP_LIFECYCLE_LOCAL_ONLY
-            completion(.failure(AppUpdateError("此 App 只读取 iCloud 已下载到本机的私有发行包。")))
+            finish(.failure(AppUpdateError("此 App 只读取 iCloud 已下载到本机的私有发行包。")))
             #else
             let region = (Locale.current.region?.identifier ?? "US").lowercased()
             let country = region.count == 2 && region.allSatisfy(\.isLetter) ? region : "us"
             guard id.allSatisfy(\.isNumber), !id.isEmpty,
                   let url = URL(string: "https://itunes.apple.com/lookup?id=\(id)&country=\(country)") else {
-                completion(.failure(AppUpdateError("未配置 App Store 发行渠道。"))); return
+                finish(.failure(AppUpdateError("未配置 App Store 发行渠道。"))); return
             }
             fetch(url) { result in
-                completion(result.flatMap { data in Result { try appStore(data, id: id, bundleID: bundleID) } })
+                finish(result.flatMap { data in Result { try appStore(data, id: id, bundleID: bundleID) } })
             }
             #endif
         }
@@ -188,7 +276,8 @@ enum AppUpdateChecker {
         return AppRelease(version: version, build: build, downloadURL: download, releaseURL: releaseURL,
                           sha256: hash, size: (value["size_bytes"] as? NSNumber)?.int64Value,
                           channel: value["channel"] as? String, bundleID: declaredID,
-                          installation: value["installation"] as? String)
+                          installation: value["installation"] as? String,
+                          notes: (value["notes"] as? String).map{String($0.prefix(6000))},publishedAt:value["published_at"] as? String)
     }
 
     static func github(_ data: Data, bundleID: String) throws -> AppRelease {

@@ -17,8 +17,13 @@ extension Notification.Name {
 @MainActor
 enum UnrevokeEntry {
     static func main() {
-        if let code = AppCommandMode.run(arguments: Array(CommandLine.arguments.dropFirst())) {
+        let words = Array(CommandLine.arguments.dropFirst())
+        if let code = ProductLifecycle.commandMode(words) {
             exit(code)
+        } else if let code = AppCommandMode.run(arguments: words) {
+            exit(code)
+        } else if words.contains("--product-basics-self-test") {
+            ProductBasicsSelfTest.launch()
         } else if CommandLine.arguments.contains("--ui-self-test") {
             NativeUISelfTest.launch()
         } else if CommandLine.arguments.contains("--background-measure") && LaneSignal.quiet {
@@ -75,9 +80,7 @@ final class UnrevokeAppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let configuration = ProductLifecycle.makeConfiguration()
-        configuration.onChange = {
-            NotificationCenter.default.post(name: .unrevokePreferencesChanged, object: nil)
-        }
+        ProductSettings.install(configuration: configuration)
         AppLifecycleCLI.follow(configuration)
         AppLifecycleUI.install(name: ProductLifecycle.name, configuration: configuration,
                                updateSource: ProductLifecycle.updateSource())
@@ -95,12 +98,6 @@ struct UnrevokeApp: App {
         .windowResizability(.contentMinSize)
         .commands {
             CommandGroup(replacing: .newItem) {}
-            CommandMenu(L.t("操作", "Actions")) {
-                Button(L.btn_recheck) {
-                    NotificationCenter.default.post(name: .consoleRefresh, object: nil)
-                }
-                .keyboardShortcut("r", modifiers: .command)
-            }
         }
     }
 }

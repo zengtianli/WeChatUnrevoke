@@ -4,6 +4,7 @@ import AppKit
 import CryptoKit
 
 final class AppLifecycleUI: NSObject {
+    private final class Document:NSView { override var isFlipped:Bool { true } }
     static let shared = AppLifecycleUI()
     static let formWidth: CGFloat = 520
     /// A product's own settings groups (built with `group` and `row`), shown above the update group. Set before the
@@ -23,15 +24,35 @@ final class AppLifecycleUI: NSObject {
     private var release: AppRelease?
     private var observers: [NSObjectProtocol] = []
     private var working = false
+    var canInstallUpdate: (() -> Bool)?
+    private var automaticTimer: Timer?
+    private var automaticDisabled = false
+    private var transfer: AppUpgradeInstaller.Transfer?
+    private var transferAutomatic = false
+    private var prepared: AppUpgradeInstaller.Prepared?
+    private var effectiveSourceDescription:String?
+    private var preparedKey: String?
+    private let checkToggle = NSSwitch()
+    private let downloadToggle = NSSwitch()
+    private let installToggle = NSSwitch()
+    private let intervalPopup = NSPopUpButton()
+    private let channelPopup = NSPopUpButton()
+    private let updateDetails = AppLifecycleUI.detailLabel()
+    private let cancelButton = NSButton(title:"取消下载/验证",target:nil,action:nil)
+    private let notesButton = NSButton(title:"更新内容…",target:nil,action:nil)
+    private let skipButton = NSButton(title:"跳过此版",target:nil,action:nil)
+    private let remindButton = NSButton(title:"明天提醒",target:nil,action:nil)
+    private var bundleID:String { Bundle.main.bundleIdentifier ?? "" }
     private var currentVersion: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0" }
     private var currentBuild: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "0" }
 
-    static func install(name: String, configuration: AppConfiguration?, updateSource: AppUpdateSource) {
+    static func install(name: String, configuration: AppConfiguration?, updateSource: AppUpdateSource, startConfiguration: Bool = true) {
         let instance = shared
         instance.productName = name
         instance.configuration = configuration
         instance.source = updateSource
-        configuration?.start()
+        instance.automaticDisabled = !startConfiguration || ProcessInfo.processInfo.environment["APP_LIFECYCLE_SUPPORT_DIR"] != nil || NSApp.activationPolicy() == .prohibited
+        if startConfiguration { configuration?.start() }
         if instance.observers.isEmpty {
             instance.observers.append(NotificationCenter.default.addObserver(forName: NSApplication.didFinishLaunchingNotification, object: nil, queue: .main) { _ in
                 DispatchQueue.main.async { shared.attachMenu() }
@@ -40,6 +61,10 @@ final class AppLifecycleUI: NSObject {
             instance.observers.append(NotificationCenter.default.addObserver(forName: NSNotification.Name("AppConfigurationStatusChanged"), object: configuration, queue: .main) { _ in shared.refreshConfiguration() })
         }
         instance.attachMenu()
+        instance.scheduleAutomaticChecks()
+        if instance.observers.count < 4 {
+            instance.observers.append(DistributedNotificationCenter.default().addObserver(forName:Notification.Name("cyou.tianli.update-options." + instance.bundleID),object:nil,queue:.main) { _ in shared.refreshUpdateOptions();shared.scheduleAutomaticChecks() })
+        }
     }
 
     static func menuItems() -> [NSMenuItem] {
@@ -66,6 +91,7 @@ final class AppLifecycleUI: NSObject {
         makeWindow()
         refreshConfiguration()
         willShow?()
+        refreshUpdateOptions()
         // A menu-bar (accessory) app is not active after its status menu closes; without this the window opens behind.
         if !NSApp.isActive { NSApp.activate(ignoringOtherApps: true) }
         controller?.showWindow(nil)
@@ -142,8 +168,8 @@ final class AppLifecycleUI: NSObject {
         return outer
     }
 
-    func checkForUpdates() {
-        show()
+    func checkForUpdates(present:Bool = true) {
+        if present { show() } else { makeWindow() }
         guard !working else { return }
         working = true
         release = nil
@@ -151,26 +177,138 @@ final class AppLifecycleUI: NSObject {
         updateButton.isEnabled = false
         spinner.startAnimation(nil)
         status.stringValue = "正在检查发行版本…"
-        AppUpdateChecker.check(source: source, bundleID: Bundle.main.bundleIdentifier ?? "", version: currentVersion, build: currentBuild) { [weak self] result in
+        let requestedSource = AppUpdatePreferences.describe(AppUpdatePreferences.source(source,bundleID))
+        AppUpdateChecker.check(source: source, bundleID: bundleID, version: currentVersion, build: currentBuild) { [weak self] result in
             DispatchQueue.main.async { [weak self] in
                 guard let self else { return }
                 self.working = false
                 self.updateButton.isEnabled = true
                 self.spinner.stopAnimation(nil)
+                self.refreshUpdateOptions()
+                guard requestedSource == AppUpdatePreferences.describe(AppUpdatePreferences.source(self.source,self.bundleID)) else { self.status.stringValue = "渠道已改变，请检查所选渠道。";return }
                 switch result {
                 case .failure(let error): self.status.stringValue = "检查未完成：" + error.localizedDescription
                 case .success(let release):
                     self.release = release
+                    self.notesButton.isEnabled = true
+                    self.skipButton.isEnabled = release.isNewer(than:self.currentVersion,build:self.currentBuild)
                     if release.isNewer(than: self.currentVersion, build: self.currentBuild) {
                         self.status.stringValue = "有新版 \(release.version) (\(release.build))，当前 \(self.currentVersion) (\(self.currentBuild))。升级会保留本机配置。"
                         self.installButton.isHidden = release.downloadURL == nil
                         self.installButton.title = AppUpgradeInstaller.supportsReplacement(release: release, currentBundle: Bundle.main.bundleURL) ? "升级到新版…" : "下载新版…"
-                    } else if AppVersion.compare(self.currentVersion, release.version) == .orderedDescending {
+                    } else if AppVersion.compare(self.currentVersion, release.version) == .orderedDescending || (AppVersion.compare(self.currentVersion,release.version) == .orderedSame && AppVersion.compare(self.currentBuild,release.build) == .orderedDescending) {
                         self.status.stringValue = "当前 \(self.currentVersion) (\(self.currentBuild))；此渠道正式发行版本为 \(release.version) (\(release.build))。"
                     } else { self.status.stringValue = "当前已是此渠道最新版：\(self.currentVersion) (\(self.currentBuild))。" }
+                    if !present,release.isNewer(than:self.currentVersion,build:self.currentBuild) {
+                        let options = AppUpdatePreferences.options(self.bundleID)
+                        if options.skippedBuild != self.releaseKey(release) {
+                            NSApp.dockTile.badgeLabel = "↑"
+                            if options.automaticDownload { self.prepareRelease(release,automatic:true) }
+                        }
+                    }
                 }
             }
         }
+    }
+
+    private func releaseKey(_ release:AppRelease) -> String { release.version + "/" + release.build }
+    private func cacheKey(_ release:AppRelease) -> String { releaseKey(release) + "/" + (release.sha256 ?? "") }
+    private func scheduleAutomaticChecks() {
+        automaticTimer?.invalidate();automaticTimer = nil
+        guard !automaticDisabled,AppUpdatePreferences.options(bundleID).automaticCheck else {
+            if transferAutomatic { transfer?.cancel() };return
+        }
+        let timer = Timer(timeInterval:60,repeats:true) { [weak self] _ in self?.automaticTick() };timer.tolerance = 10
+        RunLoop.main.add(timer,forMode:.common);automaticTimer = timer
+        DispatchQueue.main.asyncAfter(deadline:.now()+15) { [weak self] in self?.automaticTick() }
+    }
+    private func automaticTick() {
+        guard !automaticDisabled,!working else { return }
+        let options = AppUpdatePreferences.options(bundleID)
+        guard options.automaticCheck else { return }
+        if let release,let prepared,preparedKey == cacheKey(release),options.automaticInstall,
+           options.skippedBuild != releaseKey(release),(options.remindAfter ?? 0) <= Date().timeIntervalSince1970,
+           !NSApp.isActive,canInstallUpdate?() ?? true { replacePrepared(prepared);return }
+        if AppUpdatePreferences.due(bundleID) { checkForUpdates(present:false) }
+    }
+    private func refreshUpdateOptions() {
+        let options = AppUpdatePreferences.options(bundleID)
+        let currentSource = AppUpdatePreferences.describe(AppUpdatePreferences.source(source,bundleID))
+        if let old = effectiveSourceDescription,old != currentSource {
+            transfer?.cancel();release = nil;installButton.isHidden = true;notesButton.isEnabled = false;skipButton.isEnabled = false;NSApp.dockTile.badgeLabel = nil
+            if let prepared { try? FileManager.default.removeItem(at:prepared.directory);self.prepared = nil;preparedKey = nil }
+        }
+        effectiveSourceDescription = currentSource
+        if transferAutomatic && (!options.automaticCheck || !options.automaticDownload) { transfer?.cancel() }
+        checkToggle.state = options.automaticCheck ? .on : .off;downloadToggle.state = options.automaticDownload ? .on : .off;installToggle.state = options.automaticInstall ? .on : .off
+        downloadToggle.isEnabled = options.automaticCheck && !options.automaticInstall;installToggle.isEnabled = options.automaticCheck
+        intervalPopup.removeAllItems();for hours in Set([1,6,24,168,720,options.intervalHours]).sorted() { intervalPopup.addItem(withTitle:"\(hours) 小时");intervalPopup.lastItem?.representedObject = hours };intervalPopup.selectItem(at:intervalPopup.itemArray.firstIndex(where:{$0.representedObject as? Int == options.intervalHours}) ?? 0)
+        channelPopup.removeAllItems()
+        if case .privateCloud(let base) = source {
+            var channels:Set<String> = [base,options.channel ?? base]
+            if let directory = try? AppUpdateChecker.privateDirectory(bundleID:bundleID,channel:base).deletingLastPathComponent(),
+               let entries = try? FileManager.default.contentsOfDirectory(at:directory,includingPropertiesForKeys:nil) { entries.filter{AppUpdatePreferences.validChannel($0.lastPathComponent)}.forEach{channels.insert($0.lastPathComponent)} }
+            channelPopup.addItems(withTitles:channels.sorted());channelPopup.selectItem(withTitle:options.channel ?? base);channelPopup.isEnabled = true
+        } else { channelPopup.addItem(withTitle:"由发行源决定");channelPopup.isEnabled = false }
+        let state = AppUpdatePreferences.defaults(bundleID).dictionary(forKey:"appUpdateState") ?? [:]
+        let time = (state["last_success_at"] as? Double).map{DateFormatter.localizedString(from:Date(timeIntervalSince1970:$0),dateStyle:.short,timeStyle:.short)} ?? "尚未成功检查"
+        updateDetails.stringValue = AppUpdatePreferences.describe(AppUpdatePreferences.source(source,bundleID)) + " · 上次成功：" + time + ((state["last_error"] as? String).flatMap{$0.isEmpty ? nil : " · " + $0} ?? "")
+        if let release { skipButton.title = options.skippedBuild == releaseKey(release) ? "不再跳过" : "跳过此版" }
+    }
+    @objc private func changedUpdateOption(_ sender:NSControl) {
+        var options = AppUpdatePreferences.options(bundleID)
+        switch sender {
+        case checkToggle:options.automaticCheck = checkToggle.state == .on
+        case downloadToggle:options.automaticDownload = downloadToggle.state == .on
+        case installToggle:options.automaticInstall = installToggle.state == .on;if options.automaticInstall { options.automaticDownload = true }
+        case intervalPopup:options.intervalHours = intervalPopup.selectedItem?.representedObject as? Int ?? 24
+        case channelPopup:options.channel = channelPopup.titleOfSelectedItem;release = nil;installButton.isHidden = true
+        default:return
+        }
+        do { try AppUpdatePreferences.save(options,bundleID);status.stringValue = "更新选项已保存。" } catch { status.stringValue = error.localizedDescription }
+        refreshUpdateOptions();scheduleAutomaticChecks()
+    }
+    @objc private func skipRelease() {
+        guard let release else { return };var options = AppUpdatePreferences.options(bundleID)
+        options.skippedBuild = options.skippedBuild == releaseKey(release) ? nil : releaseKey(release)
+        do { try AppUpdatePreferences.save(options,bundleID);status.stringValue = options.skippedBuild == nil ? "已恢复此版本提醒。" : "已跳过此版自动提醒，手动升级仍可用。" } catch { status.stringValue = error.localizedDescription };refreshUpdateOptions()
+    }
+    @objc private func remindLater() { var options = AppUpdatePreferences.options(bundleID);options.remindAfter = Date().timeIntervalSince1970 + 86400;do { try AppUpdatePreferences.save(options,bundleID);status.stringValue = "已延后到明天提醒。" } catch { status.stringValue = error.localizedDescription } }
+    @objc private func showReleaseNotes() {
+        guard let release else { return };let alert = NSAlert();alert.messageText = "\(productName) \(release.version) (\(release.build))";alert.informativeText = "发布：\(release.publishedAt ?? "此渠道未提供日期")"
+        let view = NSTextView();view.isEditable = false;view.isRichText = false;view.font = .systemFont(ofSize:12);view.string = release.notes ?? "此渠道没有提供更新内容。"
+        let scroll = NSScrollView(frame:NSRect(x:0,y:0,width:440,height:220));scroll.hasVerticalScroller = true;scroll.documentView = view;view.autoresizingMask = [.width];view.textContainer?.widthTracksTextView = true;alert.accessoryView = scroll
+        if let window = controller?.window { alert.beginSheetModal(for:window,completionHandler:nil) }
+    }
+    @objc private func cancelUpgrade() { transfer?.cancel();cancelButton.isEnabled = false;status.stringValue = "正在取消，当前 App 保留…" }
+    private func prepareRelease(_ release:AppRelease,automatic:Bool) {
+        guard !working else { return }
+        if preparedKey == cacheKey(release),let prepared {
+            if !automatic || AppUpdatePreferences.options(bundleID).automaticInstall && !NSApp.isActive && (canInstallUpdate?() ?? true) { replacePrepared(prepared) };return
+        }
+        if let prepared { try? FileManager.default.removeItem(at:prepared.directory);self.prepared = nil;preparedKey = nil }
+        working = true;transferAutomatic = automatic;updateButton.isEnabled = false;installButton.isEnabled = false;cancelButton.isHidden = false;cancelButton.isEnabled = true;spinner.startAnimation(nil)
+        let transfer = AppUpgradeInstaller.Transfer();self.transfer = transfer
+        transfer.progress = { [weak self,weak transfer] stage,done,total in DispatchQueue.main.async { guard let self,let transfer,self.transfer === transfer else { return };self.status.stringValue = total > 0 ? "\(stage) · \(Int(Double(done)/Double(total)*100))% (\(done)/\(total) 字节)" : stage } }
+        let cache = configuration?.updateDownloadDirectory
+        AppUpgradeInstaller.prepare(release:release,currentBundle:Bundle.main.bundleURL,transfer:transfer,cacheRoot:cache) { [weak self] result in
+            DispatchQueue.main.async {
+                guard let self,self.transfer === transfer else { return }
+                self.working = false;self.transfer = nil;self.cancelButton.isHidden = true;self.updateButton.isEnabled = true;self.installButton.isEnabled = true;self.spinner.stopAnimation(nil)
+                switch result {
+                case .failure(let error):self.status.stringValue = "升级未完成，当前 App 保留：" + error.localizedDescription
+                case .success(let prepared):
+                    if transfer.canceled { try? FileManager.default.removeItem(at:prepared.directory);self.status.stringValue = "已取消，当前 App 保留。";return }
+                    self.prepared = prepared;self.preparedKey = self.cacheKey(release);self.status.stringValue = "新版已下载并验证；配置和当前 App 保留。"
+                    if !automatic || AppUpdatePreferences.options(self.bundleID).automaticInstall && !NSApp.isActive && (self.canInstallUpdate?() ?? true) { self.replacePrepared(prepared) }
+                }
+            }
+        }
+    }
+    private func replacePrepared(_ prepared:AppUpgradeInstaller.Prepared) {
+        guard canInstallUpdate?() ?? true else { status.stringValue = "正在处理任务，安装已延后；当前 App 保留。";return }
+        do { working = true;cancelButton.isHidden = true;status.stringValue = "正在替换并重新打开…";try AppUpgradeInstaller.launchReplacement(prepared,currentBundle:Bundle.main.bundleURL,pid:ProcessInfo.processInfo.processIdentifier);NSApp.terminate(nil) }
+        catch { working = false;status.stringValue = "替换未完成，当前 App 保留：" + error.localizedDescription }
     }
 
     private func makeWindow() {
@@ -189,11 +327,16 @@ final class AppLifecycleUI: NSObject {
         titles.orientation = .vertical; titles.alignment = .leading; titles.spacing = 2
         let header = NSStackView(views: [icon, titles])
         header.spacing = 12; header.alignment = .centerY; header.edgeInsets = NSEdgeInsets(top: 0, left: 4, bottom: 2, right: 0)
-        status.stringValue = "按需检查新版，不在后台轮询。"
+        status.stringValue = "按需检查，或在下方开启自动检查。自动行为默认关闭。"
         updateButton.target = self; updateButton.action = #selector(checkUpdates)
         installButton.target = self; installButton.action = #selector(upgrade)
         installButton.isHidden = true; installButton.keyEquivalent = "\r"
         spinner.style = .spinning; spinner.controlSize = .small; spinner.isDisplayedWhenStopped = false
+        for control in [checkToggle,downloadToggle,installToggle,intervalPopup,channelPopup] as [NSControl] { control.target = self;control.action = #selector(changedUpdateOption(_:)) }
+        cancelButton.target = self;cancelButton.action = #selector(cancelUpgrade);cancelButton.isHidden = true
+        notesButton.target = self;notesButton.action = #selector(showReleaseNotes);notesButton.isEnabled = false
+        skipButton.target = self;skipButton.action = #selector(skipRelease);skipButton.isEnabled = false
+        remindButton.target = self;remindButton.action = #selector(remindLater)
         var groups: [NSView] = productGroups?() ?? []
         if configuration?.hasSettings == true {
             cloudToggle.target = self; cloudToggle.action = #selector(toggleCloud)
@@ -205,7 +348,16 @@ final class AppLifecycleUI: NSObject {
                 Self.row("导入与导出", detail: syncStatus, accessory: transfers)]))
         }
         let actions = NSStackView(views: [spinner, updateButton, installButton]); actions.spacing = 8
-        groups.append(Self.group("软件更新", rows: [Self.row("当前版本 \(currentVersion) (\(currentBuild))", detail: status, accessory: actions)]))
+        let extras = NSStackView(views:[notesButton,skipButton,remindButton]);extras.spacing = 6
+        groups.append(Self.group("软件更新", rows: [
+            Self.row("当前版本 \(currentVersion) (\(currentBuild))", detail: status, accessory: actions),
+            Self.row("发行来源与检查记录",detail:updateDetails,accessory:channelPopup),
+            Self.row("自动检查更新",detail:Self.detailLabel("关闭时不轮询；开启后按所选间隔读取此发行源。"),accessory:checkToggle),
+            Self.row("检查间隔",accessory:intervalPopup),
+            Self.row("自动下载新版",detail:Self.detailLabel("只下载并验证，不自行替换；已验证的下载留在本机。"),accessory:downloadToggle),
+            Self.row("空闲时自动安装",detail:Self.detailLabel("开启后也会下载；你正在使用 App 或产品任务忙时延后。关闭自动检查会暂停这些自动行为，保留原选择。"),accessory:installToggle),
+            Self.row("版本选项",accessory:extras),Self.row("下载与验证",accessory:cancelButton)
+        ]))
         let stack = NSStackView(views: [header] + groups)
         stack.orientation = .vertical; stack.alignment = .leading; stack.spacing = 18
         stack.translatesAutoresizingMaskIntoConstraints = false
@@ -220,10 +372,22 @@ final class AppLifecycleUI: NSObject {
             icon.widthAnchor.constraint(equalToConstant: 48), icon.heightAnchor.constraint(equalToConstant: 48)
         ] + groups.map { $0.widthAnchor.constraint(equalTo: stack.widthAnchor) })
         content.layoutSubtreeIfNeeded()
-        window.setContentSize(content.fittingSize)
+        let natural = content.fittingSize
+        let maximum = min(CGFloat(740),max(CGFloat(480),(NSScreen.main?.visibleFrame.height ?? 840)-100))
+        if natural.height > maximum {
+            stack.removeFromSuperview()
+            let scroll = NSScrollView();scroll.translatesAutoresizingMaskIntoConstraints = false;scroll.hasVerticalScroller = true;scroll.scrollerStyle = .overlay;scroll.autohidesScrollers = true;scroll.drawsBackground = false
+            let document = Document(frame:NSRect(x:0,y:0,width:Self.formWidth,height:natural.height-40))
+            document.addSubview(stack);content.addSubview(scroll);scroll.documentView = document
+            NSLayoutConstraint.activate([scroll.leadingAnchor.constraint(equalTo:content.leadingAnchor,constant:20),scroll.trailingAnchor.constraint(equalTo:content.trailingAnchor,constant:-20),scroll.topAnchor.constraint(equalTo:content.topAnchor,constant:20),scroll.bottomAnchor.constraint(equalTo:content.bottomAnchor,constant:-20),scroll.widthAnchor.constraint(equalToConstant:Self.formWidth),scroll.heightAnchor.constraint(equalToConstant:maximum-40),stack.leadingAnchor.constraint(equalTo:document.leadingAnchor),stack.topAnchor.constraint(equalTo:document.topAnchor),stack.bottomAnchor.constraint(equalTo:document.bottomAnchor)])
+            window.setContentSize(NSSize(width:natural.width,height:maximum))
+            content.layoutSubtreeIfNeeded()
+            scroll.contentView.scroll(to:.zero)
+        } else { window.setContentSize(natural) }
         window.center()
         controller = NSWindowController(window: window)
         refreshConfiguration()
+        refreshUpdateOptions()
     }
 
     private func refreshConfiguration() {
@@ -232,15 +396,21 @@ final class AppLifecycleUI: NSObject {
     }
 
     /// Same window construction as the user-facing action; never orders a window in.
-    func offscreenSnapshot(to url: URL, appearance: NSAppearance.Name = .aqua) throws -> [String: Bool] {
+    func offscreenSnapshot(to url: URL, appearance: NSAppearance.Name = .aqua, showingUpdateOptions:Bool = false) throws -> [String: Bool] {
         guard NSApp.activationPolicy() == .prohibited else { throw AppUpdateError("离屏验收必须禁止显示窗口和 Dock 图标。") }
         makeWindow()
         willShow?()
         guard let window = controller?.window, let view = window.contentView else { throw AppUpdateError("窗口构造失败。") }
         window.appearance = NSAppearance(named: appearance)
         view.layoutSubtreeIfNeeded()
-        window.setContentSize(view.fittingSize)
+        window.setContentSize(NSSize(width:Self.formWidth + 40,height:max(480,view.bounds.height)))
         view.layoutSubtreeIfNeeded()
+        willShow?();view.layoutSubtreeIfNeeded()
+        if let scroll = view.subviews.compactMap({$0 as? NSScrollView}).first,let document = scroll.documentView {
+            let bottom = max(0,document.bounds.height-scroll.contentView.bounds.height)
+            scroll.contentView.scroll(to:NSPoint(x:0,y:(showingUpdateOptions == document.isFlipped) ? bottom : 0));scroll.reflectScrolledClipView(scroll.contentView)
+        }
+        view.needsDisplay = true;view.displayIfNeeded()
         // Retina-sized, on the window background the real window has (the content view itself draws none).
         guard let bitmap = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(view.bounds.width * 2), pixelsHigh: Int(view.bounds.height * 2),
                                             bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
@@ -283,46 +453,45 @@ final class AppLifecycleUI: NSObject {
     }
 
     @objc private func upgrade() {
-        guard !working, let release, let url = release.downloadURL else { return }
-        if !AppUpgradeInstaller.supportsReplacement(release: release, currentBundle: Bundle.main.bundleURL) {
-            NSWorkspace.shared.open(url)
-            status.stringValue = "已打开正式安装包下载；安装新版会保留支持目录中的配置。"
-            return
+        guard !working,let release,let url = release.downloadURL,release.isNewer(than:currentVersion,build:currentBuild) else { return }
+        if !AppUpgradeInstaller.supportsReplacement(release:release,currentBundle:Bundle.main.bundleURL) {
+            NSWorkspace.shared.open(url);status.stringValue = "已打开正式安装包下载；配置保留。";return
         }
-        let alert = NSAlert()
-        alert.messageText = "升级 \(productName) 到 \(release.version)？"
-        alert.informativeText = "将验证发行包和 App 签名，然后替换当前 App 并重新打开。配置保留；替换失败可回滚。"
-        alert.addButton(withTitle: "升级"); alert.addButton(withTitle: "取消")
-        alert.beginSheetModal(for: controller!.window!) { answer in
-            guard answer == .alertFirstButtonReturn else { return }
-            self.working = true; self.updateButton.isEnabled = false; self.installButton.isEnabled = false
-            self.spinner.startAnimation(nil)
-            self.status.stringValue = "正在下载并验证新版…"
-            AppUpgradeInstaller.prepare(release: release, currentBundle: Bundle.main.bundleURL) { result in
-                DispatchQueue.main.async {
-                    switch result {
-                    case .failure(let error):
-                        self.working = false; self.updateButton.isEnabled = true; self.installButton.isEnabled = true
-                        self.spinner.stopAnimation(nil)
-                        self.status.stringValue = "升级未完成，当前 App 已保留：" + error.localizedDescription
-                    case .success(let prepared):
-                        do {
-                            try AppUpgradeInstaller.launchReplacement(prepared, currentBundle: Bundle.main.bundleURL,
-                                                                       pid: ProcessInfo.processInfo.processIdentifier)
-                            NSApp.terminate(nil)
-                        } catch {
-                            self.working = false; self.updateButton.isEnabled = true; self.installButton.isEnabled = true
-                            self.spinner.stopAnimation(nil)
-                            self.status.stringValue = "无法替换 App，当前 App 已保留：" + error.localizedDescription
-                        }
-                    }
-                }
-            }
-        }
+        let alert = NSAlert();alert.messageText = "升级 \(productName) 到 \(release.version) (\(release.build))？"
+        alert.informativeText = "验证发行包与签名后替换并重新打开；配置保留，失败回滚。下载和验证阶段可以取消。"
+        alert.addButton(withTitle:"升级");alert.addButton(withTitle:"取消")
+        alert.beginSheetModal(for:controller!.window!) { [weak self] result in if result == .alertFirstButtonReturn { self?.prepareRelease(release,automatic:false) } }
     }
 }
 
 enum AppUpgradeInstaller {
+    final class Transfer {
+        private let lock = NSLock()
+        private var stopped = false
+        var progress: ((String,Int64,Int64) -> Void)?
+        #if !APP_LIFECYCLE_LOCAL_ONLY
+        private var task: URLSessionTask?
+        private var observation: NSKeyValueObservation?
+        func attach(_ task:URLSessionTask) {
+            lock.lock();self.task = task;let stopped = self.stopped;lock.unlock()
+            observation = task.progress.observe(\.fractionCompleted,options:[.new]) { [weak self] progress,_ in self?.report("正在下载",progress.completedUnitCount,progress.totalUnitCount) }
+            if stopped { task.cancel() }
+        }
+        #endif
+        var canceled:Bool { lock.lock();defer{lock.unlock()};return stopped }
+        func cancel() {
+            lock.lock();stopped = true
+            #if !APP_LIFECYCLE_LOCAL_ONLY
+            let task = self.task
+            #endif
+            lock.unlock()
+            #if !APP_LIFECYCLE_LOCAL_ONLY
+            task?.cancel()
+            #endif
+        }
+        func report(_ stage:String,_ done:Int64 = 0,_ total:Int64 = 0) { progress?(stage,done,total) }
+        func check() throws { if canceled { throw AppUpdateError("升级已取消，当前 App 保留") } }
+    }
     struct Prepared { let app: URL; let directory: URL; let installation: String? }
 
     static func supportsReplacement(release: AppRelease, currentBundle: URL) -> Bool {
@@ -336,7 +505,8 @@ enum AppUpgradeInstaller {
     static func prepare(release: AppRelease, currentBundle: URL, expectedTeam: String? = nil,
                         allowFirstInstall: Bool = false, strictBundle: Bool = false,
                         stagingRoot: URL? = nil,
-                        completion: @escaping (Result<Prepared, Error>) -> Void) {
+                        transfer: Transfer? = nil,
+                        cacheRoot: URL? = nil, completion: @escaping (Result<Prepared, Error>) -> Void) {
         guard let url = release.downloadURL, let expectedHash = release.sha256,
               expectedHash.count == 64, expectedHash.allSatisfy(\.isHexDigit) else {
             completion(.failure(AppUpdateError("发行包缺少完整性校验。"))); return
@@ -344,15 +514,18 @@ enum AppUpgradeInstaller {
         func verify(_ archive: URL, directory: URL) {
             DispatchQueue.global(qos: .utility).async {
                 do {
+                    try transfer?.check();transfer?.report("正在验证校验和")
                     let attributes = try FileManager.default.attributesOfItem(atPath: archive.path)
                     let size = (attributes[.size] as? NSNumber)?.int64Value ?? 0
                     guard size > 0, size <= 1_500_000_000, release.size == nil || release.size == size else { throw AppUpdateError("发行包大小不匹配。") }
                     let file = try FileHandle(forReadingFrom: archive); defer { try? file.close() }
                     var hasher = SHA256()
-                    while let data = try file.read(upToCount: 1_048_576), !data.isEmpty { hasher.update(data: data) }
+                    var checked:Int64 = 0
+                    while let data = try file.read(upToCount: 1_048_576), !data.isEmpty { try transfer?.check();hasher.update(data:data);checked += Int64(data.count);transfer?.report("正在验证校验和",checked,size) }
                     let hash = hasher.finalize().map { String(format: "%02x", $0) }.joined()
                     guard hash == expectedHash.lowercased() else { throw AppUpdateError("发行包 SHA256 校验失败。") }
                     let extracted = directory.appendingPathComponent("payload", isDirectory: true)
+                    try transfer?.check();transfer?.report("正在解包与验证签名")
                     try FileManager.default.createDirectory(at: extracted, withIntermediateDirectories: true)
                     if url.pathExtension.lowercased() == "zip" {
                         _ = try command("/usr/bin/ditto", ["-x", "-k", archive.path, extracted.path])
@@ -422,8 +595,20 @@ enum AppUpgradeInstaller {
                         let current = "\(system.majorVersion).\(system.minorVersion).\(system.patchVersion)"
                         guard AppVersion.compare(minimum, current) != .orderedDescending else { throw AppUpdateError("新版需要 macOS " + minimum + " 或更新系统。") }
                     }
+                    try transfer?.check();transfer?.report("发行包验证完成",size,size)
+                    if let cacheRoot {
+                        try FileManager.default.createDirectory(at:cacheRoot,withIntermediateDirectories:true,attributes:[.posixPermissions:0o700])
+                        let cached = cacheRoot.appendingPathComponent(expectedHash.lowercased() + "." + url.pathExtension)
+                        if !FileManager.default.fileExists(atPath:cached.path) {
+                            let temp = cacheRoot.appendingPathComponent(UUID().uuidString + ".tmp")
+                            do { try FileManager.default.copyItem(at:archive,to:temp);try FileManager.default.moveItem(at:temp,to:cached) }
+                            catch { try? FileManager.default.removeItem(at:temp);throw error }
+                        }
+                        for old in (try? FileManager.default.contentsOfDirectory(at:cacheRoot,includingPropertiesForKeys:nil)) ?? [] where old != cached { try? FileManager.default.removeItem(at:old) }
+                    }
                     completion(.success(Prepared(app: apps[0], directory: directory, installation: release.installation)))
                 } catch {
+                    if let cacheRoot { try? FileManager.default.removeItem(at:cacheRoot.appendingPathComponent(expectedHash.lowercased() + "." + url.pathExtension)) }
                     try? FileManager.default.removeItem(at: directory)
                     completion(.failure(error))
                 }
@@ -434,13 +619,26 @@ enum AppUpgradeInstaller {
                 .appendingPathComponent("app-upgrade-" + UUID().uuidString, isDirectory: true)
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
             let archive = directory.appendingPathComponent("archive." + url.pathExtension)
+            if let cacheRoot {
+                let cached = cacheRoot.appendingPathComponent(expectedHash.lowercased() + "." + url.pathExtension)
+                if FileManager.default.fileExists(atPath:cached.path) { try FileManager.default.copyItem(at:cached,to:archive);verify(archive,directory:directory);return }
+            }
             if url.isFileURL {
                 DispatchQueue.global(qos: .utility).async {
                     do {
+                        try transfer?.check()
                         if FileManager.default.isUbiquitousItem(at: url) { try FileManager.default.startDownloadingUbiquitousItem(at: url) }
                         var error: NSError?, copyError: Error?
                         NSFileCoordinator().coordinate(readingItemAt: url, options: [], error: &error) { coordinated in
-                            do { try FileManager.default.copyItem(at: coordinated, to: archive) } catch { copyError = error }
+                            do {
+                                let input = try FileHandle(forReadingFrom:coordinated);defer{try? input.close()}
+                                let total = ((try FileManager.default.attributesOfItem(atPath:coordinated.path))[.size] as? NSNumber)?.int64Value ?? 0
+                                FileManager.default.createFile(atPath:archive.path,contents:Data())
+                                let output = try FileHandle(forWritingTo:archive);defer{try? output.close()}
+                                var copied:Int64 = 0
+                                while let data = try input.read(upToCount:1_048_576),!data.isEmpty { try transfer?.check();try output.write(contentsOf:data);copied += Int64(data.count);transfer?.report("正在读取私有发行包",copied,total) }
+                                try output.synchronize()
+                            } catch { copyError = error }
                         }
                         if let error { throw error }; if let copyError { throw copyError }
                         verify(archive, directory: directory)
@@ -454,15 +652,17 @@ enum AppUpgradeInstaller {
                 let configuration = URLSessionConfiguration.ephemeral; configuration.timeoutIntervalForResource = 300
                 let session = URLSession(configuration: configuration)
                 var request = URLRequest(url: url); request.setValue("TianliApp-Update/1.0", forHTTPHeaderField: "User-Agent")
-                session.downloadTask(with: request) { temporary, response, error in
+                let task = session.downloadTask(with: request) { temporary, response, error in
                     defer { session.finishTasksAndInvalidate() }
                     do {
                         if let error { throw error }
+                        try transfer?.check()
                         guard let temporary, let http = response as? HTTPURLResponse, http.statusCode == 200, http.url?.scheme == "https" else { throw AppUpdateError("下载未完成。") }
                         try FileManager.default.moveItem(at: temporary, to: archive)
                         verify(archive, directory: directory)
                     } catch { try? FileManager.default.removeItem(at: directory); completion(.failure(error)) }
-                }.resume()
+                }
+                transfer?.attach(task);task.resume()
                 #endif
             }
         } catch { completion(.failure(error)) }

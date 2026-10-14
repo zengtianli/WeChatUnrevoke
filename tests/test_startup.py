@@ -81,6 +81,7 @@ class StartupRegression(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="unrevoke-configuration-") as scratch:
             scratch = Path(scratch)
             env["APP_LIFECYCLE_SUPPORT_DIR"] = str(scratch / "configuration")
+            env["UNREVOKE_LIFECYCLE_SUITE"] = info["CFBundleIdentifier"] + ".accept." + scratch.name
             app = scratch / "Product.app"
             macos = app / "Contents/MacOS"
             macos.mkdir(parents=True)

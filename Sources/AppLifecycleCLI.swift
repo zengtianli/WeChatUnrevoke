@@ -41,6 +41,8 @@ enum AppLifecycleCLI {
         var upgradeTimeout: TimeInterval = 330
         /// How long `update install` waits for a running app to quit before it gives up without replacing anything.
         var quitTimeout: TimeInterval = 20
+        /// The product can defer replacement while a scan or other owned work is running.
+        var canInstallUpdate: (() -> Bool)? = nil
     }
 
     static let verbs = ["config", "update"]
@@ -60,7 +62,8 @@ enum AppLifecycleCLI {
         """
     }
     /// The update line alone, for a product that already lists its own `config` commands and wires only `update`.
-    static let helpUpdate = "  update check               检查更新：当前版本、此渠道最新版本、有没有新版、怎么升级（只读；私有渠道读 iCloud Drive 里的发行记录，公开渠道联网读发行记录）"
+    static let helpUpdate = "  update check               检查更新：当前版本、此渠道最新版本、有没有新版、怎么升级（不改配置或安装；记录本机检查结果；私有渠道读 iCloud Drive 里的发行记录，公开渠道联网读发行记录）"
+    static let helpOptions = "  update options [--yes]     查看或保存自动检查/下载/安装、间隔、渠道、跳过与延后选项（--dry-run 只预演）"
     /// The upgrade line alone, for a product that already lists its own `config` commands and wires only `update`.
     static func helpInstall(_ command: String) -> String {
         "  update install --yes           升级到新版：与窗口「升级到新版…」同一条路——验证发行包与签名、替换当前 App，运行中的先退出、换好再重开；配置保留，替换失败回滚（--dry-run 只看会做什么；用 \(command) update check 回读）"
@@ -92,11 +95,14 @@ enum AppLifecycleCLI {
                \(command) config sync on|off --yes [--dry-run] [--json]
                \(command) update check [--json]
                \(command) update install --yes [--dry-run] [--json]
+               \(command) update options [--auto-check on|off] [--auto-download on|off] [--auto-install on|off]
+                   [--interval 1..720] [--channel <name>] [--skip <version/build|clear>] [--remind 0..720] [--yes|--dry-run] [--json]
         「\(windowEntry)」窗口里的各项，与窗口读写同一份设置、走同一个安装器。
-        读（不写任何文件或状态）:
+        查询（update check 记录本机检查时间与结果）:
         \(helpRead(command))
         写:
         \(helpWrite(command))
+        \(helpOptions)
         --json：成功 {"ok": true, "command": "config status", …}；失败 {"ok": false, "command": …, "error": {"code", "message"}}，退出码非零。
           config status  → has_settings, sync_enabled, sync_status{text, at, from, live}, keys[], app_running, problem
           config export  → path, bytes, keys[]
@@ -133,6 +139,7 @@ enum AppLifecycleCLI {
             let sub = p.positionals.first ?? (verb == "config" ? "status" : "")
             command = sub.isEmpty ? verb : verb + " " + sub
             if p.flags.contains("--help") || p.flags.contains("-h") { product.out(help(product.command, windowEntry: product.windowEntry)); return 0 }
+            if !p.values.isEmpty && (verb != "update" || sub != "options") { throw Failure.usage("更新选项只用于 update options") }
             // A command's own sync results go to its own record: it never replaces the sentence the running window shows.
             product.configuration?.statusRecordName = commandStatusRecord
             let result: Output
@@ -143,6 +150,7 @@ enum AppLifecycleCLI {
             case ("config", "sync"): result = try configSync(p, product)
             case ("update", "check"): result = try updateCheck(p, product)
             case ("update", "install"): result = try updateInstall(p, product)
+            case ("update", "options"): result = try updateOptions(p, product)
             default: throw Failure.usage(syntax(product.command))
             }
             if json {
@@ -338,7 +346,8 @@ enum AppLifecycleCLI {
         var latest: [String: Any] {
             ["version": release.version, "build": release.build, "channel": release.channel ?? NSNull(),
              "download_url": release.downloadURL?.absoluteString ?? NSNull(), "release_url": release.releaseURL?.absoluteString ?? NSNull(),
-             "sha256": release.sha256 ?? NSNull(), "size_bytes": release.size ?? NSNull()]
+             "sha256": release.sha256 ?? NSNull(), "size_bytes": release.size ?? NSNull(),
+             "notes":release.notes ?? NSNull(),"published_at":release.publishedAt ?? NSNull()]
         }
     }
     private static func checked(_ product: Product) throws -> Checked {
@@ -346,7 +355,7 @@ enum AppLifecycleCLI {
         let version = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0"
         let build = bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "0"
         let current: [String: Any] = ["version": version, "build": build]
-        let source = describe(product.updateSource)
+        let source = describe(AppUpdatePreferences.source(product.updateSource,bundle.bundleIdentifier ?? ""))
         let box = Box<Result<AppRelease, Error>>()
         AppUpdateChecker.check(source: product.updateSource, bundleID: bundle.bundleIdentifier ?? "", version: version, build: build) { box.set($0) }
         wait(product.timeout) { box.value != nil }
@@ -361,7 +370,7 @@ enum AppLifecycleCLI {
         let state: String, message: String
         if release.isNewer(than: version, build: build) {
             state = "update_available"; message = "有新版 \(release.version) (\(release.build))，当前 \(version) (\(build))。升级会保留本机配置。"
-        } else if AppVersion.compare(version, release.version) == .orderedDescending {
+        } else if AppVersion.compare(version, release.version) == .orderedDescending || (AppVersion.compare(version,release.version) == .orderedSame && AppVersion.compare(build,release.build) == .orderedDescending) {
             state = "ahead_of_channel"; message = "当前 \(version) (\(build))；此渠道正式发行版本为 \(release.version) (\(release.build))。"
         } else { state = "up_to_date"; message = "当前已是此渠道最新版：\(version) (\(build))。" }
         return Checked(version: version, build: build, current: current, source: source, release: release, state: state, message: message)
@@ -381,8 +390,39 @@ enum AppLifecycleCLI {
         let upgrade: [String: Any] = ["in_app": inApp, "button": !newer || release.downloadURL == nil ? NSNull() : (inApp ? "升级到新版…" : "下载新版…") as Any,
                                       "how": how, "download_url": link ?? NSNull(), "command": inApp ? install : NSNull() as Any]
         return Output(body: ["current": check.current, "source": check.source, "latest": check.latest, "update_available": newer, "state": check.state,
-                             "message": check.message, "upgrade": upgrade],
+                             "message": check.message, "upgrade": upgrade,
+                             "preferences":AppUpdatePreferences.status(product.bundle.bundleIdentifier ?? "",source:product.updateSource)],
                       text: check.message + (newer ? "\n" + how : ""))
+    }
+
+    private static func updateOptions(_ p:Arguments,_ product:Product) throws -> Output {
+        guard p.positionals.count == 1,p.output == nil else { throw Failure.usage("update options 不接受额外位置参数") }
+        let bundleID = product.bundle.bundleIdentifier ?? ""
+        if p.values.isEmpty { return Output(body:AppUpdatePreferences.status(bundleID,source:product.updateSource),text:text(AppUpdatePreferences.status(bundleID,source:product.updateSource))) }
+        var options = AppUpdatePreferences.options(bundleID)
+        for (key,value) in p.values {
+            switch key {
+            case "--auto-check","--auto-download","--auto-install":
+                guard let boolean = ["on":true,"off":false][value] else { throw Failure.usage(key + " 必须是 on 或 off") }
+                if key == "--auto-check" { options.automaticCheck = boolean }
+                if key == "--auto-download" { options.automaticDownload = boolean }
+                if key == "--auto-install" { options.automaticInstall = boolean;if boolean { options.automaticDownload = true } }
+            case "--interval": guard let hours = Int(value),(1...720).contains(hours) else { throw Failure.usage("间隔必须是 1–720 小时") };options.intervalHours = hours
+            case "--channel":
+                guard case .privateCloud = product.updateSource else { throw Failure.usage("当前发行源不支持选择私有渠道") }
+                guard AppUpdatePreferences.validChannel(value) else { throw Failure.usage("无效渠道") };options.channel = value
+            case "--skip":
+                guard value == "clear" || (value.count < 100 && value.allSatisfy{$0.isNumber || "./".contains($0)}) else { throw Failure.usage("--skip 使用 版本/构建号 或 clear") };options.skippedBuild = value == "clear" ? nil : value
+            case "--remind": guard let hours = Int(value),(0...720).contains(hours) else { throw Failure.usage("提醒延后 0–720 小时") };options.remindAfter = hours == 0 ? nil : Date().timeIntervalSince1970 + Double(hours) * 3600
+            default: throw Failure.usage("未知选项 " + key)
+            }
+        }
+        if options.automaticInstall { options.automaticDownload = true }
+        let encoded = try JSONSerialization.jsonObject(with:JSONEncoder().encode(options))
+        if p.flags.contains("--dry-run") { return Output(body:["dry_run":true,"would_set":encoded],text:text(["would_set":encoded])) }
+        guard p.flags.contains("--yes") else { throw Failure(exit:2,code:"confirmation_required",message:"保存更新选项需要 --yes，或先 --dry-run") }
+        try AppUpdatePreferences.save(options,bundleID);notify(product,switchedTo:nil)
+        return Output(body:AppUpdatePreferences.status(bundleID,source:product.updateSource),text:"更新选项已保存")
     }
 
     /// The window's「升级到新版…」: the same lookup, the same download, verification and replacement (AppUpgradeInstaller).
@@ -423,6 +463,7 @@ enum AppLifecycleCLI {
                           message: "会验证发行包与签名，然后把当前的 \(product.name) \(check.version) (\(check.build)) 替换为 \(release.version) (\(release.build))；运行中的会先退出、换好再重开，配置保留，替换失败回滚：确认请加 --yes（或先 --dry-run）")
         }
         let box = Box<Result<AppUpgradeInstaller.Prepared, Error>>()
+        guard product.canInstallUpdate?() ?? true else { throw Failure(exit:1,code:"busy",message:"产品正在处理任务，安装已延后，当前 App 保留",extra:body) }
         AppUpgradeInstaller.prepare(release: release, currentBundle: target) { box.set($0) }
         wait(product.upgradeTimeout) { box.value != nil }
         let prepared: AppUpgradeInstaller.Prepared
@@ -434,6 +475,7 @@ enum AppLifecycleCLI {
         case .success(let value)?: prepared = value
         }
         func discard() { try? FileManager.default.removeItem(at: prepared.directory) }
+        guard product.canInstallUpdate?() ?? true else { discard();throw Failure(exit:1,code:"busy",message:"产品正在处理任务，安装已延后，当前 App 保留",extra:body) }
         if recipe == "notifhub-collector" {
             // The product's own install transaction, started the way the window starts it: it waits for the process it is
             // given, so a running app is asked to quit after the hand-off, as the window quits itself.
@@ -534,7 +576,7 @@ enum AppLifecycleCLI {
         var extra: [String: Any] = [:]
         static func usage(_ message: String) -> Failure { Failure(exit: 2, code: "usage", message: message) }
     }
-    private struct Arguments { var positionals: [String] = []; var flags: Set<String> = []; var output: String? }
+    private struct Arguments { var positionals: [String] = []; var flags: Set<String> = []; var output: String?;var values:[String:String] = [:] }
     private final class Box<T> {
         private let lock = NSLock()
         private var stored: T?
@@ -544,7 +586,7 @@ enum AppLifecycleCLI {
     private static var followers: [NSObjectProtocol] = []
 
     private static func syntax(_ command: String) -> String {
-        "用法：\(command) config status | export -o <file> [--force] | import <file> --yes | sync on|off --yes [--dry-run]；\(command) update check | install --yes [--dry-run]（都可加 --json）"
+        "用法：\(command) config status | export -o <file> [--force] | import <file> --yes | sync on|off --yes [--dry-run]；\(command) update check | install --yes [--dry-run] | options [--yes|--dry-run]（都可加 --json）"
     }
 
     private static func parse(_ arguments: [String]) throws -> Arguments {
@@ -556,6 +598,9 @@ enum AppLifecycleCLI {
             case "-o", "--output":
                 guard index + 1 < arguments.count else { throw Failure.usage("\(argument) 后面要跟文件路径") }
                 index += 1; parsed.output = arguments[index]
+            case "--auto-check","--auto-download","--auto-install","--interval","--channel","--skip","--remind":
+                guard index + 1 < arguments.count else { throw Failure.usage(argument + " 缺少值") }
+                index += 1;parsed.values[argument] = arguments[index]
             default:
                 if argument.hasPrefix("--output=") { parsed.output = String(argument.dropFirst("--output=".count)) }
                 else if argument.hasPrefix("-") { throw Failure.usage("未知参数 \(argument)") }
