@@ -1,6 +1,8 @@
 # 2026-10-16 · 当前构建发行与素材接续
 
-## 第二轮接续（2026-10-16，进行中）
+**收尾完成（2026-10-16 18:41）**：本轮三项 media、release、update-feed 已由 Chapter 原检查读为 ok；公开与装机同为 **1.0.14 (123)**。以下保留中间失败的真实记录，旧的资源门阻塞和「尚未发布」段落均为历史过程，不是待办。最后接续使用 Chapter `--pid 63153 --session chapter-task:ff67e3f3a11940a59cf9f049cb215584`，未释放其声明。
+
+## 第二轮接续（2026-10-16，已完成）
 
 本次复用 Chapter `--pid 89000 --session chapter-task:ff67e3f3a11940a59cf9f049cb215584` 的声明，原声明不释放。以下新接口和结果覆盖下文上一轮的资源门阻塞与恢复步骤：直接调用 `sim_lane.build`，由其内部并行槽准入，不再套 FIFO/acquire/heavy_builds，也不以压力 2 中止。
 
@@ -28,6 +30,17 @@ SDK 的 `reuse_build` 实测拒绝 form: mac 自身线（错误来自共享 `lan
 - Homebrew cask 已由原发布器更新到 1.0.14，version/SHA 回读匹配；本轮源码领先提交均为本任务，推送前已审阅，Actions 0/webhooks 0，不触发 App Store 送审。
 - 原发布器随后退出 3，仅站点阶段失败。已定位为旧导览复用记录原要求是带 build/SHA/source map 的对象，本轮最初写成文字；修正真实记录并保持严格闸，错误类型输入改为明确拒绝；4 项专项回归和原 build contract 18 项通过。中英 README 仅将旧表明确标为 1.0.13 (99) 历史实测与 1.0.14 待测，未重测或改原数字。
 - `scripts/build-site.py` 重建 `dist/site` 成功，原 Lintel `site check --site unrevoke --out dist/site --json` 为 ok，站点没有安装包。正式站点尚待下面的原 ship 单独接续；**不要重跑 publish.py**。本机底包已构建为同一 1.0.14 (123)，后续只走原安装事务与真实回执。
+
+### 最终回读与范围
+
+- 原 Lintel `site ship --site unrevoke --work ~/Library/Caches/unrevoke-site-ship --json` 已单独接续成功，`shipped=true / published=true / verified=true`；桌面与窄屏 1 页、3 段视频及字幕经过原 capture/review，正式 HTTPS **20/20 文件 SHA256 一致**，无 mismatched。原回执为本机忽略的 `build/site-ship-1.0.14-20261016.json`，构建目录仍为 `dist/site`，正式页 <https://unrevoke.tianli.cyou/>。站点只提供 GitHub Release 获取入口，没有 ZIP/DMG/App 等安装包镜像，教程样例与视频保留。
+- 原本机事务已完成同版 **1.0.14 (123)** 安装，bundle 身份、原安装内容与引擎摘要保留，strict/deep 签名和真实 build-receipt 匹配；未改登录项、用户配置或常驻服务，登记后台回读仍在运行。安装/所选更新渠道的详细产物与摘要只保留本机忽略目录和原私有入口，不加入公开 ZIP 或受控交接材料。
+- 实际已装版再次通过原 `chapter sop accept --app unrevoke-mac --check product_basics --json`：四项功能 **14 项必测、32 个原始 checks、45 次真实命令**，所有 checks 为 true；原 `installed_icon` 固定离屏验收通过。证据均由 Chapter 写入，不手写 delivery-evidence。iCloud 功能证据是本机隔离传输，未声称 Apple 跨设备传输通过。
+- 原更新发布器已对实际装机发布同版，manifest、包字节数/SHA、包内主程序与装机一致，App 自身 `update check --json` 返回 1.0.14 (123) / up_to_date。只确认本机提交和回读，未声称另一台设备已收到。最初普通 check-only 复用了旧阶段缓存；确认真实 feed 输入已从旧版变化后，沿原 `run --stage ship --retry --check-only` 只刷新发行观察，没有重复发包。
+- 最终 Chapter 回执 `build/release-media-final-ship-check-20261016.json`：**media / release / update-feed / install / build-receipt 均为 ok**。源码发行提交 `e888bbe`、页面/复用记录修复 `0e74329` 已推送；GitHub 正式资产仍为上述唯一 SHA，无重复 Release、重签公证或 App Store 送审，未改任何共享组件代码。
+- 本轮真实测试是原完整发行 **64 项 Python + 3 个 Swift 套件**，以及页面修改后的原 build contract **18 项**与新增导览合同 **4 项**，均通过；原隐私发行扫描 **46 项**通过。Chapter 的测试登记缓存仍显示 stale，未以手写状态冒充登记；原队列后续可用 `chapter sop run --app unrevoke-mac --test-only --json` 记录。性能和其输入绑定的 stale 保留原采样队列，本轮明确未重测；不把这些既有提醒追加为本轮三项结束条件，也不声称全部 SOP 已绿。
+
+本轮有限范围已完成，没有需要本人决定或操作的事项。后续不要重新运行 App 发布器；仅按原队列处理测试登记和性能采样。
 
 补充：仅把 ARCHS 写进工程仍被 SDK 的 `platform=macOS,arch=arm64` 本机 destination 收窄；已明确为 universal 产品构建选择 SDK 的 `generic/platform=macOS` destination，仍直接调用原 `sim_lane.build`，不改共享文件。此原因改变后才重新构建；两次单架构候选均被原门拒绝，未上传。
 
