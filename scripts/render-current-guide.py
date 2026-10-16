@@ -7,14 +7,20 @@ A disposable bundle's doctor-only fixture supplies states; no real WeChat is rea
 """
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
-import hashlib, json, os, plistlib, subprocess, sys, uuid
+import argparse, hashlib, json, os, plistlib, subprocess, sys, uuid
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / 'accept'))
 from _common import run as common_run, xcode_env
 
 ROOT = Path(__file__).resolve().parents[1]
 WORK = ROOT / 'build/current-guide'
-OUT = ROOT / 'docs/demo'
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--snapshots-only', action='store_true', help='Render current views for comparison without replacing an existing video')
+parser.add_argument('--out', type=Path, default=ROOT / 'docs/demo')
+options = parser.parse_args()
+OUT = options.out.resolve()
+if options.snapshots_only and OUT == ROOT / 'docs/demo':
+    parser.error('--snapshots-only requires a separate --out directory')
 WORK.mkdir(parents=True, exist_ok=True)
 OUT.mkdir(parents=True, exist_ok=True)
 ENV = xcode_env()
@@ -97,8 +103,9 @@ engine.chmod(0o755)
 with ThreadPoolExecutor(max_workers=2) as compilers:
     builds = [
         compilers.submit(run, 'xcrun','swiftc','-parse-as-library',ROOT/'Sources/Models.swift',ROOT/'Sources/Engine.swift',ROOT/'Sources/WriteHistory.swift',ROOT/'Sources/ViewModel.swift',ROOT/'Sources/ContentView.swift',WORK/'Capture.swift','-o',APP/'Contents/MacOS/Guide'),
-        compilers.submit(run, 'xcrun','swiftc',ROOT/'scripts/demo-caption.swift','-o',WORK/'caption'),
     ]
+    if not options.snapshots_only:
+        builds.append(compilers.submit(run, 'xcrun','swiftc',ROOT/'scripts/demo-caption.swift','-o',WORK/'caption'))
     for build in builds:
         build.result()
 scenes = [
@@ -114,12 +121,23 @@ for i,(state,title,line1,line2) in enumerate(scenes):
     spec=WORK/f'{state}.json';spec.write_text(json.dumps(fixture,ensure_ascii=False))
     image=OUT/f'current-{state}.png'
     run(APP/'Contents/MacOS/Guide',image,ROOT/'icon/AppIcon.png','-AppleLanguages','(zh-Hans)','-AppleLocale','zh_CN','-weChatPath',target,'-everProtected','NO',env={**ENV,'UNREVOKE_GUIDE_FIXTURE':str(spec),'UNREVOKE_GUIDE_TARGET':str(target)})
+    if options.snapshots_only:
+        continue
     caption=WORK/f'{state}-caption.json';caption.write_text(json.dumps({'title':title,'line1':line1,'line2':line2},ensure_ascii=False))
     overlay=WORK/f'{state}-overlay.png';run(WORK/'caption',caption,overlay)
     segment=WORK/f'{state}.mp4'
     encodings.append(encoders.submit(encode, image, overlay, segment))
     segments.append(segment)
     cues.append(f'00:00:{i*7:02}.000 --> 00:00:{(i+1)*7:02}.000\n{line1}\n{line2}\n')
+if options.snapshots_only:
+    encoders.shutdown(wait=True)
+    sources={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in (ROOT/'Sources').glob('*.swift')}
+    assert sources == SOURCE_HASHES, 'Sources changed during rendering'
+    assert plistlib.loads((ROOT/'Info.plist').read_bytes())['CFBundleShortVersionString'] == VERSION, 'Version changed during rendering'
+    (OUT/'snapshots.json').write_text(json.dumps({'version':VERSION,'source_sha256':sources,
+        'files':{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in OUT.glob('current-*.png')}},ensure_ascii=False,indent=2)+'\n')
+    print('Current UI comparison snapshots rendered:',OUT)
+    sys.exit(0)
 try:
     for encoding in encodings:
         encoding.result()
