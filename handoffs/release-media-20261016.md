@@ -18,3 +18,26 @@
 - 原隐私发行扫描通过，当前公开源码/原公开包白名单无命中；发布预检回归 2 项、启动门回归 4 项通过。快照模式拒绝直接写正式素材目录的实测退出 2，通过预期的破坏性输出防护。
 - 本仓无 ci_scripts、GitHub workflows 或 Xcode Cloud 脚本，GitHub API 回读 Actions 0 条、webhooks 0 条；Homebrew tap API 回读 Actions 0 条。原 publish.py 的明确对外步骤仍为源码 push、新 Release、对应 cask 更新及 Lintel 站点发布，不触发 App Store 送审。
 - 三张当前视图编译/对比接原 sim-lane FIFO 与门槛；初次准入等待 60 秒后返回 75，未启动渲染或编译。现接同一资源队列等待，不改锁持有者或门槛；其他产品构建、常驻进程和原素材均保留。
+
+## 本轮结果与接续（2026-10-16 16:50）
+
+**已交付：** 本轮选定的更新渠道沿原发布入口完成，manifest、包大小/SHA、ZIP 内身份/版本/主程序与实际装机逐项一致，产品自身检查更新也读到本机当前构建；未声称另一设备已收到。详细原回执保留本机忽略的 `build/personal-publish-20261016.log`，不公开该构建或安装内容。Chapter 原 `run --app unrevoke-mac --check-only --json` 退出 0，明确将 update-feed 判为 ok，原件 `build/release-media-final-check-20261016.json`；没有手写 delivery-evidence。
+
+源码准备提交 **`fd950be`**，精确五个路径，尚未推送。两组专项回归共 6 项、原隐私检查 46 项、共享生命周期五份副本 `--check`、Python AST 和 `git diff --check` 通过；完整发行测试/双架构构建未开始，不称本轮完整验收通过。
+
+**受阻：media 与 release。** 原 FIFO 曾轮到本产品，但准入读到内存压力等级 2（要求 1），退出 75；接回原门作 180 秒有界等待后仍为 2，再次退出 75。两次均未启动渲染或任何 SDK 编译，未改压力阈值、未取消其他队列/后台。本轮不在同因不变时继续重试。原素材字节、公开 GitHub 1.0.13 及其资产、Homebrew 和线上站点均未替换；本轮未安装、未 push、未部署、未送审。1.0.14 只是已提交的准备版本，media/release 仍未通过。
+
+编译环境恢复后，由原 Chapter 再派本产品接续（不扩大旧 SOP）：
+
+```sh
+cd /Users/tianli/Apps/unrevoke
+chapter agent-send --app unrevoke-mac --fix-stage all --message '接续 handoffs/release-media-20261016.md，仅完成 media、release 和新版本装机后的原更新渠道同步；先核原 sim-lane 的内存压力恢复至 1，复用 FIFO/负载/编译竞争门，不重测 perf；先真实三图对比后原 publish.py，失败只续缺失阶段，不重发已有 Release。' --json
+```
+
+后续固定执行入口和约束：
+
+1. 沿原 sim-lane FIFO 包围 `python3 scripts/render-current-guide.py --snapshots-only --out build/media-review-20261016`；实际生成三张离屏视图后逐像素/视觉对比原 `current-*.png`。只有确实相同才由真实对比原件生成 `current-guide.json` 的 reused_for/ui_reviews，绑定原 app_sop 的当前 UI 输入摘要，保留原视频 SHA、原拍摄时间和「不演示配置窗口」范围；若有实际画面变化，仅更新受影响部分，不手写 unchanged 或重录整套录像。
+2. 公开引擎已从官方 1.0.13 ZIP 核摘要/大小后提取为 `build/release-input-20261016/wechattweak`，出处与 SHA 在同目录 provenance.json；原公开引擎仍为 ad-hoc、universal，config.json 与当前原版相同。**不要用本机带开发者签名的引擎替代公开字节。** 公开发布时沿原队列运行 `UNREVOKE_PREBUILT_ENGINE="$PWD/build/release-input-20261016/wechattweak" python3 scripts/publish.py docs/releases/1.0.14.md`，先查是否已存在该 Release；原隐私闸、测试、ZIP 白名单、双架构启动门、草稿下载 SHA 与 cask 回读均保留。当前只是准备，无新包可上传。
+3. 源码/素材先完成必要检查并限定提交，推送前重读领先提交和原隐私扫描；当前 Actions/webhook 读取结果见前节，不为恢复而 force。网页交原 Lintel ship/check，不能直接 deploy-site.sh；发布器非零先查 GitHub/cask/正式 HTTPS，已公开部分不重做。
+4. 新版本出来后沿原本机安装入口保留原安装内容与引擎摘要，回读真实 build-receipt、版本和后台；按用户要求运行固定 installed_icon，以及构建变化造成失效的必要固定验收，再发布实际已装版本的原更新渠道。不把公开包覆盖安装到原有本机变体，不将本机叠加内容放入公开 ZIP。
+5. 收尾再读原 Chapter 整体状态，只补本轮真实变化引起的必要回归；perf/input-binding 仍由原采样队列处理，不把环境 75 改为通过。
