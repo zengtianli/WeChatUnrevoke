@@ -16,6 +16,8 @@ SDK 接入首轮定位并修复两个真实问题：输出/预构建引擎变量
 
 SDK 的 `reuse_build` 实测拒绝 form: mac 自身线（错误来自共享 `lane_inputs` 的测量绑定限制）；本轮不改共享代码，也不使用该可选缓存入口。原发布器与本机底包构建均直接经 `sim_lane.build`，保留所有原门，不把单元测试假文件当真实缓存可用证据。
 
+原 publish.py 首次完整测试通过（63 项 Python，三个 Swift 套件含 83 项登录 fixture），但原 release.sh 的 `/bin/bash` 3.2 解析 SDK 的双引号 heredoc 替换遇到注释中的单引号而退出 2；候选使用 PATH 的新版 Bash 未暴露。此时尚未构建发行包、push 或创建 Release。修正为赋值自身已保留空白的命令替换，并增加系统 `/bin/bash -n` 专项回归；仍沿原入口再次完成必要发行门，不绕过测试。
+
 补充：仅把 ARCHS 写进工程仍被 SDK 的 `platform=macOS,arch=arm64` 本机 destination 收窄；已明确为 universal 产品构建选择 SDK 的 `generic/platform=macOS` destination，仍直接调用原 `sim_lane.build`，不改共享文件。此原因改变后才重新构建；两次单架构候选均被原门拒绝，未上传。
 
 本轮任务：Chapter `6835da139e6c4eaa926df5b6b68064e5`，仅 unrevoke-mac 的 media、release、update-feed；性能及 input-binding 留原调度，不重复采样。写前复用 `--pid 47746 --session chapter-task:6835da139e6c4eaa926df5b6b68064e5` 核原 claims，不另开或释放声明。开工工作区/暂存为空，保留已有提交和后台。

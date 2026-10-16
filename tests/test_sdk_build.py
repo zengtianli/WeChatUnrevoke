@@ -12,6 +12,10 @@ ADAPTER = (ROOT / 'build.sh').read_text().split("<<'PY_SDK'\n", 1)[1].split('\nP
 
 
 class SDKBuildTests(unittest.TestCase):
+    def test_native_shell_parses_the_actual_build_entry(self):
+        result = subprocess.run(['/bin/bash', '-n', str(ROOT / 'build.sh')], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
     def run_adapter(self, reuse=False, reject=False):
         with tempfile.TemporaryDirectory() as directory:
             work = Path(directory)

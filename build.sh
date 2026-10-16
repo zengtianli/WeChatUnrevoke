@@ -88,7 +88,7 @@ if [ -f "$SIM_LANE" ]; then
   # The shared SDK producer owns parallel build admission; do not take a device
   # or quiet-measurement lock around compilation. Keep its frozen app unchanged.
   SDK_JSON="$DIR/build/unrevoke-sdk-$CONFIG.json"
-  SDK_APP="$("${PYTHON:-python3}" - "$SIM_LANE" "$DIR" "$CONFIG" "$SDK_JSON" <<'PY_SDK'
+  SDK_APP=$("${PYTHON:-python3}" - "$SIM_LANE" "$DIR" "$CONFIG" "$SDK_JSON" <<'PY_SDK'
 import json, os, sys
 from pathlib import Path
 sys.path.insert(0, str(Path(sys.argv[1]).parent))
@@ -111,7 +111,7 @@ else:
     output.write_text(json.dumps(built, ensure_ascii=False, indent=2) + '\n')
 print(built['app_path'])
 PY_SDK
-)"
+)
   APP="$DIR/build/sdk-output-$CONFIG/Unrevoke.app"
   mkdir -p "$(dirname "$APP")"
   [ ! -e "$APP" ] || rm -rf "$APP"
