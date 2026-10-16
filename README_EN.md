@@ -32,7 +32,7 @@ WeChatUnrevoke reads your WeChat build and lets you manage patches through a nat
 
 **No activation codes, no need to disable SIP, no kernel extension or persistent root helper.** Native SwiftUI with an embedded Swift CLI; no Python runtime. Patch configuration can update online; engine and interface changes still require app updates.
 
-The resource measurements below are for the current release version number, using an LSUIElement copy of this Mac's installed GUI with read-only WeChat checks and offscreen rendering. Its executable digest differs from the public ZIP, so runtime figures describe this installed GUI; download size comes separately from the official Release ZIP, and their installed sizes must not be conflated. The version, device and date appear under the table, with original measurements in `perf/lightweight.json`. The download page also reads unpacked file sizes from the SHA256-verified release ZIP.
+Historical measurements: the figures below describe v1.0.13 (99), not the current public v1.0.14; its memory, CPU, launch speed and installed footprint are not yet measured. They use an LSUIElement copy of this Mac's installed GUI with read-only WeChat checks and offscreen rendering. Its executable digest differs from the original public ZIP, so runtime figures describe this installed GUI; the table's download size comes separately from the original official Release ZIP, and their installed sizes must not be conflated. The version, device and date appear under the table, with original measurements in `perf/lightweight.json`. The download page also reads unpacked file sizes from the SHA256-verified current release ZIP.
 
 <!-- lightweight:start -->
 ## Resource use

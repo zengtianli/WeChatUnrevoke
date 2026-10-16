@@ -25,7 +25,35 @@
     "current-antiRevokeOnly.png": "425c3168c8e81cafaa91600ca31e507ec4e6f8ef9bdac4f4c71f314596359260"
   },
   "reused_for": {
-    "1.0.14": "Three depicted status screens reviewed against current offscreen production ContentView; no change to shown layout, controls or behavior. New settings/lifecycle features are outside this guide; historical real operation recordings remain scoped to their recorded versions."
+    "1.0.14": {
+      "historical_reference": true,
+      "summary": "Three depicted status screens reviewed against current offscreen production ContentView; no change to shown layout, controls or behavior. New settings/lifecycle features are outside this guide; historical real operation recordings remain scoped to their recorded versions.",
+      "not_covered": [
+        "Settings and update window",
+        "Shortcut configuration",
+        "iCloud transport and recovery",
+        "Update checks and installation"
+      ],
+      "build": "123",
+      "release_sha256": "e677b6f5314e7c9ce57a8f7c74e7f481d29472ec8e12dfac618212730fd31fa9",
+      "source_sha256": {
+        "ProductLifecycle.swift": "f60068691215d4d5b6c5428829e7b50311e6012dc153fb74e779ed3cf482c6fb",
+        "AppShortcuts.swift": "cbbf8e9296424fa1ce05bd1be67a4f171a96ba28c00de3d789423cb27320aac5",
+        "AppCommandMode.swift": "6f5918fa8b7c909c1c2b1e75ffe77279821a8f4c715e637b0207e5714e6a2621",
+        "LaneSignal.swift": "e7e68ac41417ddd06e7049a7bd4e01a92d52305bc999cd6ddd323178c64a2ce8",
+        "AppConfiguration.swift": "9aeeb1bd2e7be98ea76f1ccc0eefd062caa4c698287295c9cd675195c4401c6f",
+        "ProductBasics.swift": "0ada4ad4160aed5450b393ff26b49c938831a30696131242d1dfde3d2bd4dc62",
+        "Engine.swift": "ba0f8eeb662e47f614826caab3c8f1ef34e58a4cfb0def64c94262ce602d636c",
+        "AppLifecycleUI.swift": "6160059da9ba310c62b81ac0cc71d014b8a25f57054b03e82f4993cdfe229391",
+        "AppLifecycleCLI.swift": "0f197936945a4825935dd9cb8bac2297480ddf0a29c34183fe6d4cef42f52178",
+        "AppLifecycle.swift": "fb3bb65554e539c61c6f30bf57c1343aa2eceed2968d4d8f3fd09920bf36c25d",
+        "ViewModel.swift": "586ca76bd7873f36ab2414d1f5e78fc76cb314289f04f7f8dcf8cdd2b4d304f7",
+        "WriteHistory.swift": "d630bfe96cef9f8d3a0c4959387f8486ac057ba0b5c7bd817baa388091162438",
+        "Models.swift": "26dce40bc91a0c1f4175ea0e0abd1505215f290e73ab95309695b5c4e4774038",
+        "ContentView.swift": "01ba87e78306ca74c6e9a911f22adfd492f99eff00f36c6f373fcb5a72772ef1",
+        "UnrevokeApp.swift": "06a50a6c74589d3d9e48f14df88a0d71019b15784f8be1704ae8b68cd27d4bc6"
+      }
+    }
   },
   "ui_reviews": [
     {

@@ -18,6 +18,17 @@ SDK 的 `reuse_build` 实测拒绝 form: mac 自身线（错误来自共享 `lan
 
 原 publish.py 首次完整测试通过（63 项 Python，三个 Swift 套件含 83 项登录 fixture），但原 release.sh 的 `/bin/bash` 3.2 解析 SDK 的双引号 heredoc 替换遇到注释中的单引号而退出 2；候选使用 PATH 的新版 Bash 未暴露。此时尚未构建发行包、push 或创建 Release。修正为赋值自身已保留空白的命令替换，并增加系统 `/bin/bash -n` 专项回归；仍沿原入口再次完成必要发行门，不绕过测试。
 
+### 已正式公开 1.0.14 (123)
+
+源码冻结提交 `e888bbe476afd57ed5e8694a29e0e8f0f80d2113`，原发布器完整 64 项 Python 与三个 Swift 套件通过，公开包 exact 12 项、strict/deep 签名、双架构引擎/GUI、arm64 与 x86_64 各 8 秒实际静默启动通过；主程序没有安装到真实微信路径，也没有任何 patch/restore。
+
+- 正式 Release：<https://github.com/zengtianli/WeChatUnrevoke/releases/tag/v1.0.14>，draft=false，target 为上述冻结提交；未重发或覆盖已有 Release。
+- 唯一公开 ZIP `WeChatUnrevoke-1.0.14.zip`，**3,037,994 bytes**，SHA256 **`e677b6f5314e7c9ce57a8f7c74e7f481d29472ec8e12dfac618212730fd31fa9`**；草稿下载逐字节 SHA 门与正式 GitHub digest/size 回读一致。
+- 公开引擎保留 SHA256 `61efbc17fc1aed5f31dac97853d6ad9062ddebe8e5e924aa9b1f085d2c5a85b6`，仍为 ad-hoc/universal；未加入本机叠加内容、开发者签名引擎或新公证。
+- Homebrew cask 已由原发布器更新到 1.0.14，version/SHA 回读匹配；本轮源码领先提交均为本任务，推送前已审阅，Actions 0/webhooks 0，不触发 App Store 送审。
+- 原发布器随后退出 3，仅站点阶段失败。已定位为旧导览复用记录原要求是带 build/SHA/source map 的对象，本轮最初写成文字；修正真实记录并保持严格闸，错误类型输入改为明确拒绝；4 项专项回归和原 build contract 18 项通过。中英 README 仅将旧表明确标为 1.0.13 (99) 历史实测与 1.0.14 待测，未重测或改原数字。
+- `scripts/build-site.py` 重建 `dist/site` 成功，原 Lintel `site check --site unrevoke --out dist/site --json` 为 ok，站点没有安装包。正式站点尚待下面的原 ship 单独接续；**不要重跑 publish.py**。本机底包已构建为同一 1.0.14 (123)，后续只走原安装事务与真实回执。
+
 补充：仅把 ARCHS 写进工程仍被 SDK 的 `platform=macOS,arch=arm64` 本机 destination 收窄；已明确为 universal 产品构建选择 SDK 的 `generic/platform=macOS` destination，仍直接调用原 `sim_lane.build`，不改共享文件。此原因改变后才重新构建；两次单架构候选均被原门拒绝，未上传。
 
 本轮任务：Chapter `6835da139e6c4eaa926df5b6b68064e5`，仅 unrevoke-mac 的 media、release、update-feed；性能及 input-binding 留原调度，不重复采样。写前复用 `--pid 47746 --session chapter-task:6835da139e6c4eaa926df5b6b68064e5` 核原 claims，不另开或释放声明。开工工作区/暂存为空，保留已有提交和后台。

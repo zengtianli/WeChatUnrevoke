@@ -220,6 +220,22 @@ def write_site_manifest(out, version, build):
     return files
 
 
+def verify_guide(guide, version, release_build, expected):
+    """A historical guide needs its own scope and the exact new public artifact."""
+    for filename, digest in guide['files'].items():
+        if hashlib.sha256((ROOT / 'docs/demo' / filename).read_bytes()).hexdigest() != digest:
+            raise SystemExit('Reviewed UI guide media changed: ' + filename)
+    if guide['version'] != version:
+        reuse = guide.get('reused_for', {}).get(version, {})
+        if not (isinstance(reuse, dict) and reuse.get('historical_reference') is True and reuse.get('not_covered')
+                and str(reuse.get('build')) == release_build
+                and reuse.get('release_sha256') == expected):
+            raise SystemExit('Historical UI guide is not explicitly bound to this release')
+        sources = {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in (ROOT / 'Sources').glob('*.swift')}
+        if reuse.get('source_sha256') != sources:
+            raise SystemExit('Historical guide review is stale for the current UI sources')
+
+
 def main():
     release = json.loads(subprocess.check_output(
         ["gh", "api", f"repos/{REPO}/releases/latest"], text=True))
@@ -235,18 +251,7 @@ def main():
     installed_bytes, release_build = metadata['installed_file_bytes'], metadata['build']
     source_commit = subprocess.check_output(['gh', 'api', f"repos/{REPO}/commits/{release['target_commitish']}", '--jq', '.sha'], text=True).strip()
     guide = json.loads((ROOT / 'docs/demo/current-guide.json').read_text())
-    for filename, digest in guide['files'].items():
-        if hashlib.sha256((ROOT / 'docs/demo' / filename).read_bytes()).hexdigest() != digest:
-            raise SystemExit('Reviewed UI guide media changed: ' + filename)
-    if guide['version'] != version:
-        reuse = guide.get('reused_for', {}).get(version, {})
-        if not (reuse.get('historical_reference') is True and reuse.get('not_covered')
-                and str(reuse.get('build')) == release_build
-                and reuse.get('release_sha256') == expected):
-            raise SystemExit('Historical UI guide is not explicitly bound to this release')
-        sources = {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in (ROOT / 'Sources').glob('*.swift')}
-        if reuse.get('source_sha256') != sources:
-            raise SystemExit('Historical guide review is stale for the current UI sources')
+    verify_guide(guide, version, release_build, expected)
 
     record = release_record(release, metadata, source_commit)
     # Start empty so even unlinked packages from earlier site builds disappear.
