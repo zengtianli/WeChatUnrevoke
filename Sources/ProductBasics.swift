@@ -141,6 +141,11 @@ enum ProductBasicsSelfTest {
               let output = ProcessInfo.processInfo.environment["UNREVOKE_BASICS_OUT"] else { exit(78) }
         let app = NSApplication.shared
         app.setActivationPolicy(.prohibited)
+        // Finish AppKit's deferred launch before constructing the hidden test
+        // windows: the launch event can otherwise restore LSUIElement's policy
+        // when the update check first pumps the run loop.
+        app.finishLaunching()
+        app.setActivationPolicy(.prohibited)
         let root = NSMenu()
         let item = NSMenuItem(); item.submenu = NSMenu(title: "WeChatUnrevoke"); root.addItem(item)
         app.mainMenu = root
@@ -198,6 +203,9 @@ enum ProductBasicsSelfTest {
             checks["updates.real_check_result_in_window"] = resultVisible
             checks["settings.no_visible_windows_or_dock"] = app.activationPolicy() == .prohibited && app.windows.allSatisfy { !$0.isVisible && !$0.isKeyWindow }
             let observed: [String: Any] = ["checks": checks,
+                "activation_policy": app.activationPolicy().rawValue,
+                "windows": app.windows.map { ["class": String(describing: type(of: $0)),
+                    "visible": $0.isVisible, "key": $0.isKeyWindow] as [String: Any] },
                 "visible_status_labels": views.compactMap { ($0 as? NSTextField)?.stringValue },
                 "update_status": AppUpdatePreferences.status(Bundle.main.bundleIdentifier!, source: ProductLifecycle.updateSource())]
             try JSONSerialization.data(withJSONObject: observed, options: [.prettyPrinted, .sortedKeys]).write(to: directory.appendingPathComponent("ui.json"), options: .atomic)

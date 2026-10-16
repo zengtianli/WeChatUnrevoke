@@ -12,6 +12,10 @@ SDK 接入首轮定位并修复两个真实问题：输出/预构建引擎变量
 
 此处尚未宣称新发行完成，最终回读见本节后续结果。
 
+公开候选 1.0.14 (121) 已由 `sim_lane.build` 构建 universal GUI，并用原 `app_sop build-receipt` 写 `build/accept/public-candidate-20261016.json`。第一次固定 product_basics 真实验收定位到 Xcode 27/AppKit 延迟启动在事件循环后恢复 LSUIElement 激活策略，离屏条件失败；仅在自检入口补 `finishLaunching` 后重新固定 prohibited，并增加窗口/策略原始诊断，未削弱断言或改变用户窗口流程。源码原因改变后重建，`chapter sop accept --app unrevoke-mac --check product_basics --json` 的候选模式通过，证据由 Chapter 写 `perf/acceptance/run-bcbodw3q/product_basics.json`。原推送前隐私扫描 46 项再次通过。
+
+SDK 的 `reuse_build` 实测拒绝 form: mac 自身线（错误来自共享 `lane_inputs` 的测量绑定限制）；本轮不改共享代码，也不使用该可选缓存入口。原发布器与本机底包构建均直接经 `sim_lane.build`，保留所有原门，不把单元测试假文件当真实缓存可用证据。
+
 补充：仅把 ARCHS 写进工程仍被 SDK 的 `platform=macOS,arch=arm64` 本机 destination 收窄；已明确为 universal 产品构建选择 SDK 的 `generic/platform=macOS` destination，仍直接调用原 `sim_lane.build`，不改共享文件。此原因改变后才重新构建；两次单架构候选均被原门拒绝，未上传。
 
 本轮任务：Chapter `6835da139e6c4eaa926df5b6b68064e5`，仅 unrevoke-mac 的 media、release、update-feed；性能及 input-binding 留原调度，不重复采样。写前复用 `--pid 47746 --session chapter-task:6835da139e6c4eaa926df5b6b68064e5` 核原 claims，不另开或释放声明。开工工作区/暂存为空，保留已有提交和后台。

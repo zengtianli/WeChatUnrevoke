@@ -1,10 +1,10 @@
 {
-  "checked_at": "2026-10-16T17:51:50+08:00",
+  "checked_at": "2026-10-16T17:59:45+08:00",
   "version": "1.0.14",
   "tool": "python3 scripts/render-current-guide.py --snapshots-only --out build/media-review-20261016",
   "unchanged": true,
-  "ui_source_sha256": "8e5c1558174cf2ee4347c958b06e5c10d5cfc8829c0da59732fb7d5dac7287ae",
-  "scope": "Reviewed all three current production ContentView states against the recorded frames. Layout, text, controls and depicted behavior unchanged; minor color-profile/rasterization differences are measured below, not pixel equality. The five display source files match the recording. Settings/shortcut/iCloud/update windows are outside this guide; historical real patch/restore videos retain their original versions.",
+  "ui_source_sha256": "b05f03f9d3cccc0ee61be5df04804bfa54ebb793d860907cb12abc3960b52e45",
+  "scope": "Reviewed all three current production ContentView states against the recorded frames. Layout, text, controls and depicted behavior unchanged; minor color-profile/rasterization differences are measured below, not pixel equality. The five display source files match the recording. Settings/shortcut/iCloud/update windows are outside this guide; historical real patch/restore videos retain their original versions. The later product-basics self-test launch-order/diagnostic change affects only the isolated test entry, outside these five unchanged display sources.",
   "comparisons": [
     {
       "name": "current-unprotected.png",
