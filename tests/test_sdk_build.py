@@ -17,9 +17,11 @@ class SDKBuildTests(unittest.TestCase):
             work = Path(directory)
             module = work / 'sim_lane.py'
             module.write_text('''import os
+DESTINATION = {'mac': 'platform=macOS,arch=arm64'}
 def build(root, scheme, platform, configuration):
     assert not any(k.startswith('UNREVOKE_') for k in os.environ)
     assert (scheme, platform, configuration) == ('Unrevoke', 'mac', 'Release')
+    assert DESTINATION['mac'] == 'generic/platform=macOS'
     return {'app_path': '/immutable/fresh.app', 'ok': True}
 def reuse_build(receipt, app_id, root, platform, scheme, configuration, fixtures):
     assert not any(k.startswith('UNREVOKE_') for k in os.environ)
@@ -29,7 +31,7 @@ def reuse_build(receipt, app_id, root, platform, scheme, configuration, fixtures
 ''')
             output = work / 'sdk.json'
             env = {**os.environ, 'UNREVOKE_OUTPUT_APP': str(work / 'not-created.app'),
-                   'UNREVOKE_PREBUILT_ENGINE': str(work / 'engine')}
+                   'UNREVOKE_PREBUILT_ENGINE': str(work / 'engine'), 'UNIVERSAL': '1'}
             if reuse:
                 env['UNREVOKE_REUSE_SDK_RECEIPT'] = str(work / 'original.json')
             if reject:

@@ -94,6 +94,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(sys.argv[1]).parent))
 import sim_lane
 root, config, output = Path(sys.argv[2]), sys.argv[3], Path(sys.argv[4])
+# The SDK defaults to the current Mac architecture for local iteration. A
+# distributable targets generic macOS so Xcode honors Release's full ARCHS.
+if os.environ.get('UNIVERSAL') == '1':
+    sim_lane.DESTINATION['mac'] = 'generic/platform=macOS'
 # These paths belong to postprocessing, not the isolated Xcode compilation.
 # Never make the compiler depend on an output folder or a prebuilt engine.
 receipt = os.environ.get('UNREVOKE_REUSE_SDK_RECEIPT')

@@ -12,6 +12,8 @@ SDK 接入首轮定位并修复两个真实问题：输出/预构建引擎变量
 
 此处尚未宣称新发行完成，最终回读见本节后续结果。
 
+补充：仅把 ARCHS 写进工程仍被 SDK 的 `platform=macOS,arch=arm64` 本机 destination 收窄；已明确为 universal 产品构建选择 SDK 的 `generic/platform=macOS` destination，仍直接调用原 `sim_lane.build`，不改共享文件。此原因改变后才重新构建；两次单架构候选均被原门拒绝，未上传。
+
 本轮任务：Chapter `6835da139e6c4eaa926df5b6b68064e5`，仅 unrevoke-mac 的 media、release、update-feed；性能及 input-binding 留原调度，不重复采样。写前复用 `--pid 47746 --session chapter-task:6835da139e6c4eaa926df5b6b68064e5` 核原 claims，不另开或释放声明。开工工作区/暂存为空，保留已有提交和后台。
 
 有限步骤与完成标准：
