@@ -29,6 +29,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import uuid
 
 QUIET_ARGUMENTS = ["-lane_quiet", "YES", "-autoRepatch", "NO"]
 
@@ -64,22 +65,24 @@ def quiet_copy(app: Path, work: Path) -> Path:
     return copy
 
 
-def start(app: Path, arch: str | None, work: Path) -> tuple[subprocess.Popen, Path]:
+def start(app: Path, arch: str | None, work: Path) -> tuple[subprocess.Popen, Path, str]:
     slot = work / (arch or "native")
     slot.mkdir()
     copy = quiet_copy(app, slot)
     info = plistlib.loads((copy / "Contents/Info.plist").read_bytes())
+    suite = info["CFBundleIdentifier"] + ".accept.launch." + uuid.uuid4().hex
     executable = copy / "Contents/MacOS" / info["CFBundleExecutable"]
     command = (["arch", f"-{arch}"] if arch else []) + [
         str(executable), *QUIET_ARGUMENTS, "-weChatPath", str(slot / "absent/WeChat.app")]
     environment = {**os.environ,
                    "APP_LIFECYCLE_SUPPORT_DIR": str(slot / "support"),
                    "APP_LIFECYCLE_CLOUD_DIR": str(slot / "cloud"),
+                   "UNREVOKE_LIFECYCLE_SUITE": suite,
                    "APP_LIFECYCLE_NO_RELAUNCH": "1"}
     log = slot / "output.log"
     process = subprocess.Popen(command, stdout=log.open("wb"), stderr=subprocess.STDOUT,
                                stdin=subprocess.DEVNULL, env=environment, start_new_session=True)
-    return process, log
+    return process, log, suite
 
 
 def stop(process: subprocess.Popen) -> None:
@@ -125,7 +128,7 @@ def main() -> int:
 
     failed = False
     work = Path(tempfile.mkdtemp(prefix="launch-check."))
-    running: list[tuple[str | None, subprocess.Popen, Path]] = []
+    running: list[tuple[str | None, subprocess.Popen, Path, str]] = []
     try:
         for arch in wanted:
             if arch and not can_execute(arch):
@@ -133,12 +136,12 @@ def main() -> int:
                       f"(on Apple Silicon install Rosetta: softwareupdate --install-rosetta)")
                 failed = True
                 continue
-            process, log = start(app, arch, work)
-            running.append((arch, process, log))
+            process, log, suite = start(app, arch, work)
+            running.append((arch, process, log, suite))
         deadline = time.monotonic() + options.seconds
-        while time.monotonic() < deadline and any(p.poll() is None for _, p, _ in running):
+        while time.monotonic() < deadline and any(p.poll() is None for _, p, _, _ in running):
             time.sleep(0.2)
-        for arch, process, log in running:
+        for arch, process, log, _ in running:
             label = arch or "native"
             code = process.poll()
             if code is None:
@@ -151,8 +154,9 @@ def main() -> int:
             for line in tail:
                 print(f"    {line}")
     finally:
-        for _, process, _ in running:
+        for _, process, _, suite in running:
             stop(process)
+            subprocess.run(["/usr/bin/defaults", "delete", suite], capture_output=True)
         shutil.rmtree(work, ignore_errors=True)
     return 1 if failed else 0
 

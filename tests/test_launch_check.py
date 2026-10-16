@@ -49,7 +49,10 @@ class LaunchCheckTests(unittest.TestCase):
             scratch = Path(scratch)
             record = scratch / "record"
             app = fixture(scratch, "Alive", f"""
+case "$UNREVOKE_LIFECYCLE_SUITE" in {PRODUCT_ID}.accept.launch.*) ;; *) exit 65 ;; esac
+/usr/bin/defaults write "$UNREVOKE_LIFECYCLE_SUITE" launchProbe -bool YES
 {{ echo "pid=$$"; echo "args=$*"; echo "support=$APP_LIFECYCLE_SUPPORT_DIR"; echo "cloud=$APP_LIFECYCLE_CLOUD_DIR"
+  echo "suite=$UNREVOKE_LIFECYCLE_SUITE"
   /usr/bin/plutil -extract CFBundleIdentifier raw "$(dirname "$0")/../Info.plist"
   /usr/bin/plutil -extract LSUIElement raw "$(dirname "$0")/../Info.plist"
   echo "self=$0"; }} > '{record}'
@@ -76,6 +79,11 @@ exec sleep 30
             with self.assertRaises(ProcessLookupError):
                 os.kill(pid, 0)
             self.assertFalse(Path(launched).exists(), "The scratch copy is removed afterwards")
+            suite = seen.split("suite=", 1)[1].splitlines()[0]
+            self.assertTrue(suite.startswith(PRODUCT_ID + ".accept.launch."))
+            self.assertNotEqual(suite, PRODUCT_ID)
+            deleted = subprocess.run(["/usr/bin/defaults", "read", suite, "launchProbe"], capture_output=True)
+            self.assertNotEqual(deleted.returncode, 0, "The isolated preference values must be removed")
 
     def test_an_architecture_this_mac_cannot_run_fails_instead_of_skipping(self):
         with tempfile.TemporaryDirectory(prefix="unrevoke-launch-") as scratch:
