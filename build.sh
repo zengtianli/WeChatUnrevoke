@@ -83,10 +83,42 @@ echo "→ 构建 Unrevoke（$CONFIG${UNIVERSAL:+, universal}）…"
 mkdir -p "$DIR/build"
 BUILD_LOG="$(mktemp "$DIR/build/unrevoke-compile.XXXXXX")"
 echo "   编译日志 → $BUILD_LOG"
+SIM_LANE="${SIM_LANE_MODULE:-$HOME/Dev/tools/dev/lib/tools/macapp/ios/sim_lane.py}"
+if [ -f "$SIM_LANE" ]; then
+  # The shared SDK producer owns parallel build admission; do not take a device
+  # or quiet-measurement lock around compilation. Keep its frozen app unchanged.
+  SDK_JSON="$DIR/build/unrevoke-sdk-$CONFIG.json"
+  SDK_APP="$("${PYTHON:-python3}" - "$SIM_LANE" "$DIR" "$CONFIG" "$SDK_JSON" <<'PY_SDK'
+import json, os, sys
+from pathlib import Path
+sys.path.insert(0, str(Path(sys.argv[1]).parent))
+import sim_lane
+root, config, output = Path(sys.argv[2]), sys.argv[3], Path(sys.argv[4])
+# These paths belong to postprocessing, not the isolated Xcode compilation.
+# Never make the compiler depend on an output folder or a prebuilt engine.
+receipt = os.environ.get('UNREVOKE_REUSE_SDK_RECEIPT')
+for key in list(os.environ):
+    if key.startswith('UNREVOKE_'):
+        del os.environ[key]
+if receipt:
+    built = sim_lane.reuse_build(Path(receipt), 'unrevoke-mac', root, 'mac', 'Unrevoke', config, False)
+else:
+    built = sim_lane.build(root, 'Unrevoke', 'mac', config)
+    output.write_text(json.dumps(built, ensure_ascii=False, indent=2) + '\n')
+print(built['app_path'])
+PY_SDK
+)"
+  APP="$DIR/build/sdk-output-$CONFIG/Unrevoke.app"
+  mkdir -p "$(dirname "$APP")"
+  [ ! -e "$APP" ] || rm -rf "$APP"
+  ditto "$SDK_APP" "$APP"
+  echo "   SDK receipt → $SDK_JSON" | tee -a "$BUILD_LOG"
+else
 xcodebuild -project Unrevoke.xcodeproj -scheme Unrevoke -configuration "$CONFIG" ${XCARGS[@]+"${XCARGS[@]}"} build 2>&1 | tee "$BUILD_LOG" | tail -3
 
 BUILT="$(xcodebuild -project Unrevoke.xcodeproj -scheme Unrevoke -configuration "$CONFIG" ${XCARGS[@]+"${XCARGS[@]}"} -showBuildSettings 2>/dev/null | awk -F' = ' '/ BUILT_PRODUCTS_DIR =/{print $2; exit}')"
 APP="$BUILT/Unrevoke.app"
+fi
 [ -d "$APP" ] || { echo "❌ 未找到产物 $APP"; exit 1; }
 
 # ── 3. post-build：内嵌引擎 + 规范化 + adhoc 重签 ─────────────────────────

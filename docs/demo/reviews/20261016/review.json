@@ -1,0 +1,55 @@
+{
+  "checked_at": "2026-10-16T17:51:50+08:00",
+  "version": "1.0.14",
+  "tool": "python3 scripts/render-current-guide.py --snapshots-only --out build/media-review-20261016",
+  "unchanged": true,
+  "ui_source_sha256": "8e5c1558174cf2ee4347c958b06e5c10d5cfc8829c0da59732fb7d5dac7287ae",
+  "scope": "Reviewed all three current production ContentView states against the recorded frames. Layout, text, controls and depicted behavior unchanged; minor color-profile/rasterization differences are measured below, not pixel equality. The five display source files match the recording. Settings/shortcut/iCloud/update windows are outside this guide; historical real patch/restore videos retain their original versions.",
+  "comparisons": [
+    {
+      "name": "current-unprotected.png",
+      "recorded_sha256": "16bd182315b3f60f8e52979853e02fb01c21e05dd5e9951b671a520fc2de7287",
+      "rendered_sha256": "edbe1875dc7863a24f87cc91ab78809fb9785768410ce1715b42760e1e415c7b",
+      "shape": [
+        640,
+        620,
+        4
+      ],
+      "changed_pixels": 85257,
+      "recorded_color_profile": "Display",
+      "rendered_color_profile": "sRGB",
+      "normalized_mean_channel_delta": 0.16591103830645162,
+      "normalized_pixels_delta_over_10": 1516
+    },
+    {
+      "name": "current-protected.png",
+      "recorded_sha256": "c0e181bf20699ba3c3a98f18a4ff3e83bfe2a6fe93a6f1bbca83c7f54b1e8e42",
+      "rendered_sha256": "76d79091c6147e1c1b586ee152cf9330561fbcf4e5f8a481d03df0b7b944ac00",
+      "shape": [
+        640,
+        620,
+        4
+      ],
+      "changed_pixels": 84992,
+      "recorded_color_profile": "Display",
+      "rendered_color_profile": "sRGB",
+      "normalized_mean_channel_delta": 0.21322454637096774,
+      "normalized_pixels_delta_over_10": 170
+    },
+    {
+      "name": "current-antiRevokeOnly.png",
+      "recorded_sha256": "425c3168c8e81cafaa91600ca31e507ec4e6f8ef9bdac4f4c71f314596359260",
+      "rendered_sha256": "fd26841495123d0104bbe7eb4051f50fd61e1a711e2a9d587eec0f8ca4668233",
+      "shape": [
+        640,
+        620,
+        4
+      ],
+      "changed_pixels": 93572,
+      "recorded_color_profile": "Display",
+      "rendered_color_profile": "sRGB",
+      "normalized_mean_channel_delta": 0.23325037802419354,
+      "normalized_pixels_delta_over_10": 218
+    }
+  ]
+}

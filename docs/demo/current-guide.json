@@ -23,5 +23,20 @@
     "current-protected.png": "c0e181bf20699ba3c3a98f18a4ff3e83bfe2a6fe93a6f1bbca83c7f54b1e8e42",
     "current-guide.vtt": "1947757cb374d9fbf5c79be8a28a345fab0d8229683c83fd579acafe8eb09a98",
     "current-antiRevokeOnly.png": "425c3168c8e81cafaa91600ca31e507ec4e6f8ef9bdac4f4c71f314596359260"
-  }
+  },
+  "reused_for": {
+    "1.0.14": "Three depicted status screens reviewed against current offscreen production ContentView; no change to shown layout, controls or behavior. New settings/lifecycle features are outside this guide; historical real operation recordings remain scoped to their recorded versions."
+  },
+  "ui_reviews": [
+    {
+      "checked_at": "2026-10-16T17:51:50+08:00",
+      "version": "1.0.14",
+      "tool": "python3 scripts/render-current-guide.py --snapshots-only --out build/media-review-20261016",
+      "unchanged": true,
+      "ui_source_sha256": "8e5c1558174cf2ee4347c958b06e5c10d5cfc8829c0da59732fb7d5dac7287ae",
+      "scope": "Reviewed all three current production ContentView states against the recorded frames. Layout, text, controls and depicted behavior unchanged; minor color-profile/rasterization differences are measured below, not pixel equality. The five display source files match the recording. Settings/shortcut/iCloud/update windows are outside this guide; historical real patch/restore videos retain their original versions.",
+      "evidence": "docs/demo/reviews/20261016/review.json",
+      "evidence_sha256": "db7daca298ffb36fcee142e04ae7f10d17f8d9c1d8cd949c6afa73903818e245"
+    }
+  ]
 }

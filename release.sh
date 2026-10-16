@@ -9,7 +9,8 @@ cd "$DIR"
 
 # 从构建产物直接打包，不经过 /Applications：发版不应替换这台机器上正在用的那一份。
 # build.sh 的 INSTALL_APP=0 路径已完成内嵌引擎、规范化与 adhoc 重签，产物与安装件逐字节同源。
-INSTALL_APP=0 CONFIG=Release UNIVERSAL=1 ./build.sh
+BUILT_APP="$DIR/build/release-current/WeChatUnrevoke.app"
+INSTALL_APP=0 CONFIG=Release UNIVERSAL=1 UNREVOKE_OUTPUT_APP="$BUILT_APP" ./build.sh
 NAME="$(plutil -extract CFBundleName raw "$DIR/Info.plist")"
 _XCODE_ENV_SH="${XCODE_ENV_SH:-$HOME/Dev/tools/dev/lib/tools/macapp/xcode_env.sh}"
 if [ -f "$_XCODE_ENV_SH" ]; then
@@ -17,15 +18,12 @@ if [ -f "$_XCODE_ENV_SH" ]; then
   source "$_XCODE_ENV_SH"
   xcode_env_use macosx
 fi
-BUILT="$(xcodebuild -project Unrevoke.xcodeproj -scheme Unrevoke -configuration Release \
-  ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO -showBuildSettings 2>/dev/null \
-  | awk -F' = ' '/ BUILT_PRODUCTS_DIR =/{print $2; exit}')"
-[ -d "$BUILT/Unrevoke.app" ] || { echo "❌ 找不到构建产物 $BUILT/Unrevoke.app"; exit 1; }
+[ -d "$BUILT_APP" ] || { echo "❌ 找不到构建产物 $BUILT_APP"; exit 1; }
 # 发行包里的 bundle 名与安装名一致（cask 的 app 条目按这个名字找）。
 STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
 APP="$STAGE/$NAME.app"
-cp -R "$BUILT/Unrevoke.app" "$APP"
+cp -R "$BUILT_APP" "$APP"
 
 VERSION="$(plutil -extract CFBundleShortVersionString raw "$APP/Contents/Info.plist")"
 BUILD="$(plutil -extract CFBundleVersion raw "$APP/Contents/Info.plist")"

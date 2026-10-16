@@ -7,7 +7,7 @@ A disposable bundle's doctor-only fixture supplies states; no real WeChat is rea
 """
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
-import argparse, hashlib, json, os, plistlib, subprocess, sys, uuid
+import argparse, hashlib, json, os, plistlib, shutil, subprocess, sys, uuid
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / 'accept'))
 from _common import run as common_run, xcode_env
@@ -100,14 +100,29 @@ set -eu
 cat "$UNREVOKE_GUIDE_FIXTURE"
 ''')
 engine.chmod(0o755)
-with ThreadPoolExecutor(max_workers=2) as compilers:
-    builds = [
-        compilers.submit(run, 'xcrun','swiftc','-parse-as-library',ROOT/'Sources/Models.swift',ROOT/'Sources/Engine.swift',ROOT/'Sources/WriteHistory.swift',ROOT/'Sources/ViewModel.swift',ROOT/'Sources/ContentView.swift',WORK/'Capture.swift','-o',APP/'Contents/MacOS/Guide'),
-    ]
-    if not options.snapshots_only:
-        builds.append(compilers.submit(run, 'xcrun','swiftc',ROOT/'scripts/demo-caption.swift','-o',WORK/'caption'))
-    for build in builds:
-        build.result()
+lane_module = Path(os.environ.get('SIM_LANE_MODULE', Path.home()/'Dev/tools/dev/lib/tools/macapp/ios/sim_lane.py'))
+if lane_module.is_file():
+    sys.path.insert(0, str(lane_module.parent))
+    import sim_lane
+    project = WORK/'GuideProject'
+    (project/'Sources').mkdir(parents=True, exist_ok=True)
+    for name in ['Models.swift','Engine.swift','WriteHistory.swift','ViewModel.swift','ContentView.swift']:
+        shutil.copyfile(ROOT/'Sources'/name, project/'Sources'/name)
+    shutil.copyfile(WORK/'Capture.swift', project/'Sources/Capture.swift')
+    shutil.copyfile(APP/'Contents/Info.plist', project/'Info.plist')
+    spec = {'name':'Guide', 'targets':{'Guide':{'type':'application','platform':'macOS',
+        'deploymentTarget':'13.0','sources':['Sources'],'info':{'path':'Info.plist'},
+        'settings':{'base':{'PRODUCT_BUNDLE_IDENTIFIER':plistlib.loads((project/'Info.plist').read_bytes())['CFBundleIdentifier'],
+                            'SWIFT_VERSION':'5.0'}}}}}
+    (project/'project.yml').write_text(json.dumps(spec))
+    built = sim_lane.build(project, 'Guide', 'mac', 'Release')
+    (WORK/'sdk-build.json').write_text(json.dumps(built,ensure_ascii=False,indent=2)+'\n')
+    shutil.copyfile(Path(built['app_path'])/'Contents/MacOS/Guide', APP/'Contents/MacOS/Guide')
+    (APP/'Contents/MacOS/Guide').chmod(0o755)
+else:
+    run('xcrun','swiftc','-parse-as-library',ROOT/'Sources/Models.swift',ROOT/'Sources/Engine.swift',ROOT/'Sources/WriteHistory.swift',ROOT/'Sources/ViewModel.swift',ROOT/'Sources/ContentView.swift',WORK/'Capture.swift','-o',APP/'Contents/MacOS/Guide')
+if not options.snapshots_only:
+    run('xcrun','swiftc',ROOT/'scripts/demo-caption.swift','-o',WORK/'caption')
 scenes = [
     ('unprotected','01 · 检查当前状态','未打补丁时，主按钮显示「开启防撤回」','虚构状态 · 仅展示当前界面，不执行写入'),
     ('protected','02 · 两项结果分别说明','防撤回与拦截更新均生效时，可重新检查或还原','虚构状态 · 未操作真实微信或消息'),

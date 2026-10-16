@@ -1,5 +1,17 @@
 # 2026-10-16 · 当前构建发行与素材接续
 
+## 第二轮接续（2026-10-16，进行中）
+
+本次复用 Chapter `--pid 89000 --session chapter-task:ff67e3f3a11940a59cf9f049cb215584` 的声明，原声明不释放。以下新接口和结果覆盖下文上一轮的资源门阻塞与恢复步骤：直接调用 `sim_lane.build`，由其内部并行槽准入，不再套 FIFO/acquire/heavy_builds，也不以压力 2 中止。
+
+本轮具体写入范围：原 `build.sh` 的 SDK 接口及独立后处理、`release.sh` 显式产物路径、Release 工程的 universal 设置、离屏导览生成器及三屏复核原件/元数据、专项测试、本 handoff；不改共享 SDK、Chapter、引擎、产品业务界面或旧实机录像。完成标准为真实三屏复核、原完整发行门通过、新 GitHub 发行与 cask/网站回读、必要本机来源对齐和原更新源回读；不重复 perf，不重发已存在 Release。
+
+三屏离屏渲染已完成，`docs/demo/reviews/20261016/` 保存新图与真实差异统计，旧视频 SHA 保持 `8123a2dc9934ee9b328dd3a316a1c614c4f98904e4f7f1d87b63e71f6c89ad9f`。五个展示源码逐一与原记录相同；视觉检查三个状态的布局、文案、控件与行为相同。新图 sRGB、旧图 Display ICC，存在色彩/栅格差异，不称像素一致；复用仅限已展示范围，设置/快捷键/iCloud/更新窗口不在导览中。复核绑定当前原 Chapter 的 UI 输入摘要。
+
+SDK 接入首轮定位并修复两个真实问题：输出/预构建引擎变量不得传入源码隔离器；新接口不接原命令行 universal 参数，因此 Release 工程明确 arm64+x86_64 和 ONLY_ACTIVE_ARCH=NO。保留原包内 12 项白名单、签名、引擎、双架构及真实启动门；SDK 原始产物不修改，后处理只用副本。新的复用选项只经 SDK `reuse_build` 校验当前源码和二进制，不接受仅有 receipt 的缓存。
+
+此处尚未宣称新发行完成，最终回读见本节后续结果。
+
 本轮任务：Chapter `6835da139e6c4eaa926df5b6b68064e5`，仅 unrevoke-mac 的 media、release、update-feed；性能及 input-binding 留原调度，不重复采样。写前复用 `--pid 47746 --session chapter-task:6835da139e6c4eaa926df5b6b68064e5` 核原 claims，不另开或释放声明。开工工作区/暂存为空，保留已有提交和后台。
 
 有限步骤与完成标准：
