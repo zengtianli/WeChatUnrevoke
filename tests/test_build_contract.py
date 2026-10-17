@@ -2,6 +2,7 @@ import hashlib
 import importlib.util
 import json
 from pathlib import Path
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -150,7 +151,10 @@ class SiteResourceContractTests(unittest.TestCase):
             self.skipTest("Chapter page checker is not installed")
         spec = importlib.util.spec_from_file_location("chapter_page_contract", checker_path)
         sop = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(sop)
+        # Match Chapter's CLI import context: it imports sibling engine modules.
+        # Restore the test runner's path after loading the real parser.
+        with patch.object(sys, "path", [str(checker_path.parent), *sys.path]):
+            spec.loader.exec_module(sop)
         raw, html, _ = self.historical("99.0.1", 2_449_790, 4_402_604)
         self.assertEqual(sop.numbers_on_page(raw, html), [])
         for values in sop.measured_fields(raw, html).values():

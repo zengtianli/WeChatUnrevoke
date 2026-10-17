@@ -44,6 +44,34 @@ def sha_bytes(data):
     return hashlib.sha256(data).hexdigest()
 
 
+def verified_build(app, receipt_path):
+    """Use Chapter's production binding, retaining real artifact/signature checks."""
+    sys.path.insert(0, str(Path.home() / "Apps/chapter/engine"))
+    import app_sop
+    registered = app_sop.load_apps("unrevoke-mac")[0]
+    binding = None
+    if app == Path("/Applications/WeChatUnrevoke.app") and any(
+            key in os.environ for key in ("SOP_CODE_BINDING_SHA256", "SOP_BUILD_CURRENT")):
+        binding = os.environ.get("SOP_CODE_BINDING_SHA256", "")
+        assert len(binding) == 64 and all(c in "0123456789abcdef" for c in binding), "Missing/invalid Chapter code binding"
+        assert os.environ.get("SOP_BUILD_CURRENT") == "1", "Chapter has not verified the current installed build"
+        # Recheck after the run too: actual production changes still invalidate it.
+        current = app_sop.acceptance_code_environment(registered)
+        assert current == {"SOP_CODE_BINDING_SHA256": binding, "SOP_BUILD_CURRENT": "1"}, "Chapter production inputs/build changed"
+    else:
+        # Explicit candidates and standalone runs use the same production-only
+        # verifier, never compare tests, acceptors or perf outputs as shipped code.
+        valid, reason = app_sop.verify_build_receipt(registered, app, receipt_path=receipt_path, code_only=True)
+        assert valid, reason
+    receipt = json.loads(receipt_path.read_text())
+    observed = app_sop.artifact_snapshot(app)
+    if "icon" not in receipt["artifact"]:
+        observed = {k: v for k, v in observed.items() if k != "icon"}
+    assert observed == receipt["artifact"], "App artifact differs from the build receipt"
+    subprocess.run(["codesign", "--verify", "--deep", "--strict", str(app)], check=True, capture_output=True)
+    return receipt, binding
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--app", type=Path, default=os.environ.get("UNREVOKE_BASICS_APP", "/Applications/WeChatUnrevoke.app"))
@@ -77,20 +105,15 @@ def main():
         return body
 
     try:
-        sys.path.insert(0, str(Path.home() / "Apps/chapter/engine"))
-        import app_sop
-        registered = app_sop.load_apps("unrevoke-mac")[0]
-        valid, reason = app_sop.verify_build_receipt(registered, app, receipt_path=receipt_path)
-        assert valid, reason
-        receipt = json.loads(receipt_path.read_text())
+        receipt, binding = verified_build(app, receipt_path)
         artifact = receipt["artifact"]
         info = plistlib.loads((app / "Contents/Info.plist").read_bytes())
         identity = {"scope": scope, "bundle_id": info["CFBundleIdentifier"],
                     "version": info["CFBundleShortVersionString"], "build": str(info["CFBundleVersion"]),
                     "executable_sha256": sha(app / artifact["executable"]),
-                    "receipt_sha256": sha(receipt_path), "source_sha256": receipt["source"]["sha256"]}
+                    "receipt_sha256": sha(receipt_path), "source_sha256": receipt["source"]["sha256"],
+                    "code_binding_sha256": binding}
         assert identity["bundle_id"] == PRODUCT and identity["executable_sha256"] == artifact["sha256"]
-        subprocess.run(["codesign", "--verify", "--deep", "--strict", str(app)], check=True, capture_output=True)
         suite = PRODUCT + ".accept." + uuid.uuid4().hex
         suites.append(suite)
         clone = run / "Applications/WeChatUnrevoke.app"
@@ -205,8 +228,10 @@ def main():
         check("updates.data_preservation", installed["installed"] and after_upgrade["variant"] == baseline["variant"])
         check("settings.interaction", ui["settings.real_control_actions"] and ui["settings.no_visible_windows_or_dock"])
         check("shortcuts.action_path", ui["shortcuts.real_refresh_action"])
-        valid_after, reason = app_sop.verify_build_receipt(registered, app, receipt_path=receipt_path)
-        check("settings.candidate_and_source_unchanged", valid_after and identity["executable_sha256"] == sha(app / artifact["executable"]))
+        after_receipt, after_binding = verified_build(app, receipt_path)
+        check("settings.candidate_and_source_unchanged", after_receipt == receipt and after_binding == binding
+              and identity["receipt_sha256"] == sha(receipt_path)
+              and identity["executable_sha256"] == sha(app / artifact["executable"]))
     except Exception as exc:
         error = str(exc)
     finally:

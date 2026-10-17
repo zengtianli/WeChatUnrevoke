@@ -8,27 +8,8 @@ if [ -f "$_XCODE_ENV_SH" ]; then
 fi
 TEST_DIR="$(mktemp -d /tmp/unrevoke-tests.XXXXXX)"
 run_python_tests() {
-  "${PYTHON:-python3}" - <<'PY'
-from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
-import os
-import subprocess
-import sys
-
-files = sorted(Path("tests").glob("test_*.py"))
-if not files:
-    raise SystemExit("No Python test files found")
-def check(path):
-    result = subprocess.run([sys.executable, "-m", "unittest", "discover", "-s", "tests", "-p", path.name],
-                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-    return path.name, result
-failed = False
-with ThreadPoolExecutor(max_workers=min(os.cpu_count() or 1, len(files))) as pool:
-    for name, result in pool.map(check, files):
-        print(f"Python: {name}\n{result.stdout}", end="", flush=True)
-        failed |= result.returncode != 0
-raise SystemExit(1 if failed else 0)
-PY
+  # Python regression dependencies: pytest and pytest-xdist.
+  "${PYTHON:-python3}" -m pytest -n auto tests
 }
 run_write_failure_tests() {
 APP="$TEST_DIR/UnrevokeTests.app"
@@ -68,7 +49,7 @@ swiftc -parse-as-library Sources/Models.swift Sources/Engine.swift Sources/Write
 "$HISTORY_APP/Contents/MacOS/WriteHistoryTests"
 }
 
-# Independent compiles and Python files share no output paths. Keep the existing
+# Independent compiles and Python workers share no output paths. Keep the existing
 # entry point parallel on both Macs, and report every suite even if one fails.
 JOBS=(run_python_tests run_write_failure_tests run_login_tests run_write_history_tests)
 PIDS=()
