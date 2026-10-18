@@ -38,6 +38,9 @@ final class AppLifecycleUI: NSObject {
     private let intervalPopup = NSPopUpButton()
     private let channelPopup = NSPopUpButton()
     private let updateDetails = AppLifecycleUI.detailLabel()
+    private let languagePopup = NSPopUpButton()
+    private let languageNote = AppLifecycleUI.detailLabel()
+    private let reopenButton = NSButton(title: LifecycleText.pick("Reopen Now", "立即重新打开"), target: nil, action: nil)
     private let cancelButton = NSButton(title:LifecycleText.pick("Cancel Download/Verification", "取消下载/验证"),target:nil,action:nil)
     private let notesButton = NSButton(title:LifecycleText.pick("What's New…", "更新内容…"),target:nil,action:nil)
     private let skipButton = NSButton(title:LifecycleText.pick("Skip Version", "跳过此版"),target:nil,action:nil)
@@ -337,7 +340,16 @@ final class AppLifecycleUI: NSObject {
         notesButton.target = self;notesButton.action = #selector(showReleaseNotes);notesButton.isEnabled = false
         skipButton.target = self;skipButton.action = #selector(skipRelease);skipButton.isEnabled = false
         remindButton.target = self;remindButton.action = #selector(remindLater)
-        var groups: [NSView] = productGroups?() ?? []
+        languagePopup.removeAllItems()
+        languagePopup.addItems(withTitles: LifecycleLanguage.allCases.map(\.title))
+        languagePopup.target = self; languagePopup.action = #selector(changedLanguage)
+        reopenButton.target = self; reopenButton.action = #selector(reopenForLanguage)
+        let languageControls = NSStackView(views: [languagePopup, reopenButton]); languageControls.spacing = 8
+        refreshLanguage()
+        // Every app lets the user pick its language here (本人 2026-10-18: a basic requirement for all apps).
+        var groups: [NSView] = [Self.group(LifecycleText.pick("Language", "语言"), rows: [
+            Self.row(LifecycleText.pick("App language", "界面语言"), detail: languageNote, accessory: languageControls)])]
+        groups += productGroups?() ?? []
         if configuration?.hasSettings == true {
             cloudToggle.target = self; cloudToggle.action = #selector(toggleCloud)
             let export = NSButton(title: LifecycleText.pick("Export Settings…", "导出配置…"), target: self, action: #selector(exportConfiguration))
@@ -428,6 +440,17 @@ final class AppLifecycleUI: NSObject {
                 "upgrade_actual_button_target": updateButton.target === self && updateButton.action == #selector(checkUpdates),
                 "upgrade_image_rendered": data.count > 1_000 && bitmap.pixelsWide >= 400]
     }
+    private func refreshLanguage() {
+        languagePopup.selectItem(at: LifecycleLanguage.allCases.firstIndex(of: LifecycleLanguage.current) ?? 0)
+        let pending = LifecycleLanguage.needsRelaunch
+        languageNote.stringValue = pending ? LifecycleText.pick("Takes effect after the app reopens.", "重新打开 App 后生效。")
+            : LifecycleText.pick("Menus, windows and system panels switch together.", "菜单、窗口和系统面板一起切换。")
+        reopenButton.isHidden = !pending
+    }
+    @objc private func changedLanguage() {
+        LifecycleLanguage.set(LifecycleLanguage.allCases[max(0, languagePopup.indexOfSelectedItem)]); refreshLanguage()
+    }
+    @objc private func reopenForLanguage() { LifecycleLanguage.relaunch() }
     @objc private func toggleCloud() {
         configuration?.setEnabled(cloudToggle.state == .on)
         refreshConfiguration()
@@ -834,6 +857,52 @@ enum AppUpgradeInstaller {
         let output = pipe.fileHandleForReading.readDataToEndOfFile(); process.waitUntilExit()
         guard process.terminationStatus == 0 else { throw AppUpdateError("安装包验证失败：" + String(decoding: output.prefix(4096), as: UTF8.self)) }
         return String(decoding: output, as: UTF8.self)
+    }
+}
+/// The app's own language choice: Follow System, 简体中文 or English. Stored as this app's `AppleLanguages`
+/// override, which macOS applies at the next launch (the same mechanism as System Settings → Language & Region
+/// → Applications), so menus, windows and system panels switch together. Follow System removes the override.
+enum LifecycleLanguage: String, CaseIterable {
+    case system, chinese = "zh-Hans", english = "en"
+    static let key = "AppleLanguages"
+    /// The defaults domain holding the override; tests point it at an isolated domain.
+    static var domain = Bundle.main.bundleIdentifier ?? ""
+    /// Each option is shown in its own language, so it can be found from either interface.
+    var title: String {
+        switch self {
+        case .system: return LifecycleText.pick("Follow System", "跟随系统")
+        case .chinese: return "简体中文"
+        case .english: return "English"
+        }
+    }
+    /// Only this app's own domain counts; the global list is the system language, not a choice.
+    static var current: LifecycleLanguage {
+        guard !domain.isEmpty, let code = (UserDefaults.standard.persistentDomain(forName: domain)?[key] as? [String])?.first?.lowercased()
+        else { return .system }
+        return code.hasPrefix("zh") ? .chinese : (code.hasPrefix("en") ? .english : .system)
+    }
+    static func set(_ choice: LifecycleLanguage) {
+        guard !domain.isEmpty else { return }
+        var values = UserDefaults.standard.persistentDomain(forName: domain) ?? [:]
+        values[key] = choice == .system ? nil : [choice.rawValue]
+        UserDefaults.standard.setPersistentDomain(values, forName: domain)
+    }
+    /// The interface language the saved choice resolves to at the next launch.
+    static var resolved: LifecycleText.Language {
+        switch current {
+        case .system: return LifecycleText.resolve(UserDefaults.standard.persistentDomain(forName: UserDefaults.globalDomain)?[key] as? [String] ?? Locale.preferredLanguages)
+        case .chinese: return .chinese
+        case .english: return .english
+        }
+    }
+    static var needsRelaunch: Bool { resolved != LifecycleText.language }
+    /// Opens a fresh instance of this app, then quits this one.
+    static func relaunch() {
+        let config = NSWorkspace.OpenConfiguration()
+        config.createsNewApplicationInstance = true
+        NSWorkspace.shared.openApplication(at: Bundle.main.bundleURL, configuration: config) { _, error in
+            DispatchQueue.main.async { if error == nil { NSApp.terminate(nil) } }
+        }
     }
 }
 #endif
