@@ -1,5 +1,13 @@
 # Chapter 源码与测试交接（2026-10-08）
 
+## 2026-10-18：delivery-localization 固定检查续轮（待队列复验）
+
+- 本轮仅处理 `run-eb18jide/localization.log` 的截图绑定失效，预算 15 分钟；沿 Chapter 原 claims 身份核对截图、临时构建和本交接路径，没有另开或释放声明。工作区开工时干净，本轮不改产品逻辑，不推送、发版、装机、部署或变更授权。
+- 原固定脚本 detail 显示英文资源覆盖 125/125、资源问题为空，但双语截图 `current_binding=false`；这只证明旧截图绑定不被接受，不能据此认定翻译缺失或源码存在缺陷。
+- 实际执行共享 `l10n_tool.py shots --app unrevoke-mac`，它调用已有 `native_ui.py --localization`。产品脚本被共享 BuildSlot 的安静测量保护挡住，退出 75，日志为“开机/测量在等安静窗口”；没有开始 Swift 编译或生成新截图，不绕保护、不忙轮询，待原 jobs 队列有界接续。
+- 同时发现 Chapter `engine/l10n_tool.py:shots` 将子进程 75 写成两种语言 `ok=false` 的回执，外层退出 1；此处应由 Chapter 保留环境延期语义，超出本轮可写范围。证据为 `perf/acceptance/l10n/command.log`、`perf/acceptance/l10n/en/receipt.json` 和 `perf/acceptance/l10n/zh-Hans/receipt.json`；这些文件均由共享脚本产生，没有手写通过。
+- 接续入口：`/Users/tianli/Dev/.venv/bin/python /Users/tianli/Apps/chapter/engine/l10n_tool.py shots --app unrevoke-mac`，成功后执行同入口 `check --app unrevoke-mac`，再由原队列运行固定 localization 检查。本轮只提交交接记录，不把环境延期或旧轮通过算作当前通过。
+
 ## 2026-10-18：delivery-localization 定向修复
 
 本轮只修本地化失败；未推送、发版、装机、部署或变更授权。沿派出任务原 claims 身份核对写入范围，不另开或释放声明。
