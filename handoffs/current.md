@@ -1,5 +1,17 @@
 # Chapter 源码与测试交接（2026-10-08）
 
+## 2026-10-18：delivery-localization 定向修复
+
+本轮只修本地化失败；未推送、发版、装机、部署或变更授权。沿派出任务原 claims 身份核对写入范围，不另开或释放声明。
+
+- 将已有 125 条中英文案迁入根目录 `Localizable.xcstrings`；生产界面使用 `String(localized:)`，保留插值和原恢复提示。下载版 Info 声明 en/zh-Hans，Xcode 资源阶段纳入目录；商店版的项目生成源也消费同一份目录并声明两种语言。
+- 复用 `scripts/accept/native_ui.py --localization`，共享 BuildSlot 只包编译，槽忙退出 75；共用 Chapter 的目录编译、截图 OCR 和输入绑定实现，不另造本地化验收器。编译/运行失败打印真实子进程输出。
+- 本机登记接入 `sop.localization.shots.command`，并将目录加入源码、界面及性能输入；公开登记示例见 `scripts/accept/README.md`。登记与生成回执按既有约定不入库。
+- 发布包精确白名单同步加入 en/zh-Hans 两份字符串资源和目录，保持额外文件、缺文件和重复条目拒绝；两种语言各缺一份资源均有回归覆盖。本轮没有运行发行脚本。
+- `PYTHON=… bash tests/run.sh` 通过：76 项 Python、18 项写入恢复检查、83 项登录夹具断言、6 项写入历史检查；后续白名单变更单独重跑其 pytest 通过。Info 与 Xcode 工程 `plutil -lint`、`git diff --check` 通过。
+- `chapter l10n shots --app unrevoke-mac` 通过：两种语言各 12 项真实视图断言、5 张离屏截图；英文 OCR 无中文残留，标题与整数/字符串插值均核对，10 张截图已目视检查。`chapter l10n check --app unrevoke-mac` 为 passed，当前源码绑定有效、英文覆盖 125/125、issues 为空。
+- 机器生成证据在 `perf/acceptance/l10n/{en,zh-Hans}/receipt.json` 与各语言 `result.json`；截图为真实 ContentView 加受控 doctor 夹具，不代表已装版本已更新或真实微信写入复验。本轮结案后固定脚本结果由原 jobs 队列自动复验。
+
 ## 2026-10-10 续轮：补资产独立 build 与隔离构建缺包恢复
 
 接续 `2275e3f` 的两处实物缺口，固定预算 10 分钟，仅修改 `scripts/build-site.py`、`tests/test_site_release_assets.py` 和本交接；2026-10-10 00:32（上海）源码、重建与必要回归通过。此前九包 GitHub 摘要证据直接沿用，没有重做 Release 核验；没有发版、装机、push 或部署。原 `2275e3f/201b4d3` 保留，Lintel 任务二与 root 统一冻结后发布。

@@ -16,9 +16,14 @@ class ReleaseManifestTests(unittest.TestCase):
         declaration = next(node for node in ast.parse(gate).body
                            if isinstance(node, ast.Assign) and node.targets[0].id == "allowed")
         approved = sorted(ast.literal_eval(declaration.value))
-        self.assertEqual(len(approved), 12)
+        self.assertEqual(len(approved), 16)
+        localized = [f"WeChatUnrevoke.app/Contents/Resources/{lang}.lproj/Localizable.strings"
+                     for lang in ("en", "zh-Hans")]
+        self.assertTrue(set(localized).issubset(approved))
         cases = [(approved, True), (approved + ["unexpected.txt"], False),
                  (approved[:-1], False), (approved + [approved[-1]], False)]
+        cases += [([entry for entry in approved if entry != resource], False)
+                  for resource in localized]
         with tempfile.TemporaryDirectory() as directory:
             archive = Path(directory) / "package.zip"
             for entries, valid in cases:

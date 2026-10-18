@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		BF0000000000000000000121 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000221 /* Localizable.xcstrings */; };
 		BF0000000000000000000119 /* AppShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000219 /* AppShortcuts.swift */; };
 		BF0000000000000000000120 /* ProductBasics.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000220 /* ProductBasics.swift */; };
 		BF0000000000000000000115 /* AppLifecycleCLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000215 /* AppLifecycleCLI.swift */; };
@@ -26,6 +27,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		BF0000000000000000000221 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		BF0000000000000000000219 /* AppShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShortcuts.swift; sourceTree = "<group>"; };
 		BF0000000000000000000220 /* ProductBasics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductBasics.swift; sourceTree = "<group>"; };
 		BF0000000000000000000215 /* AppLifecycleCLI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLifecycleCLI.swift; sourceTree = "<group>"; };
@@ -62,6 +64,7 @@
 			children = (
 				BF0000000000000000000603 /* Sources */,
 				BF0000000000000000000301 /* Info.plist */,
+				BF0000000000000000000221 /* Localizable.xcstrings */,
 				BF0000000000000000000206 /* AppIcon.icns */,
 				BF0000000000000000000602 /* Products */,
 			);
@@ -138,6 +141,7 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
+				"zh-Hans",
 				Base,
 			);
 			mainGroup = BF0000000000000000000601;
@@ -156,6 +160,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				BF0000000000000000000106 /* AppIcon.icns in Resources */,
+				BF0000000000000000000121 /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

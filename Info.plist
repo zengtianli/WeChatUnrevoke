@@ -26,5 +26,10 @@
 	<string>WeChatUnrevoke · zengtianli · AGPL-3.0</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>zh-Hans</string>
+	</array>
 </dict>
 </plist>

@@ -1,0 +1,2131 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "%lld builds listed; updated with TestFlight releases.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld builds listed; updated with TestFlight releases."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "收录 %lld 个 build；随 TestFlight 版本更新。"
+          }
+        }
+      }
+    },
+    "Access to WeChat files was denied; this error alone does not identify the cause. Check each item:\n1. Administrator access: root-owned files or missing user write access require administrator authorization for this operation.\n2. File permissions and locks: check the reported file and its directory for ownership, access permissions, ACLs and immutable flags (uchg/schg). Administrator authorization may not remove a lock.\n3. App Management: if file permissions are correct, allow the current WeChatUnrevoke in System Settings → Privacy & Security → App Management, then quit and reopen it. This system permission is separate from administrator authorization.\nEntitlements are shown in Details and are separate from file write permissions. Keep the original engine log when copying diagnostics.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Access to WeChat files was denied; this error alone does not identify the cause. Check each item:\n1. Administrator access: root-owned files or missing user write access require administrator authorization for this operation.\n2. File permissions and locks: check the reported file and its directory for ownership, access permissions, ACLs and immutable flags (uchg/schg). Administrator authorization may not remove a lock.\n3. App Management: if file permissions are correct, allow the current WeChatUnrevoke in System Settings → Privacy & Security → App Management, then quit and reopen it. This system permission is separate from administrator authorization.\nEntitlements are shown in Details and are separate from file write permissions. Keep the original engine log when copying diagnostics."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "微信文件的读写被拒绝；仅凭这条错误不能确定原因。请逐项检查：\n1. 管理员权限：文件属于 root 或当前用户无写权限时，需要在本次操作中完成管理员授权。\n2. 文件权限与锁定：检查报错文件及其目录的所有者、访问权限、ACL 和不可变标记（uchg/schg）；管理员授权不一定能解除锁定。\n3. App 管理：若上述权限正常，到「系统设置 → 隐私与安全性 → App 管理」允许当前 WeChatUnrevoke 修改其他 App，然后完全退出并重开。本项系统授权与管理员授权是两回事。\n签名权限是否完好见详情，与文件写权限分开判断。复制诊断报告时请保留原始引擎日志。"
+          }
+        }
+      }
+    },
+    "An ACL denies writing": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An ACL denies writing"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "访问控制规则拒绝写入"
+          }
+        }
+      }
+    },
+    "An access-control entry (ACL) denies writing to WeChat's files. Inspect it with ls -le in Terminal and remove the deny entry, then retry.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An access-control entry (ACL) denies writing to WeChat's files. Inspect it with ls -le in Terminal and remove the deny entry, then retry."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "微信文件上有一条拒绝写入的访问控制规则（ACL）。在终端用 ls -le 查看，去掉那条 deny 规则后再试。"
+          }
+        }
+      }
+    },
+    "Anti-recall": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anti-recall"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "防撤回"
+          }
+        }
+      }
+    },
+    "Anti-recall (keep tip)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anti-recall (keep tip)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "防撤回（保留提示）"
+          }
+        }
+      }
+    },
+    "Anti-recall (silent)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anti-recall (silent)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "防撤回（静默）"
+          }
+        }
+      }
+    },
+    "Anti-recall is on": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anti-recall is on"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "防撤回已生效"
+          }
+        }
+      }
+    },
+    "Anti-recall style": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anti-recall style"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "防撤回方式"
+          }
+        }
+      }
+    },
+    "App Management permission missing": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Management permission missing"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "缺少 App 管理授权"
+          }
+        }
+      }
+    },
+    "Application shortcuts": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Application shortcuts"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "应用快捷键"
+          }
+        }
+      }
+    },
+    "Applied": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Applied"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已生效"
+          }
+        }
+      }
+    },
+    "Applies within this app. Reserved and conflicting menu bindings are rejected; disabling retains the binding.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Applies within this app. Reserved and conflicting menu bindings are rejected; disabling retains the binding."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "只在本 App 内生效；系统/编辑组合和已有菜单冲突会拒绝，关闭后保留组合。"
+          }
+        }
+      }
+    },
+    "Architecture": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Architecture"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "处理器架构"
+          }
+        }
+      }
+    },
+    "Build listed in the catalog": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Build listed in the catalog"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此 build 已收录"
+          }
+        }
+      }
+    },
+    "Build not listed in this snapshot": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Build not listed in this snapshot"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此快照未收录该 build"
+          }
+        }
+      }
+    },
+    "Bundled catalog snapshot": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bundled catalog snapshot"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "内置补丁库快照"
+          }
+        }
+      }
+    },
+    "Cancel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
+          }
+        }
+      }
+    },
+    "Check again": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check again"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新检查"
+          }
+        }
+      }
+    },
+    "Complete the patch": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Complete the patch"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "补齐"
+          }
+        }
+      }
+    },
+    "Copied": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copied"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已复制"
+          }
+        }
+      }
+    },
+    "Copy diagnostics": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy diagnostics"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "复制诊断报告"
+          }
+        }
+      }
+    },
+    "Could not parse the engine output (%@). Raw: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not parse the engine output (%@). Raw: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "读不懂引擎的输出（%@）。原始输出：%@"
+          }
+        }
+      }
+    },
+    "Could not write WeChat's files. Cause and fix:": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not write WeChat's files. Cause and fix:"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没能写入微信文件。原因与办法："
+          }
+        }
+      }
+    },
+    "Details": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Details"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "详情"
+          }
+        }
+      }
+    },
+    "Done. WeChat has been reopened.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done. WeChat has been reopened."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打好了。微信已经重新打开。"
+          }
+        }
+      }
+    },
+    "Download WeChat": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download WeChat"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "去下载微信"
+          }
+        }
+      }
+    },
+    "Enable refresh shortcut": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable refresh shortcut"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用重新检查快捷键"
+          }
+        }
+      }
+    },
+    "Engine": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Engine"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "引擎"
+          }
+        }
+      }
+    },
+    "Engine requests administrator authorization": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Engine requests administrator authorization"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "引擎请求管理员授权"
+          }
+        }
+      }
+    },
+    "Enter a build number to narrow the results.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a build number to narrow the results."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "输入 build 号缩小结果。"
+          }
+        }
+      }
+    },
+    "Entitlements": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entitlements"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "签名权限"
+          }
+        }
+      }
+    },
+    "Every patch point is written back to its original bytes and the bundle is re-signed. Anti-recall stops working and WeChat's auto-updater comes back.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every patch point is written back to its original bytes and the bundle is re-signed. Anti-recall stops working and WeChat's auto-updater comes back."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "会把所有补丁点写回原始字节并重新签名。防撤回随之失效，微信的自动更新也会恢复。"
+          }
+        }
+      }
+    },
+    "Export diagnostics…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export diagnostics…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导出诊断报告…"
+          }
+        }
+      }
+    },
+    "Failed to launch the engine: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to launch the engine: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "引擎启动失败：%@"
+          }
+        }
+      }
+    },
+    "Files are locked": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Files are locked"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件被锁定"
+          }
+        }
+      }
+    },
+    "Filter by build number": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filter by build number"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "按 build 号查找"
+          }
+        }
+      }
+    },
+    "Grant read access through the system file picker.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grant read access through the system file picker."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通过系统文件面板授权读取；不扫描其他文件。"
+          }
+        }
+      }
+    },
+    "Hit the button below and recalled messages will stay in your chat.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hit the button below and recalled messages will stay in your chat."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "点下面的按钮，撤回的消息就会留在聊天里。"
+          }
+        }
+      }
+    },
+    "Import diagnostic JSON…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import diagnostic JSON…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导入诊断 JSON…"
+          }
+        }
+      }
+    },
+    "Install channel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Install channel"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安装渠道"
+          }
+        }
+      }
+    },
+    "Installation tutorials and help": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installation tutorials and help"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安装教程与使用帮助"
+          }
+        }
+      }
+    },
+    "Intact": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Intact"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "完整"
+          }
+        }
+      }
+    },
+    "Keep recall notice": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep recall notice"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保留提示"
+          }
+        }
+      }
+    },
+    "Keep the message. Even after recall.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep the message. Even after recall."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "撤回之后，消息仍在。"
+          }
+        }
+      }
+    },
+    "Keep the tip (recommended)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep the tip (recommended)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保留提示（推荐）"
+          }
+        }
+      }
+    },
+    "Key binding": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Key binding"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "按键组合"
+          }
+        }
+      }
+    },
+    "Launch at login": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Launch at login"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "开机自动运行"
+          }
+        }
+      }
+    },
+    "Lost": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lost"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已丢失"
+          }
+        }
+      }
+    },
+    "Needs administrator authorization": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Needs administrator authorization"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要管理员授权"
+          }
+        }
+      }
+    },
+    "No": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "否"
+          }
+        }
+      }
+    },
+    "No WeChat.app in /Applications. Install WeChat from mac.weixin.qq.com first.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No WeChat.app in /Applications. Install WeChat from mac.weixin.qq.com first."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 /Applications 里没找到 WeChat.app。请先从 mac.weixin.qq.com 装上微信。"
+          }
+        }
+      }
+    },
+    "No matching builds.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No matching builds."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有匹配的 build。"
+          }
+        }
+      }
+    },
+    "None": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "None"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无"
+          }
+        }
+      }
+    },
+    "Not applied": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not applied"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未打"
+          }
+        }
+      }
+    },
+    "Not available": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not available"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂不支持"
+          }
+        }
+      }
+    },
+    "Not patched yet": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not patched yet"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "还没打补丁"
+          }
+        }
+      }
+    },
+    "On this Mac's processor architecture (%@), this WeChat build offers this style only.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On this Mac's processor architecture (%@), this WeChat build offers this style only."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这个微信版本在本机的处理器架构（%@）上只有这一种方式可用。"
+          }
+        }
+      }
+    },
+    "One of anti-recall and the update block is still missing. Use the button below to add it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One of anti-recall and the update block is still missing. Use the button below to add it."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "防撤回和拦截自动更新还差一项没打上，点下面的按钮补上。"
+          }
+        }
+      }
+    },
+    "Original engine verdict": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Original engine verdict"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "引擎原判决"
+          }
+        }
+      }
+    },
+    "Owner, permissions, locks and access control all allow the write, yet macOS refused it — most likely the App Management permission is missing. In System Settings → Privacy & Security → App Management, enable WeChatUnrevoke (use + to add this copy if it is not listed), quit and reopen this app, then retry. If it is already enabled there and the write is still refused (this happens after updating this app — the permission is tied to the version that was granted): select WeChatUnrevoke, remove it with −, then add this copy with +. An administrator password does not replace this permission; security software that protects apps can cause the same refusal.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Owner, permissions, locks and access control all allow the write, yet macOS refused it — most likely the App Management permission is missing. In System Settings → Privacy & Security → App Management, enable WeChatUnrevoke (use + to add this copy if it is not listed), quit and reopen this app, then retry. If it is already enabled there and the write is still refused (this happens after updating this app — the permission is tied to the version that was granted): select WeChatUnrevoke, remove it with −, then add this copy with +. An administrator password does not replace this permission; security software that protects apps can cause the same refusal."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件的所有者、权限、锁定和访问控制都允许写入，但 macOS 仍然拒绝了：多半是缺少「App 管理」授权。到「系统设置 → 隐私与安全性 → App 管理」打开 WeChatUnrevoke（列表里没有就用 + 添加当前这份），完全退出并重开本应用再试。列表里已经打开却仍被拒绝（更新本应用后会这样：这项授权只认授权时的那一版）：选中 WeChatUnrevoke 用 − 移除，再用 + 添加当前这份。管理员密码不能代替这项授权；保护 App 的安全软件也会造成同样的拒绝。"
+          }
+        }
+      }
+    },
+    "Partially protected": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partially protected"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "部分保护已生效"
+          }
+        }
+      }
+    },
+    "Patch database up to date": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Patch database up to date"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "补丁库已是最新"
+          }
+        }
+      }
+    },
+    "Patch database updated": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Patch database updated"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "补丁库已更新"
+          }
+        }
+      }
+    },
+    "Protection preferences": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Protection preferences"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "微信保护偏好"
+          }
+        }
+      }
+    },
+    "Quit WeChat and continue": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quit WeChat and continue"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "退出微信并继续"
+          }
+        }
+      }
+    },
+    "Re-apply automatically after a WeChat update": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Re-apply automatically after a WeChat update"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "微信更新后自动打回补丁"
+          }
+        }
+      }
+    },
+    "Re-signing WeChat (this takes a while, don't quit)…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Re-signing WeChat (this takes a while, don't quit)…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在重新签名微信（几十秒，别退出）…"
+          }
+        }
+      }
+    },
+    "Read a report generated by the downloadable engine, preserving its verdict. This build does not run the patch engine.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read a report generated by the downloadable engine, preserving its verdict. This build does not run the patch engine."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "读取下载版引擎生成的报告，保留原判决。此版本不执行补丁引擎。"
+          }
+        }
+      }
+    },
+    "Read-only location": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read-only location"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "只读位置"
+          }
+        }
+      }
+    },
+    "Reapply after updates": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reapply after updates"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新后自动重打"
+          }
+        }
+      }
+    },
+    "Recall notice": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recall notice"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "防撤回方式"
+          }
+        }
+      }
+    },
+    "Requires no password, WeChat closed and prior protection. Restoring settings does not authorize patching.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Requires no password, WeChat closed and prior protection. Restoring settings does not authorize patching."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仍须无需密码、微信已退出、曾成功保护；恢复偏好不授权写微信。"
+          }
+        }
+      }
+    },
+    "Restore WeChat": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore WeChat"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "还原微信"
+          }
+        }
+      }
+    },
+    "Restore WeChat to stock?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore WeChat to stock?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "要把微信还原吗？"
+          }
+        }
+      }
+    },
+    "Restored to stock. WeChat's auto-updater is live again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restored to stock. WeChat's auto-updater is live again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已还原成没动过的样子。微信的自动更新也恢复了。"
+          }
+        }
+      }
+    },
+    "SIP": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SIP"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系统完整性保护"
+          }
+        }
+      }
+    },
+    "Saved engine diagnostics": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved engine diagnostics"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已保存的引擎诊断"
+          }
+        }
+      }
+    },
+    "Select WeChat App…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select WeChat App…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择微信 App…"
+          }
+        }
+      }
+    },
+    "Select WeChat for a read-only version check. It will not be modified.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select WeChat for a read-only version check. It will not be modified."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择要只读检查的微信 App。不会修改它。"
+          }
+        }
+      }
+    },
+    "Select a report saved with the downloadable engine's doctor --json command.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select a report saved with the downloadable engine's doctor --json command."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择下载版引擎 doctor --json 保存的报告。"
+          }
+        }
+      }
+    },
+    "Select a valid WeChat app for Mac.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select a valid WeChat app for Mac."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请选择有效的 Mac 微信 App。"
+          }
+        }
+      }
+    },
+    "Signature": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Signature"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "签名"
+          }
+        }
+      }
+    },
+    "Silent": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Silent"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "静默"
+          }
+        }
+      }
+    },
+    "Some tool re-signed it the wrong way. In this state WeChat won't launch at all on a machine with SIP on — reinstall it from mac.weixin.qq.com, then patch.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Some tool re-signed it the wrong way. In this state WeChat won't launch at all on a machine with SIP on — reinstall it from mac.weixin.qq.com, then patch."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "曾经有工具用错误的方式重签过它。这种状态下微信在开着 SIP 的机器上根本起不来，只能从 mac.weixin.qq.com 重装一次，再来打补丁。"
+          }
+        }
+      }
+    },
+    "The bundled catalog is missing. Reinstall this test build.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The bundled catalog is missing. Reinstall this test build."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "补丁库缺失，请重新安装此测试包。"
+          }
+        }
+      }
+    },
+    "The bytes at a patch point are neither pristine nor mine — most likely another tool touched them. Reinstall WeChat, then come back.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The bytes at a patch point are neither pristine nor mine — most likely another tool touched them. Reinstall WeChat, then come back."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "补丁点上的字节既不是原始的、也不是我写的 —— 多半是另一个工具动过。重装微信后再来。"
+          }
+        }
+      }
+    },
+    "The catalog is empty.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The catalog is empty."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "补丁库为空。"
+          }
+        }
+      }
+    },
+    "The diagnostic file exceeds 4 MB.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The diagnostic file exceeds 4 MB."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "诊断文件超过 4 MB。"
+          }
+        }
+      }
+    },
+    "The engine did not finish within %llds and was terminated. Re-signing a large WeChat bundle is slow — try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The engine did not finish within %llds and was terminated. Re-signing a large WeChat bundle is slow — try again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "引擎 %lld 秒没跑完，已经掐掉了。微信包很大时重签名会慢，可以再试一次。"
+          }
+        }
+      }
+    },
+    "The message stays and no recall tip is shown at all.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The message stays and no recall tip is shown at all."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "消息留着，完全不显示撤回提示，对方那边也看不出你装了什么。"
+          }
+        }
+      }
+    },
+    "The message stays and one-to-one chats still show \"X recalled a message\" — you see both what was recalled and that it was. Group chats keep the message but show no tip.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The message stays and one-to-one chats still show \"X recalled a message\" — you see both what was recalled and that it was. Group chats keep the message but show no tip."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "消息留着，私聊里仍然显示「对方撤回了一条消息」——你知道对方撤了什么，也知道对方撤过。群聊目前只保留消息、不出提示。"
+          }
+        }
+      }
+    },
+    "The patch configuration does not yet support build %@. Configuration updates arrive online; new engine rules may require a WeChatUnrevoke update.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The patch configuration does not yet support build %@. Configuration updates arrive online; new engine rules may require a WeChatUnrevoke update."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "补丁库尚未支持 build %@。配置会联网更新；如果需要新的引擎规则，请安装新版 WeChatUnrevoke。"
+          }
+        }
+      }
+    },
+    "The patch configuration has build %@, but only for the other processor architecture. On this Mac WeChat runs %@ code, so applying those points would change nothing — the switch is not offered. Points for this architecture arrive with online configuration updates once they are covered.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The patch configuration has build %@, but only for the other processor architecture. On this Mac WeChat runs %@ code, so applying those points would change nothing — the switch is not offered. Points for this architecture arrive with online configuration updates once they are covered."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "补丁库有 build %@ 的补丁点，但只有另一种处理器架构的；这台 Mac 上微信运行的是 %@ 代码，照着打不会有任何效果，所以不提供开启。该架构的补丁点收录后会随配置联网更新。"
+          }
+        }
+      }
+    },
+    "The wechattweak engine is missing from this app bundle — this build is incomplete, please download WeChatUnrevoke again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The wechattweak engine is missing from this app bundle — this build is incomplete, please download WeChatUnrevoke again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App 内少了 wechattweak 引擎 —— 这份 WeChatUnrevoke 没构建完整，请重新下载。"
+          }
+        }
+      }
+    },
+    "This WeChat build isn't covered yet": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This WeChat build isn't covered yet"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这个微信版本还没收录"
+          }
+        }
+      }
+    },
+    "This WeChat build's auto-updater can't be blocked yet (its patch points aren't covered). Anti-recall is unaffected; after a WeChat update the patch is gone and this app will remind you to turn it on again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This WeChat build's auto-updater can't be blocked yet (its patch points aren't covered). Anti-recall is unaffected; after a WeChat update the patch is gone and this app will remind you to turn it on again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这个微信版本暂时拦不住自动更新（更新器的补丁点还没收录）。防撤回不受影响；微信更新后补丁会失效，本 app 会提醒你重新开启。"
+          }
+        }
+      }
+    },
+    "This is a historical file result, not the current state of the selected WeChat app.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This is a historical file result, not the current state of the selected WeChat app."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这是文件中的历史结果，不代表当前选择的微信状态。"
+          }
+        }
+      }
+    },
+    "This is the App Store edition: the App Store updates it, so there is no in-app updater to block. Turn off App Store automatic updates to keep the patch.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This is the App Store edition: the App Store updates it, so there is no in-app updater to block. Turn off App Store automatic updates to keep the patch."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这是 App Store 版微信，由 App Store 负责更新，没有可拦截的内置更新器。想保住补丁，请在 App Store 设置里关闭自动更新。"
+          }
+        }
+      }
+    },
+    "This sandboxed TestFlight build checks versions and saved diagnostics only. It cannot apply or restore anti-recall patches, block WeChat updates, or repatch automatically. Catalog coverage does not mean protection is active.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This sandboxed TestFlight build checks versions and saved diagnostics only. It cannot apply or restore anti-recall patches, block WeChat updates, or repatch automatically. Catalog coverage does not mean protection is active."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此 TestFlight 沙盒版只读检查版本与已保存的诊断。不能开启或还原防撤回、拦截微信更新或自动重打；版本收录不代表保护已生效。"
+          }
+        }
+      }
+    },
+    "Turn on anti-recall": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on anti-recall"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "开启防撤回"
+          }
+        }
+      }
+    },
+    "Unknown (not supplied by older engines)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unknown (not supplied by older engines)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未知（旧引擎未提供）"
+          }
+        }
+      }
+    },
+    "Unrecognized": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unrecognized"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "对不上"
+          }
+        }
+      }
+    },
+    "Unrecognized bytes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unrecognized bytes"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "字节对不上"
+          }
+        }
+      }
+    },
+    "Update block": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update block"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新拦截"
+          }
+        }
+      }
+    },
+    "Updates can remove patches. Reapply only after full protection previously succeeded, with WeChat closed and no password needed. Otherwise, only notify.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Updates can remove patches. Reapply only after full protection previously succeeded, with WeChat closed and no password needed. Otherwise, only notify."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "微信更新可能清除补丁。曾成功开启完整保护、无需密码且微信已退出时，自动重新应用；条件不满足时只发提醒。"
+          }
+        }
+      }
+    },
+    "Version lookup only; current protection has not been checked.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version lookup only; current protection has not been checked."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这里只核对版本；当前防撤回状态未检查。"
+          }
+        }
+      }
+    },
+    "WeChat has not fully quit yet. Its helper processes linger a few seconds after the main one — wait a moment and try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WeChat has not fully quit yet. Its helper processes linger a few seconds after the main one — wait a moment and try again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "微信还没完全退出。它的辅助进程会比主进程多活几秒，等一下再点一次就好。"
+          }
+        }
+      }
+    },
+    "WeChat is on a read-only location (opened straight from the disk image, or translocated). Drag WeChat into Applications and use that copy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WeChat is on a read-only location (opened straight from the disk image, or translocated). Drag WeChat into Applications and use that copy."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "微信在只读位置（直接从磁盘映像里打开，或被系统隔离转移）。把微信拖进「应用程序」文件夹，再对那一份操作。"
+          }
+        }
+      }
+    },
+    "WeChat is running": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WeChat is running"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "微信正在运行"
+          }
+        }
+      }
+    },
+    "WeChat lost its entitlements": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WeChat lost its entitlements"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "微信的签名权限掉了"
+          }
+        }
+      }
+    },
+    "WeChat updated to %@ and the patch is gone. Open WeChatUnrevoke and click once to put it back.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WeChat updated to %@ and the patch is gone. Open WeChatUnrevoke and click once to put it back."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "微信更新到 %@，补丁被抹掉了。打开 WeChatUnrevoke 点一下就能装回来。"
+          }
+        }
+      }
+    },
+    "WeChat updated to %@; the anti-recall patch has been re-applied automatically.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WeChat updated to %@; the anti-recall patch has been re-applied automatically."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "微信更新到 %@，防撤回补丁已经自动打回去了。"
+          }
+        }
+      }
+    },
+    "WeChat version": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WeChat version"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "微信版本"
+          }
+        }
+      }
+    },
+    "WeChat versions & diagnostics · TestFlight": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WeChat versions & diagnostics · TestFlight"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "微信版本与诊断 · TestFlight"
+          }
+        }
+      }
+    },
+    "WeChat's auto-updater is blocked too, so the next update can't silently wipe the patch.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WeChat's auto-updater is blocked too, so the next update can't silently wipe the patch."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "微信的自动更新也拦住了，补丁不会被下一次更新悄悄抹掉。"
+          }
+        }
+      }
+    },
+    "WeChat's binary can only be modified while it is fully quit — otherwise macOS kills it mid-write and leaves a half-signed bundle.\n\nQuit WeChat now? It will be reopened once the patch is done.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WeChat's binary can only be modified while it is fully quit — otherwise macOS kills it mid-write and leaves a half-signed bundle.\n\nQuit WeChat now? It will be reopened once the patch is done."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "改动微信的程序文件必须在它完全退出时进行，否则 macOS 会在中途把它杀掉，留下一个签名残破的微信。\n\n要现在退出微信吗？打完补丁我再帮你打开。"
+          }
+        }
+      }
+    },
+    "WeChat's files are locked (immutable flag — \"Locked\" in Finder's Get Info). An administrator password does not bypass a lock. Untick Locked in Finder, or run chflags -R nouchg /Applications/WeChat.app in Terminal, then retry.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WeChat's files are locked (immutable flag — \"Locked\" in Finder's Get Info). An administrator password does not bypass a lock. Untick Locked in Finder, or run chflags -R nouchg /Applications/WeChat.app in Terminal, then retry."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "微信文件被锁定（不可变标记，访达「显示简介」里的「已锁定」）。管理员密码绕不过锁定。先在访达取消「已锁定」，或在终端执行 chflags -R nouchg /Applications/WeChat.app，然后再试。"
+          }
+        }
+      }
+    },
+    "WeChat's files belong to another user (usually root) and this user cannot write them. Try again and complete the administrator authorization in the system dialog.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WeChat's files belong to another user (usually root) and this user cannot write them. Try again and complete the administrator authorization in the system dialog."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "微信文件属于其他用户（通常是 root），当前用户没有写权限。再点一次并在弹出的系统对话框里完成管理员授权。"
+          }
+        }
+      }
+    },
+    "Working…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Working…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在处理…"
+          }
+        }
+      }
+    },
+    "Write blocker reported by the engine: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Write blocker reported by the engine: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "引擎报告的写入障碍：%@"
+          }
+        }
+      }
+    },
+    "Write blockers": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Write blockers"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "写入障碍"
+          }
+        }
+      }
+    },
+    "Yes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yes"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "是"
+          }
+        }
+      }
+    },
+    "You canceled the authorization — nothing was changed.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You canceled the authorization — nothing was changed."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你取消了授权，什么都没改。"
+          }
+        }
+      }
+    },
+    "n/a": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "n/a"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不适用"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

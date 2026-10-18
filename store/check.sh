@@ -48,7 +48,7 @@ assert export['teamID'] == 'B9LJH93LA4' and export['signingStyle'] == 'automatic
 
 sources = target['sources']
 assert {source['path'] for source in sources} == {
-    'StoreApp.swift', '../Sources/Models.swift', '../Sources/LaneSignal.swift', 'Assets.xcassets',
+    'StoreApp.swift', '../Sources/Models.swift', '../Sources/LaneSignal.swift', '../Localizable.xcstrings', 'Assets.xcassets',
     '../../vendor/WeChatTweak/config.json',
 }, 'Do not include the downloadable lifecycle, updater or engine executable'
 resource = next(source for source in sources if source['path'].endswith('config.json'))

@@ -19,6 +19,8 @@ targets:
       - path: StoreApp.swift
       - path: ../Sources/Models.swift
       - path: ../Sources/LaneSignal.swift
+      - path: ../Localizable.xcstrings
+        buildPhase: resources
       - path: Assets.xcassets
       # The same compatibility data consumed by the downloadable app.
       - path: ../../vendor/WeChatTweak/config.json
@@ -46,6 +48,8 @@ targets:
     info:
       path: Info.plist
       properties:
+        CFBundleDevelopmentRegion: en
+        CFBundleLocalizations: [en, zh-Hans]
         CFBundleName: WeChatUnrevoke
         CFBundleDisplayName: WeChatUnrevoke
         CFBundleExecutable: Unrevoke

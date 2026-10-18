@@ -16,10 +16,10 @@ struct StoreCatalog: Decodable {
 
     static func bundled() throws -> [StoreCatalog] {
         guard let url = Bundle.main.url(forResource: "config", withExtension: "json") else {
-            throw StoreFailure.message(L.t("补丁库缺失，请重新安装此测试包。", "The bundled catalog is missing. Reinstall this test build."))
+            throw StoreFailure.message(String(localized: "The bundled catalog is missing. Reinstall this test build."))
         }
         let catalog = try JSONDecoder().decode([StoreCatalog].self, from: Data(contentsOf: url))
-        guard !catalog.isEmpty else { throw StoreFailure.message(L.t("补丁库为空。", "The catalog is empty.")) }
+        guard !catalog.isEmpty else { throw StoreFailure.message(String(localized: "The catalog is empty.")) }
         return catalog
     }
 
@@ -45,7 +45,7 @@ struct StoreInstallation {
         guard let info = try PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any],
               info["CFBundleIdentifier"] as? String == "com.tencent.xinWeChat",
               let build = info["CFBundleVersion"] as? String, !build.isEmpty else {
-            throw StoreFailure.message(L.t("请选择有效的 Mac 微信 App。", "Select a valid WeChat app for Mac."))
+            throw StoreFailure.message(String(localized: "Select a valid WeChat app for Mac."))
         }
         return StoreInstallation(path: url.path, version: info["WeChatBundleVersion"] as? String ?? info["CFBundleShortVersionString"] as? String ?? "—", build: build)
     }
@@ -68,8 +68,7 @@ final class StoreModel: ObservableObject {
 
     var selectedEntry: StoreCatalog? { catalog.first { $0.version == installation?.build } }
     static var limitation: String {
-        L.t("此 TestFlight 沙盒版只读检查版本与已保存的诊断。不能开启或还原防撤回、拦截微信更新或自动重打；版本收录不代表保护已生效。",
-            "This sandboxed TestFlight build checks versions and saved diagnostics only. It cannot apply or restore anti-recall patches, block WeChat updates, or repatch automatically. Catalog coverage does not mean protection is active.")
+        String(localized: "This sandboxed TestFlight build checks versions and saved diagnostics only. It cannot apply or restore anti-recall patches, block WeChat updates, or repatch automatically. Catalog coverage does not mean protection is active.")
     }
 
     func inspect(_ url: URL) throws {
@@ -85,7 +84,7 @@ final class StoreModel: ObservableObject {
         defer { if access { url.stopAccessingSecurityScopedResource() } }
         let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
         guard size <= 4_194_304 else {
-            throw StoreFailure.message(L.t("诊断文件超过 4 MB。", "The diagnostic file exceeds 4 MB."))
+            throw StoreFailure.message(String(localized: "The diagnostic file exceeds 4 MB."))
         }
         let data = try Data(contentsOf: url)
         let decoder = JSONDecoder()
@@ -105,7 +104,7 @@ final class StoreModel: ObservableObject {
         panel.allowedContentTypes = [.applicationBundle]
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = false
-        panel.message = L.t("选择要只读检查的微信 App。不会修改它。", "Select WeChat for a read-only version check. It will not be modified.")
+        panel.message = String(localized: "Select WeChat for a read-only version check. It will not be modified.")
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do { try inspect(url) } catch { self.error = error.localizedDescription }
     }
@@ -114,7 +113,7 @@ final class StoreModel: ObservableObject {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.json]
         panel.allowsMultipleSelection = false
-        panel.message = L.t("选择下载版引擎 doctor --json 保存的报告。", "Select a report saved with the downloadable engine's doctor --json command.")
+        panel.message = String(localized: "Select a report saved with the downloadable engine's doctor --json command.")
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do { try importReport(url) } catch { self.error = error.localizedDescription }
     }
@@ -152,55 +151,55 @@ struct StoreContentView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 Label("WeChatUnrevoke", systemImage: "checkmark.shield").font(.largeTitle.bold())
-                Text(L.t("微信版本与诊断 · TestFlight", "WeChat versions & diagnostics · TestFlight")).font(.title3)
+                Text(String(localized: "WeChat versions & diagnostics · TestFlight")).font(.title3)
                 Text(StoreModel.limitation).font(.callout).foregroundStyle(.secondary)
-                GroupBox(L.t("微信版本", "WeChat version")) {
+                GroupBox(String(localized: "WeChat version")) {
                     VStack(alignment: .leading, spacing: 10) {
-                        Button(L.t("选择微信 App…", "Select WeChat App…"), action: model.selectInstallation)
+                        Button(String(localized: "Select WeChat App…"), action: model.selectInstallation)
                             .keyboardShortcut("o")
                         if let app = model.installation {
                             Text("\(app.version) (\(app.build))").font(.headline)
                             Text(app.path).font(.caption).textSelection(.enabled)
-                            Label(model.selectedEntry == nil ? L.t("此快照未收录该 build", "Build not listed in this snapshot") : L.t("此 build 已收录", "Build listed in the catalog"),
+                            Label(model.selectedEntry == nil ? String(localized: "Build not listed in this snapshot") : String(localized: "Build listed in the catalog"),
                                   systemImage: "list.bullet.rectangle")
                                 .foregroundStyle(model.selectedEntry == nil ? Color.orange : Color.primary)
                             if let entry = model.selectedEntry { Text(entry.summary).font(.caption.monospaced()) }
-                            Text(L.t("这里只核对版本；当前防撤回状态未检查。", "Version lookup only; current protection has not been checked.")).font(.caption).foregroundStyle(.secondary)
+                            Text(String(localized: "Version lookup only; current protection has not been checked.")).font(.caption).foregroundStyle(.secondary)
                         } else {
-                            Text(L.t("通过系统文件面板授权读取；不扫描其他文件。", "Grant read access through the system file picker.")).foregroundStyle(.secondary)
+                            Text(String(localized: "Grant read access through the system file picker.")).foregroundStyle(.secondary)
                         }
                     }.frame(maxWidth: .infinity, alignment: .leading).padding(8)
                 }
-                GroupBox(L.t("已保存的引擎诊断", "Saved engine diagnostics")) {
+                GroupBox(String(localized: "Saved engine diagnostics")) {
                     VStack(alignment: .leading, spacing: 10) {
-                        Button(L.t("导入诊断 JSON…", "Import diagnostic JSON…"), action: model.selectReport)
+                        Button(String(localized: "Import diagnostic JSON…"), action: model.selectReport)
                         if let status = model.savedStatus {
-                            Text("\(L.t("引擎原判决", "Original engine verdict")): \(status.overall.rawValue)").font(.headline).textSelection(.enabled)
+                            Text("\(String(localized: "Original engine verdict")): \(status.overall.rawValue)").font(.headline).textSelection(.enabled)
                             Text("\(model.reportName ?? "") · \(status.fullVersion ?? status.shortVersion ?? status.build ?? "—")")
                             Text(status.appPath).font(.caption).textSelection(.enabled)
-                            Text("\(L.t("防撤回（保留提示）", "Anti-recall (keep tip)")): \(status.antiRevokeKeeptip ?? "—")\n\(L.t("防撤回（静默）", "Anti-recall (silent)")): \(status.antiRevokeSilent ?? "—")\n\(L.t("更新拦截", "Update block")): \(status.updateBlock ?? "—")")
+                            Text("\(String(localized: "Anti-recall (keep tip)")): \(status.antiRevokeKeeptip ?? "—")\n\(String(localized: "Anti-recall (silent)")): \(status.antiRevokeSilent ?? "—")\n\(String(localized: "Update block")): \(status.updateBlock ?? "—")")
                                 .font(.caption.monospaced())
                             if !status.verdict.isEmpty { Text(status.verdict.joined(separator: "\n")).font(.callout) }
-                            Text(L.t("这是文件中的历史结果，不代表当前选择的微信状态。", "This is a historical file result, not the current state of the selected WeChat app.")).font(.caption).foregroundStyle(.secondary)
+                            Text(String(localized: "This is a historical file result, not the current state of the selected WeChat app.")).font(.caption).foregroundStyle(.secondary)
                         } else {
-                            Text(L.t("读取下载版引擎生成的报告，保留原判决。此版本不执行补丁引擎。", "Read a report generated by the downloadable engine, preserving its verdict. This build does not run the patch engine.")).foregroundStyle(.secondary)
+                            Text(String(localized: "Read a report generated by the downloadable engine, preserving its verdict. This build does not run the patch engine.")).foregroundStyle(.secondary)
                         }
                     }.frame(maxWidth: .infinity, alignment: .leading).padding(8)
                 }
-                GroupBox(L.t("内置补丁库快照", "Bundled catalog snapshot")) {
+                GroupBox(String(localized: "Bundled catalog snapshot")) {
                     VStack(alignment: .leading, spacing: 10) {
-                        Text(L.t("收录 \(model.catalog.count) 个 build；随 TestFlight 版本更新。", "\(model.catalog.count) builds listed; updated with TestFlight releases."))
-                        TextField(L.t("按 build 号查找", "Filter by build number"), text: $search)
+                        Text(String(localized: "\(model.catalog.count) builds listed; updated with TestFlight releases."))
+                        TextField(String(localized: "Filter by build number"), text: $search)
                         let filtered = model.catalog.filter { search.isEmpty || $0.version.contains(search) }
                         ForEach(filtered.prefix(12), id: \.version) { entry in
                             DisclosureGroup(entry.version) { Text(entry.summary).font(.caption.monospaced()).frame(maxWidth: .infinity, alignment: .leading) }
                         }
-                        if filtered.isEmpty { Text(L.t("没有匹配的 build。", "No matching builds.")).foregroundStyle(.secondary) }
-                        if filtered.count > 12 { Text(L.t("输入 build 号缩小结果。", "Enter a build number to narrow the results.")).font(.caption) }
+                        if filtered.isEmpty { Text(String(localized: "No matching builds.")).foregroundStyle(.secondary) }
+                        if filtered.count > 12 { Text(String(localized: "Enter a build number to narrow the results.")).font(.caption) }
                     }.frame(maxWidth: .infinity, alignment: .leading).padding(8)
                 }
                 if let error = model.error { Text(error).foregroundStyle(.red).textSelection(.enabled) }
-                Button(L.t("导出诊断报告…", "Export diagnostics…"), action: model.exportReport)
+                Button(String(localized: "Export diagnostics…"), action: model.exportReport)
                     .keyboardShortcut("s").disabled(model.installation == nil && model.savedStatus == nil)
             }.padding(24).frame(maxWidth: .infinity, alignment: .leading)
         }.frame(minWidth: 580, idealWidth: 640, minHeight: 620, idealHeight: 780)

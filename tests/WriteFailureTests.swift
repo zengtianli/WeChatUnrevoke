@@ -98,8 +98,8 @@ struct WriteFailureTests {
             preconditionFailure("\(issue8)")
         }
         let appManagementFix = issue8.localizedDescription
-        precondition(appManagementFix.contains(L.t("App 管理", "App Management")))
-        precondition(appManagementFix.contains(L.t("用 − 移除，再用 + 添加当前这份", "remove it with −, then add this copy with +")),
+        precondition(appManagementFix.contains(String(localized: "App Management")))
+        precondition(appManagementFix.contains(String(localized: "remove it with −, then add this copy with +")),
                      "A stale grant from an earlier version needs its own step")
         precondition(!appManagementFix.contains("chflags") && !appManagementFix.contains("ls -le"))
         precondition(issue8.diagnosticOutput.contains("0:365: execution error"))

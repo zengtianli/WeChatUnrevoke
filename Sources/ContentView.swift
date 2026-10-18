@@ -37,15 +37,15 @@ struct ContentView: View {
                             .resizable().frame(width: 44, height: 44)
                         VStack(alignment: .leading, spacing: 2) {
                             Text("WeChatUnrevoke").font(.headline)
-                            Text(L.t("撤回之后，消息仍在。", "Keep the message. Even after recall."))
+                            Text(String(localized: "Keep the message. Even after recall."))
                                 .font(.caption).foregroundStyle(.secondary)
                         }
                         Spacer()
                         Link(destination: URL(string: "https://unrevoke.tianli.cyou/")!) {
                             Image(systemName: "arrow.up.right.square")
                         }
-                        .help(L.t("安装教程与使用帮助", "Installation tutorials and help"))
-                        .accessibilityLabel(L.t("安装教程与使用帮助", "Installation tutorials and help"))
+                        .help(String(localized: "Installation tutorials and help"))
+                        .accessibilityLabel(String(localized: "Installation tutorials and help"))
                     }
                     statusCard
                     if let error = model.errorMessage { errorBox(error) }
@@ -354,6 +354,12 @@ enum NativeUISelfTest {
         window.contentView = hosting
         defer { model.stop(); window.close() }
         var checks: [String: Bool] = [:]
+        if let language = env["UNREVOKE_UI_LANGUAGE"] {
+            checks["localized_title"] = L.st_protected == (language == "en" ? "Anti-recall is on" : "防撤回已生效")
+            checks["localized_integer_interpolation"] = L.err_timeout(7).contains(language == "en" ? "within 7s" : "7 秒")
+            checks["localized_string_interpolation"] = L.err_decode("parse-marker", "raw-marker").contains("parse-marker")
+                && L.err_decode("parse-marker", "raw-marker").contains("raw-marker")
+        }
         checks["automatic_writes_disabled"] = !model.autoRepatch
         var captures: [[String: Any]] = []
 

@@ -8,6 +8,7 @@
 | `python3 scripts/accept/recovery.py` | 真实 AppModel/Engine 的故障注入、写后状态刷新、错误保留与重试恢复 |
 | `python3 scripts/accept/privacy.py` | 隔离数据与偏好下验证配置请求及本地读写边界，具体覆盖见脚本回执 |
 | `python3 scripts/accept/native_ui.py` | 当前 App 自带 `--ui-self-test`，真实 SwiftUI 视图离屏渲染、刷新和关闭路径 |
+| `python3 scripts/accept/native_ui.py --localization` | 同一隔离 App 分别以 en、zh-Hans 离屏渲染；核对真实语言切换与整数/字符串插值 |
 
 构建临时文件放 `build/accept/`，每项使用独立 bundle。普通运行输出细节到 `perf/acceptance/`；Chapter 调用时使用其 `SOP_OUT_DIR`。退出码 0 表示所述范围通过，78 表示前提不可用，其他非零表示失败。真实微信聊天中的撤回效果、系统授权弹框和 Finder/Dock 图标仍在该自动化范围之外。
 
@@ -15,6 +16,11 @@
 
 ```yaml
 sop:
+  localization:
+    shots:
+      command: [python3, scripts/accept/native_ui.py, --localization]
+  source: [Sources/**, Localizable.xcstrings, Info.plist, icon/**, Unrevoke.xcodeproj/**]
+  ui: [Sources/**, Localizable.xcstrings]
   accept:
     functionality: python3 scripts/accept/functionality.py
     recovery: python3 scripts/accept/recovery.py
@@ -22,7 +28,7 @@ sop:
     native_ui: python3 scripts/accept/native_ui.py
   ui_self_test_flag: --ui-self-test
   measure:
-    inputs: [Sources/**, Info.plist, icon/**, Unrevoke.xcodeproj/**]
+    inputs: [Sources/**, Localizable.xcstrings, Info.plist, icon/**, Unrevoke.xcodeproj/**]
     archive: release
     start_args: ['-autoRepatch', 'NO', '-everProtected', 'NO']
     in_use: true
@@ -38,3 +44,7 @@ sop:
 ```
 
 原有回归测试入口为 `bash tests/run.sh`。默认 `build.sh` 会装机，验收脚本不调用它。
+
+本地化资源由 Chapter 的 `l10n compile` 共用实现编译，Swift 编译走共享 BuildSlot，槽忙退出 75。
+`chapter l10n shots --app unrevoke-mac` 调用上面的双语入口、OCR 英文截图并生成源码绑定回执；
+`chapter l10n check --app unrevoke-mac` 独立复核。截图和回执位于 `perf/acceptance/l10n/`，不手写通过证据。

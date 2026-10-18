@@ -36,7 +36,7 @@ mkdir -p "$OUT"
 # Homebrew cask 的 url 是 "…/Unrevoke-#{version}.zip" 模板，多一段 build 号就套不上。
 ZIP="$OUT/$NAME-$VERSION.zip"
 rm -f "$ZIP"
-# 不带扩展属性打包：包里的 12 项就是全部内容，签名不依赖任何扩展属性。构建进程给文件打上的
+# 不带扩展属性打包：包里的 16 项就是全部内容（含中英字符串资源），签名不依赖任何扩展属性。构建进程给文件打上的
 # 系统标记（如 com.apple.provenance）否则会被存成 __MACOSX/._* 旁文件，随构建环境而变，被下面的清单门拒绝。
 ditto -c -k --norsrc --noextattr --keepParent "$APP" "$ZIP"
 
@@ -59,6 +59,10 @@ allowed = {
     "WeChatUnrevoke.app/Contents/Resources/config.json",
     "WeChatUnrevoke.app/Contents/Resources/wechattweak",
     "WeChatUnrevoke.app/Contents/Resources/AppIcon.icns",
+    "WeChatUnrevoke.app/Contents/Resources/en.lproj/",
+    "WeChatUnrevoke.app/Contents/Resources/en.lproj/Localizable.strings",
+    "WeChatUnrevoke.app/Contents/Resources/zh-Hans.lproj/",
+    "WeChatUnrevoke.app/Contents/Resources/zh-Hans.lproj/Localizable.strings",
     "WeChatUnrevoke.app/Contents/Info.plist",
     "WeChatUnrevoke.app/Contents/PkgInfo",
 }

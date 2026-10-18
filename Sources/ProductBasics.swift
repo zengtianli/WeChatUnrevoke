@@ -37,7 +37,7 @@ final class ProductSettings: NSObject {
             NotificationCenter.default.post(name: .consoleRefresh, object: nil)
         }
         super.init()
-        variant.addItems(withTitles: [L.t("保留提示", "Keep recall notice"), L.t("静默", "Silent")])
+        variant.addItems(withTitles: [String(localized: "Keep recall notice"), String(localized: "Silent")])
         variant.itemArray[0].representedObject = "keeptip"
         variant.itemArray[1].representedObject = "silent"
         shortcutChoice.addItems(withTitles: ["⌘R", "⇧⌘R", "⌥⌘R"])
@@ -90,14 +90,14 @@ final class ProductSettings: NSObject {
     }
 
     func groups() -> [NSView] {
-        [AppLifecycleUI.group(L.t("微信保护偏好", "Protection preferences"), rows: [
-            AppLifecycleUI.row(L.t("防撤回方式", "Recall notice"), accessory: variant),
-            AppLifecycleUI.row(L.t("更新后自动重打", "Reapply after updates"),
-                detail: AppLifecycleUI.detailLabel(L.t("仍须无需密码、微信已退出、曾成功保护；恢复偏好不授权写微信。", "Requires no password, WeChat closed and prior protection. Restoring settings does not authorize patching.")), accessory: autoRepatch)]),
-         AppLifecycleUI.group(L.t("应用快捷键", "Application shortcuts"), rows: [
-            AppLifecycleUI.row(L.t("启用重新检查快捷键", "Enable refresh shortcut"), detail: shortcutStatus, accessory: shortcutEnabled),
-            AppLifecycleUI.row(L.t("按键组合", "Key binding"),
-                detail: AppLifecycleUI.detailLabel(L.t("只在本 App 内生效；系统/编辑组合和已有菜单冲突会拒绝，关闭后保留组合。", "Applies within this app. Reserved and conflicting menu bindings are rejected; disabling retains the binding.")), accessory: shortcutChoice)])]
+        [AppLifecycleUI.group(String(localized: "Protection preferences"), rows: [
+            AppLifecycleUI.row(String(localized: "Recall notice"), accessory: variant),
+            AppLifecycleUI.row(String(localized: "Reapply after updates"),
+                detail: AppLifecycleUI.detailLabel(String(localized: "Requires no password, WeChat closed and prior protection. Restoring settings does not authorize patching.")), accessory: autoRepatch)]),
+         AppLifecycleUI.group(String(localized: "Application shortcuts"), rows: [
+            AppLifecycleUI.row(String(localized: "Enable refresh shortcut"), detail: shortcutStatus, accessory: shortcutEnabled),
+            AppLifecycleUI.row(String(localized: "Key binding"),
+                detail: AppLifecycleUI.detailLabel(String(localized: "Applies within this app. Reserved and conflicting menu bindings are rejected; disabling retains the binding.")), accessory: shortcutChoice)])]
     }
 
     static func commandMode(_ words: [String]) -> Int32? {
