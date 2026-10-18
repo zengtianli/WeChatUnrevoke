@@ -1,0 +1,5 @@
+# XcodeGen outputs; project.yml is the maintained specification.
+/Info.plist
+/*.xcodeproj/
+# Keep the deterministic formal icon variants in Git.
+!Assets.xcassets/AppIcon.appiconset/*.png

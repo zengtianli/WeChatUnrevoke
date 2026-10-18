@@ -1,0 +1,76 @@
+# Sandboxed TestFlight variant. The downloadable app keeps its original target.
+name: Unrevoke
+options:
+  deploymentTarget:
+    macOS: "13.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0.14"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: B9LJH93LA4
+targets:
+  Unrevoke:
+    type: application
+    platform: macOS
+    deploymentTarget: "13.0"
+    sources:
+      - path: StoreApp.swift
+      - path: ../Sources/Models.swift
+      - path: ../Sources/LaneSignal.swift
+      - path: Assets.xcassets
+      # The same compatibility data consumed by the downloadable app.
+      - path: ../../vendor/WeChatTweak/config.json
+        buildPhase: resources
+    dependencies:
+      - sdk: AppKit.framework
+      - sdk: SwiftUI.framework
+      - sdk: UniformTypeIdentifiers.framework
+    preBuildScripts:
+      - name: Check shared version and sandbox contract
+        script: /bin/bash "$SRCROOT/check.sh"
+        basedOnDependencyAnalysis: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.zengtianli.unrevoke
+        PRODUCT_NAME: WeChatUnrevoke
+        EXECUTABLE_NAME: Unrevoke
+        ARCHS: "arm64 x86_64"
+        ENABLE_APP_SANDBOX: YES
+        ENABLE_HARDENED_RUNTIME: YES
+        ENABLE_USER_SCRIPT_SANDBOXING: NO
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: APP_STORE
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        DEAD_CODE_STRIPPING: YES
+    info:
+      path: Info.plist
+      properties:
+        CFBundleName: WeChatUnrevoke
+        CFBundleDisplayName: WeChatUnrevoke
+        CFBundleExecutable: Unrevoke
+        CFBundlePackageType: APPL
+        CFBundleIconFile: AppIcon
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
+        NSHighResolutionCapable: true
+        NSPrincipalClass: NSApplication
+        NSHumanReadableCopyright: WeChatUnrevoke · zengtianli · AGPL-3.0
+        LSApplicationCategoryType: public.app-category.utilities
+        ITSAppUsesNonExemptEncryption: false
+    entitlements:
+      path: Unrevoke.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        # App selection, imported doctor JSON and exported diagnostic reports.
+        com.apple.security.files.user-selected.read-write: true
+schemes:
+  Unrevoke:
+    build:
+      targets:
+        Unrevoke: all
+    run:
+      config: Debug
+    archive:
+      config: Release
