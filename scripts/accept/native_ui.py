@@ -47,10 +47,12 @@ def main():
         from l10n_tool import compile_catalogs
         try:
             with BuildSlot('unrevoke native UI acceptance', wait=0):
+                # Compile this single executable as one module instead of repeating
+                # optimized frontend work for every production source file.
                 run(["xcrun", "swiftc", "-parse-as-library", "-sdk", sdk,
-                     "-target", f"{platform.machine()}-apple-macos15.0", "-O",
+                     "-target", f"{platform.machine()}-apple-macos15.0", "-O", "-whole-module-optimization",
                      *map(str, sorted((ROOT / "Sources").glob("*.swift"))),
-                     "-o", str(executable)], env=env)
+                     "-o", str(executable)], env=env, timeout=420)
                 compile_catalogs({'id': 'unrevoke-mac', 'repo': str(ROOT)}, resources)
         except Busy as error:
             print(error, file=sys.stderr)

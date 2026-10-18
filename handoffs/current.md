@@ -1,5 +1,14 @@
 # Chapter 源码与测试交接（2026-10-08）
 
+## 2026-10-18：delivery-localization 编译超时定向修复
+
+- 本轮范围仅 `scripts/accept/native_ui.py` 与本交接，预算 20 分钟；复用 Chapter `--pid 52908 --session chapter-task:526d30de49a74875822d14d5c3099bbf` claims，写前核对，不另开或释放声明；开工工作区干净，不推送、发版、装机、部署或改授权。
+- 原失败回执的内部退出码为 75，构建被安静窗口保护延期；本轮获准进入 BuildSlot 后，复现全部生产 Swift 文件逐文件优化编译超过默认 180 秒，真实 traceback 由共享截图入口写入 command.log。未将该超时解释为翻译缺失或通过。
+- 隔离验收构建改为整模块优化，并给编译显式 420 秒上限（仍在共享截图命令默认 600 秒预算内）；BuildSlot、源码集合、资源编译、45 秒运行上限、双语断言和 OCR 均保留，未修改生产代码。
+- 改后共享 `l10n_tool.py shots --app unrevoke-mac` 退出 0，两种语言各 12 项真实视图断言通过、各生成 5 张离屏截图；英文 OCR 无中文残留，10 张截图已目视复核。机器生成证据位于 `perf/acceptance/l10n/{en,zh-Hans}/{receipt,result}.json`，不手写通过、不入库。
+- 同入口 `check --app unrevoke-mac` 退出 0、passed=true，英文覆盖 125/125、current_binding=true、issues=[]；`git diff --check` 通过。
+- 截图使用真实 ContentView/AppModel 与隔离 doctor 夹具，不代表装机或真实微信写入复验；固定 delivery-localization 由原 jobs 队列在本地提交后自动复验。共享 Chapter 对 75 的外层语义问题沿前节记录，本轮没有修改其源码。
+
 ## 2026-10-18：delivery-localization 固定检查续轮（待队列复验）
 
 - 本轮仅处理 `run-eb18jide/localization.log` 的截图绑定失效，预算 15 分钟；沿 Chapter 原 claims 身份核对截图、临时构建和本交接路径，没有另开或释放声明。工作区开工时干净，本轮不改产品逻辑，不推送、发版、装机、部署或变更授权。
