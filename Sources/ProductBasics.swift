@@ -70,7 +70,7 @@ final class ProductSettings: NSObject {
         if let index = choices.firstIndex(where: { $0.key == shortcuts.binding.key && $0.modifiers == shortcuts.binding.modifiers }) {
             shortcutChoice.selectItem(at: index)
         } else { shortcutChoice.select(nil) }
-        shortcutStatus.stringValue = shortcuts.descriptionText
+        shortcutStatus.stringValue = shortcuts.displayText
     }
 
     @objc func changed(_ sender: NSControl) {

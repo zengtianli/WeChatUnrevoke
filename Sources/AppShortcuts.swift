@@ -57,10 +57,10 @@ final class AppShortcuts: NSObject {
     }
     func installMenu() {
         guard menuItem == nil, let root = NSApp.mainMenu else { return }
-        let menu = NSMenu(title: "操作")
-        let item = NSMenuItem(title: "刷新", action: #selector(performAction), keyEquivalent: "")
+        let menu = NSMenu(title: LifecycleText.pick("Actions", "操作"))
+        let item = NSMenuItem(title: LifecycleText.pick("Refresh", "刷新"), action: #selector(performAction), keyEquivalent: "")
         item.target = self; menu.addItem(item); menuItem = item
-        let parent = NSMenuItem(title: "操作", action: nil, keyEquivalent: ""); parent.submenu = menu
+        let parent = NSMenuItem(title: menu.title, action: nil, keyEquivalent: ""); parent.submenu = menu
         root.addItem(parent); refresh()
     }
     func refresh() {
@@ -69,10 +69,18 @@ final class AppShortcuts: NSObject {
     }
     // Disabling the key clears keyEquivalent; clicking the ordinary menu action remains useful.
     @objc func performAction() { action() }
-    var descriptionText: String {
-        (enabled ? "已启用：" : "已关闭，配置保留：") +
+    private var comboText: String {
         (binding.modifiers.contains(.control) ? "⌃" : "") + (binding.modifiers.contains(.option) ? "⌥" : "") +
-        (binding.modifiers.contains(.shift) ? "⇧" : "") + "⌘" + binding.key.uppercased() + "（只在本 App 内生效）"
+        (binding.modifiers.contains(.shift) ? "⇧" : "") + "⌘" + binding.key.uppercased()
+    }
+    /// CLI/JSON contract: stays byte-identical whatever the system language is.
+    var descriptionText: String {
+        (enabled ? "已启用：" : "已关闭，配置保留：") + comboText + "（只在本 App 内生效）"
+    }
+    /// Window text in the user's language; never put it in CLI output.
+    var displayText: String {
+        (enabled ? LifecycleText.pick("On: ", "已启用：") : LifecycleText.pick("Off, setting kept: ", "已关闭，配置保留：")) +
+        comboText + LifecycleText.pick(" (only inside this app)", "（只在本 App 内生效）")
     }
 }
 #endif

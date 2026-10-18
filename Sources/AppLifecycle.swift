@@ -332,3 +332,155 @@ enum AppUpdateChecker {
         value.allSatisfy { $0.isASCII && ($0.isLetter || $0.isNumber || "-_.".contains($0)) }
     }
 }
+
+/// Language of the shared lifecycle windows (Mac settings/update panel, iOS/Mac SwiftUI panel, menu items).
+/// These files are vendored into each product's own target, so they cannot rely on the product's String Catalog:
+/// every UI string carries English and Simplified Chinese inline and goes through `pick`.
+/// The language follows the product's own localizations when it declares any (so the panel matches the rest of the
+/// app), otherwise the user's preferred languages; anything not Chinese is English.
+/// `APP_LIFECYCLE_LANGUAGE=en|zh-Hans` pins it (acceptance runs).
+/// Messages the shared core stores or the command line prints (configuration status, update errors, installer
+/// stages) keep their original Chinese text byte for byte; only the window translates them with `display`.
+enum LifecycleText {
+    enum Language: String { case english = "en", chinese = "zh-Hans" }
+    static var language: Language {
+        if let pinned = ProcessInfo.processInfo.environment["APP_LIFECYCLE_LANGUAGE"], !pinned.isEmpty { return resolve([pinned]) }
+        let declared = Bundle.main.localizations.filter { $0 != "Base" }
+        if !declared.isEmpty { return resolve(Bundle.main.preferredLocalizations.filter { $0 != "Base" }) }
+        return resolve(Locale.preferredLanguages)
+    }
+
+    static func resolve(_ identifiers: [String]) -> Language {
+        guard let first = identifiers.first else { return .english }
+        return first.lowercased().hasPrefix("zh") ? .chinese : .english
+    }
+
+    static func pick(_ english: String, _ chinese: String) -> String { language == .chinese ? chinese : english }
+
+    /// The window's rendering of a message produced by the shared core; unknown text is shown as it is.
+    static func display(_ message: String) -> String {
+        guard language == .english, !message.isEmpty else { return message }
+        if let exact = messages[message] { return exact }
+        for (zhPrefix, zhSuffix, enPrefix, enSuffix) in patterns
+        where message.hasPrefix(zhPrefix) && message.hasSuffix(zhSuffix) && message.count >= zhPrefix.count + zhSuffix.count {
+            let middle = String(message.dropFirst(zhPrefix.count).dropLast(zhSuffix.count))
+            return enPrefix + display(middle) + enSuffix
+        }
+        return message
+    }
+
+    private static let patterns: [(String, String, String, String)] = [
+        ("配置同步未完成：", "", "Settings sync did not finish: ", ""),
+        ("iCloud 私有渠道 · ", "", "iCloud private channel · ", ""),
+        ("iCloud 中还没有此渠道的发行包，当前版本 ", "。", "iCloud has no release for this channel yet; current version ", "."),
+        ("未能读取发行记录（HTTP ", "）。请稍后重试。", "Could not read the release record (HTTP ", "). Please try again later."),
+        ("新版需要 macOS ", " 或更新系统。", "The new version requires macOS ", " or later."),
+        ("此产品需要其专用安装事务：", "", "This product needs its own installer: ", ""),
+        ("安装包验证失败：", "", "Package verification failed: ", ""),
+    ]
+
+    private static let messages: [String: String] = [
+        // AppShortcuts errors (thrown in Chinese so CLI output stays byte-identical)
+        "应用快捷键须为 ⌘ 加单个字母或数字，可另加 ⇧、⌥、⌃。": "An app shortcut must be ⌘ plus one letter or digit, optionally with ⇧, ⌥ or ⌃.",
+        "此组合保留给系统或编辑菜单，请选择其他快捷键。": "This combination is reserved for the system or the Edit menu; choose another shortcut.",
+        "此应用菜单已使用这个组合，原快捷键保持不变。": "This app's menu already uses this combination; the original shortcut is unchanged.",
+        // AppConfiguration status sentences
+        "iCloud 配置同步已关闭": "iCloud settings sync is off",
+        "等待 iCloud 配置同步": "Waiting for iCloud settings sync",
+        "此 App 没有需要同步的配置": "This app has no settings to sync",
+        "iCloud 已开启，等待已有配置；空白配置不会覆盖云端": "iCloud is on and waiting for existing settings; blank settings never overwrite iCloud",
+        "配置已与 iCloud Drive 同步；其他设备由系统下载": "Settings synced with iCloud Drive; other devices download them through the system",
+        "隔离 KVS 配置同步完成": "Isolated KVS settings sync finished",
+        "配置已提交系统同步；跨设备恢复等待 iCloud": "Settings handed to system sync; restoring on other devices waits for iCloud",
+        "隔离配置同步完成": "Isolated settings sync finished",
+        // AppConfiguration failures
+        "配置文件格式、版本或所属 App 不匹配，原配置已保留": "The settings file's format, version or app does not match; the current settings are kept",
+        "配置含此 App 未允许同步的字段": "The settings contain fields this app does not allow to sync",
+        "本机同步记录损坏，已保留云端与本机配置": "The local sync record is damaged; iCloud and local settings are kept",
+        "无法锁定配置同步": "Could not lock settings sync",
+        "请在系统设置登录 Apple 账户并开启 iCloud Drive": "Sign in to your Apple Account and turn on iCloud Drive in System Settings",
+        "正在从 iCloud 下载配置，请稍后同步": "Downloading settings from iCloud; sync again shortly",
+        "隔离运行没有配置测试云目录": "This isolated run has no test cloud directory",
+        "请在系统设置登录 Apple 账户并开启 iCloud": "Sign in to your Apple Account and turn on iCloud in System Settings",
+        "iCloud 键值存储当前不可用，请检查账户与 App 的 iCloud 权限": "iCloud key-value storage is unavailable; check the account and this app's iCloud permission",
+        "iCloud Drive 当前不可用": "iCloud Drive is unavailable",
+        "配置超出 iCloud 键值存储大小限制": "The settings exceed the iCloud key-value storage size limit",
+        "iCloud 配置暂未完成上传，请稍后重试": "Settings have not finished uploading to iCloud; try again later",
+        "iCloud 文件协调没有返回结果": "iCloud file coordination returned no result",
+        "配置文件不是 JSON 对象，原文件已保留": "The settings file is not a JSON object; the original file is kept",
+        "配置中的 Data 字段无效": "A Data field in the settings is invalid",
+        "配置中的日期无效": "A date in the settings is invalid",
+        "UserDefaults 配置不能是 null": "A UserDefaults setting cannot be null",
+        // AppLifecycle update checks
+        "检查间隔应为 1–720 小时": "The check interval must be 1–720 hours",
+        "无效的更新渠道": "Invalid update channel",
+        "无效的更新渠道。": "Invalid update channel.",
+        "HTTPS 发行源": "HTTPS release source",
+        "隔离运行没有配置测试更新目录。": "This isolated run has no test update directory.",
+        "请在系统设置登录 Apple ID 并开启 iCloud Drive，才能获取此私有版更新。": "Sign in to your Apple ID and turn on iCloud Drive in System Settings to get this private update.",
+        "请使用此 App 的系统发行渠道升级。": "Please update through this app's system release channel.",
+        "无法读取 iCloud 发行记录。": "Could not read the iCloud release record.",
+        "此 App 只读取 iCloud 已下载到本机的私有发行包。": "This app only reads private releases iCloud has already downloaded to this Mac.",
+        "无效的发行仓库。": "Invalid release repository.",
+        "未配置 App Store 发行渠道。": "No App Store release channel is configured.",
+        "更新来源必须使用 HTTPS。": "The update source must use HTTPS.",
+        "发行记录为空或过大。": "The release record is empty or too large.",
+        "发行记录缺少有效版本。": "The release record has no valid version.",
+        "发行包属于另一个 App。": "The release belongs to another app.",
+        "发行渠道不匹配，不能替换当前版本。": "The release channel does not match; the current version cannot be replaced.",
+        "发行记录构建号无效。": "The release record's build number is invalid.",
+        "私有发行包路径或身份无效。": "The private release path or identity is invalid.",
+        "下载地址无效。": "The download address is invalid.",
+        "发行说明地址无效。": "The release notes address is invalid.",
+        "发行包校验值无效。": "The release checksum is invalid.",
+        "私有发行包缺少下载或校验信息。": "The private release is missing download or checksum information.",
+        "没有可用的正式发行。": "No official release is available.",
+        "发行版本格式无效。": "The release version format is invalid.",
+        "发行构建号格式无效。": "The release build number format is invalid.",
+        "正式发行缺少 Mac 安装包。": "The official release has no Mac package.",
+        "此地区暂未找到此 App 的商店发行，不能判断是否已是最新版。": "No store release of this app was found in this region, so it cannot tell whether this is the latest version.",
+        // Mac installer (shared with `update install`)
+        "升级已取消，当前 App 保留": "Update canceled; the current app is kept",
+        "发行包缺少完整性校验。": "The release has no integrity checksum.",
+        "发行包大小不匹配。": "The release size does not match.",
+        "发行包 SHA256 校验失败。": "The release failed its SHA256 check.",
+        "安装包中没有唯一的 App。": "The package does not contain exactly one app.",
+        "不支持此安装包格式。": "This package format is not supported.",
+        "安装包 App 身份或版本不匹配。": "The packaged app's identity or version does not match.",
+        "当前 App 无开发者身份，请使用正式下载渠道手动安装。": "The current app has no developer identity; install manually from the official download.",
+        "新版的签名开发者与当前 App 不同。": "The new version is signed by a different developer than the current app.",
+        "发行包 Team 不匹配。": "The release's Team does not match.",
+        "同步安装缺少完整身份、build 或最低系统版本。": "The synced install is missing its identity, build or minimum system version.",
+        "同步安装拒绝相同版本和降级。": "The synced install refuses the same version and downgrades.",
+        "安装包架构不匹配。": "The package architecture does not match.",
+        "测试构建仅允许隔离目录。": "Test builds are allowed only in isolated directories.",
+        "需要正式 Developer ID 签名。": "An official Developer ID signature is required.",
+        "需要正式公证。": "Official notarization is required.",
+        "此 App 只安装 iCloud 已下载到本机的私有发行包。": "This app only installs private releases iCloud has already downloaded to this Mac.",
+        "下载来源必须使用 HTTPS。": "The download source must use HTTPS.",
+        "下载未完成。": "The download did not finish.",
+        "完整性回读参数不完整。": "The integrity read-back parameters are incomplete.",
+        "当前安装目录不可写，请把 App 安装在用户可写的位置。": "The install location is not writable; install the app somewhere your account can write.",
+        "此 Notihub 发行包缺少安全采集器升级接口。": "This Notihub release lacks the secure collector upgrade interface.",
+        "替换前 App 身份或路径不匹配。": "The app's identity or path changed before replacement.",
+        // Mac sandbox update access (AppLifecycleMobile)
+        "隔离运行只使用显式测试更新目录。": "Isolated runs use only the explicit test update directory.",
+        "请选择系统 iCloud Drive 根目录。": "Choose the system iCloud Drive root folder.",
+        "请先选择 iCloud Drive 更新目录，授予此 Mac 读取发行包的权限。": "First choose the iCloud Drive update folder to let this Mac read releases.",
+        "更新目录权限已失效，请重新选择 iCloud Drive 更新目录。": "Access to the update folder expired; choose the iCloud Drive update folder again.",
+        "所选 iCloud Drive 目录暂不可用，请检查系统 iCloud Drive 状态。": "The chosen iCloud Drive folder is unavailable; check iCloud Drive in System Settings.",
+        "发行目录超出所选 iCloud Drive 目录。": "The release folder is outside the chosen iCloud Drive folder.",
+        "此 Mac 沙盒版需要手动安装的正式 ZIP 发行包。": "This sandboxed Mac version needs an official ZIP release to install manually.",
+        "发行包身份或路径不匹配，请重新检查更新。": "The release identity or path does not match; check for updates again.",
+        "发行包尚未完整下载，请稍后重试。": "The release has not finished downloading; try again later.",
+        "无法读取发行包。": "Could not read the release.",
+        "发行包校验失败，请重新下载。": "The release failed its checksum; download it again.",
+        "系统未能打开 ZIP 发行包。": "The system could not open the ZIP release.",
+        // Installer progress stages
+        "正在下载": "Downloading",
+        "正在验证校验和": "Verifying checksum",
+        "正在解包与验证签名": "Unpacking and verifying signature",
+        "发行包验证完成": "Release verified",
+        "正在读取私有发行包": "Reading private release",
+    ]
+}
