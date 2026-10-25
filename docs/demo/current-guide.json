@@ -53,6 +53,38 @@
         "ContentView.swift": "01ba87e78306ca74c6e9a911f22adfd492f99eff00f36c6f373fcb5a72772ef1",
         "UnrevokeApp.swift": "06a50a6c74589d3d9e48f14df88a0d71019b15784f8be1704ae8b68cd27d4bc6"
       }
+    },
+    "1.0.15": {
+      "historical_reference": true,
+      "summary": "Reuse the existing three status screens (unprotected, protected, antiRevokeOnly) after source comparison against v1.0.14 and the release handoff. The 1.0.15 failure-reason message and download progress are confined to unsupportedBuild, which is not depicted. This is a source-scope review and reuse of historical media, not a new screen recording, runtime measurement, or proof of patching a real WeChat installation.",
+      "not_covered": [
+        "Unsupported-build patch database refresh, download progress and failure messages",
+        "Command-R patch database refresh and the 30-minute automatic retry",
+        "Expanded patch database diagnostics",
+        "Settings and update window",
+        "Shortcut configuration",
+        "iCloud transport and recovery",
+        "Update checks and installation"
+      ],
+      "build": "141",
+      "release_sha256": "a1c13dcd2cc3f41bc1aac86dac6671e4488e16eb3aaf1b005584045be6472856",
+      "source_sha256": {
+        "AppCommandMode.swift": "6f5918fa8b7c909c1c2b1e75ffe77279821a8f4c715e637b0207e5714e6a2621",
+        "AppConfiguration.swift": "9aeeb1bd2e7be98ea76f1ccc0eefd062caa4c698287295c9cd675195c4401c6f",
+        "AppLifecycle.swift": "53981005fefe9c319868f5e7e769583185cc20f5ac137f08a8edded57a728020",
+        "AppLifecycleCLI.swift": "4bd069803de4d9030eedb85e8f2fc9ce6e3d8b8ed20eb2506cf4ae2c539ec1b4",
+        "AppLifecycleUI.swift": "1f60d2037504dc3c45399aec692a5947963ea16dc47ca41f0abfc1ba8ba2d1d1",
+        "AppShortcuts.swift": "a83942d5551250471518719dcc7da1be839c2f46bf8f69f9bddb88830003e794",
+        "ContentView.swift": "efbe51cbacabdfcd70bf4b0b6b66a0900453c9476fc8b8e5750371e58a587a86",
+        "Engine.swift": "786470071ae9d846d81f2fecd596ec8c19b162aa237e89617c45d1e640e3c6e6",
+        "LaneSignal.swift": "e7e68ac41417ddd06e7049a7bd4e01a92d52305bc999cd6ddd323178c64a2ce8",
+        "Models.swift": "65db0c5873f9a812c68ba322c3b7b99625af376728059dfb45f5cb8cf3136193",
+        "ProductBasics.swift": "1674d05ad87e5eded8400ebfe22efd4a524a3c28cc4a4733f9759b9ec01d275c",
+        "ProductLifecycle.swift": "f60068691215d4d5b6c5428829e7b50311e6012dc153fb74e779ed3cf482c6fb",
+        "UnrevokeApp.swift": "06a50a6c74589d3d9e48f14df88a0d71019b15784f8be1704ae8b68cd27d4bc6",
+        "ViewModel.swift": "6f31affb2739f09645d84fc03f376ce8bf6c880910bc83465b22478764e11841",
+        "WriteHistory.swift": "d630bfe96cef9f8d3a0c4959387f8486ac057ba0b5c7bd817baa388091162438"
+      }
     }
   },
   "ui_reviews": [
