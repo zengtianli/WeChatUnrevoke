@@ -36,7 +36,7 @@ class ProductBasicsBindingTests(unittest.TestCase):
         patch.dict(sys.modules, {"app_sop": self.engine}).start()
         patch.dict(os.environ, self.binding).start()
         self.sign = patch.object(basics.subprocess, "run", return_value=subprocess.CompletedProcess([], 0)).start()
-        self.app = Path("/Applications/WeChatUnrevoke.app")
+        self.app = basics.INSTALLED  # the production install path the binding branch keys on
 
     def test_chapter_binding_accepts_test_only_receipt_drift_and_checks_signature(self):
         _, binding = basics.verified_build(self.app, self.receipt)

@@ -129,8 +129,11 @@ def main():
     fields = {}
     summary = ""
     try:
+        # The engine inside the app under test: Chapter's SOP_INSTALLED_APP (the current-source candidate,
+        # PRD-foundation R1), else the installed app; UNREVOKE_ACCEPT_ENGINE still overrides both.
+        app_under_test = os.environ.get("SOP_INSTALLED_APP") or "/Applications/WeChatUnrevoke.app"
         engine = Path(os.environ.get("UNREVOKE_ACCEPT_ENGINE",
-                      "/Applications/WeChatUnrevoke.app/Contents/Resources/wechattweak")).resolve()
+                      str(Path(app_under_test) / "Contents/Resources/wechattweak"))).resolve()
         config = Path(os.environ.get("UNREVOKE_ACCEPT_CONFIG", str(engine.parent / "config.json"))).resolve()
         if not (source / "Contents/MacOS/WeChat").is_file():
             raise Unavailable("需要已安装的真实 WeChat.app，或用 UNREVOKE_ACCEPT_WECHAT 指定只读来源。")

@@ -57,8 +57,8 @@ final class AppShortcuts: NSObject {
     }
     func installMenu() {
         guard menuItem == nil, let root = NSApp.mainMenu else { return }
-        let menu = NSMenu(title: LifecycleText.pick("Actions", "操作"))
-        let item = NSMenuItem(title: LifecycleText.pick("Refresh", "刷新"), action: #selector(performAction), keyEquivalent: "")
+        let menu = NSMenu(title: ShortcutText.pick("Actions", "操作"))
+        let item = NSMenuItem(title: ShortcutText.pick("Refresh", "刷新"), action: #selector(performAction), keyEquivalent: "")
         item.target = self; menu.addItem(item); menuItem = item
         let parent = NSMenuItem(title: menu.title, action: nil, keyEquivalent: ""); parent.submenu = menu
         root.addItem(parent); refresh()
@@ -79,8 +79,22 @@ final class AppShortcuts: NSObject {
     }
     /// Window text in the user's language; never put it in CLI output.
     var displayText: String {
-        (enabled ? LifecycleText.pick("On: ", "已启用：") : LifecycleText.pick("Off, setting kept: ", "已关闭，配置保留：")) +
-        comboText + LifecycleText.pick(" (only inside this app)", "（只在本 App 内生效）")
+        (enabled ? ShortcutText.pick("On: ", "已启用：") : ShortcutText.pick("Off, setting kept: ", "已关闭，配置保留：")) +
+        comboText + ShortcutText.pick(" (only inside this app)", "（只在本 App 内生效）")
+    }
+}
+
+/// English or Simplified Chinese for the adapter's own words. Store targets vendor this file without the
+/// lifecycle layer (AppLifecycle.swift), so it keeps a private copy of LifecycleText's rule, as CommandPalette does:
+/// the product's declared localizations first, otherwise the user's preferred languages; anything not Chinese is
+/// English; `APP_LIFECYCLE_LANGUAGE=en|zh-Hans` pins it.
+private enum ShortcutText {
+    static func pick(_ english: String, _ chinese: String) -> String {
+        let pinned = ProcessInfo.processInfo.environment["APP_LIFECYCLE_LANGUAGE"] ?? ""
+        let declared = Bundle.main.localizations.filter { $0 != "Base" }
+        let order = !pinned.isEmpty ? [pinned]
+            : !declared.isEmpty ? Bundle.main.preferredLocalizations.filter { $0 != "Base" } : Locale.preferredLanguages
+        return (order.first?.lowercased().hasPrefix("zh") ?? false) ? chinese : english
     }
 }
 #endif

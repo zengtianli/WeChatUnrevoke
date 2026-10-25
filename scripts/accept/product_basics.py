@@ -18,6 +18,9 @@ import uuid
 ROOT = Path(__file__).resolve().parents[2]
 PRODUCT = "io.github.zengtianli.unrevoke"
 FEATURES = ("settings", "shortcuts", "icloud", "updates")
+# The production install. It is the app under test only when Chapter names no other one (SOP_INSTALLED_APP);
+# owner_state() always snapshots it read-only so a run can prove production stayed untouched.
+INSTALLED = Path("/Applications/WeChatUnrevoke.app")
 
 
 def sha(path):
@@ -35,7 +38,7 @@ def owner_state():
     done = subprocess.run(["/usr/bin/defaults", "export", PRODUCT, "-"], capture_output=True)
     result["preferences"] = sha_bytes(plistlib.dumps(plistlib.loads(done.stdout), sort_keys=True)) if done.returncode == 0 else None
     for label, directory in (("configuration", Path.home() / "Library/Application Support/TianliApps/Configuration" / PRODUCT),
-                             ("installed", Path("/Applications/WeChatUnrevoke.app"))):
+                             ("installed", INSTALLED)):
         result[label] = {str(p.relative_to(directory)): sha(p) for p in directory.rglob("*") if p.is_file() and not p.is_symlink()}
     return result
 
@@ -50,7 +53,7 @@ def verified_build(app, receipt_path):
     import app_sop
     registered = app_sop.load_apps("unrevoke-mac")[0]
     binding = None
-    if app == Path("/Applications/WeChatUnrevoke.app") and any(
+    if app == INSTALLED and any(
             key in os.environ for key in ("SOP_CODE_BINDING_SHA256", "SOP_BUILD_CURRENT")):
         binding = os.environ.get("SOP_CODE_BINDING_SHA256", "")
         assert len(binding) == 64 and all(c in "0123456789abcdef" for c in binding), "Missing/invalid Chapter code binding"
@@ -74,8 +77,12 @@ def verified_build(app, receipt_path):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--app", type=Path, default=os.environ.get("UNREVOKE_BASICS_APP", "/Applications/WeChatUnrevoke.app"))
-    parser.add_argument("--receipt", type=Path, default=os.environ.get("UNREVOKE_BASICS_RECEIPT", str(ROOT / "perf/build-receipt.json")))
+    # Chapter's app under test (SOP_INSTALLED_APP: the current-source candidate, PRD-foundation R1) and its
+    # receipt (SOP_BUILD_RECEIPT) come first; standalone runs keep the installed app and its receipt.
+    parser.add_argument("--app", type=Path, default=os.environ.get("SOP_INSTALLED_APP")
+                        or os.environ.get("UNREVOKE_BASICS_APP", str(INSTALLED)))
+    parser.add_argument("--receipt", type=Path, default=os.environ.get("SOP_BUILD_RECEIPT")
+                        or os.environ.get("UNREVOKE_BASICS_RECEIPT", str(ROOT / "perf/build-receipt.json")))
     args = parser.parse_args()
     app, receipt_path = args.app.resolve(), args.receipt.resolve()
     spec = json.loads(os.environ["SOP_PRODUCT_BASICS_SPEC"])
@@ -89,7 +96,7 @@ def main():
     error = None
     suites = []
     identity = {}
-    scope = "installed" if app == Path("/Applications/WeChatUnrevoke.app") else "candidate-not-installed"
+    scope = "installed" if app == INSTALLED else "candidate-not-installed"
 
     def check(name, condition):
         checks[name] = bool(condition)
