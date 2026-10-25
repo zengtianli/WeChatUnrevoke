@@ -79,7 +79,16 @@ struct AppUpdateOptions: Codable {
 /// Preferences and check history shared by the native window and short-lived CLI.
 /// Only appUpdateOptions is portable; local timestamps and staged packages stay per Mac.
 enum AppUpdatePreferences {
+    /// Isolated runs (APP_LIFECYCLE_SUPPORT_DIR, set by acceptance, fixtures and tests) never touch the product's real domain:
+    /// they read and write a domain derived from that directory, so every process of one run agrees and nothing leaks out.
+    static func isolatedDomain(_ environment:[String:String] = ProcessInfo.processInfo.environment) -> String? {
+        guard let root = environment["APP_LIFECYCLE_SUPPORT_DIR"],!root.isEmpty else { return nil }
+        var hash:UInt64 = 0xcbf29ce484222325
+        for byte in URL(fileURLWithPath:root).resolvingSymlinksInPath().path.utf8 { hash = (hash ^ UInt64(byte)) &* 0x100000001b3 }
+        return "test.tianli.shared-update." + String(hash,radix:16)
+    }
     static func defaults(_ bundleID:String) -> UserDefaults {
+        if let isolated = isolatedDomain() { return UserDefaults(suiteName:isolated) ?? UserDefaults(suiteName:"test.tianli.shared-update") ?? .standard }
         if bundleID == Bundle.main.bundleIdentifier { return .standard }
         return UserDefaults(suiteName:bundleID.isEmpty ? "test.tianli.shared-update" : bundleID) ?? .standard
     }
@@ -161,10 +170,10 @@ enum AppUpdateChecker {
         #endif
     }
 
-    static func check(source: AppUpdateSource, bundleID: String, version: String, build: String,
+    static func check(source: AppUpdateSource, bundleID: String, version: String, build: String, record: Bool = true,
                       completion: @escaping (Result<AppRelease, Error>) -> Void) {
         let source = AppUpdatePreferences.source(source,bundleID)
-        let finish: (Result<AppRelease,Error>) -> Void = { result in AppUpdatePreferences.record(bundleID,result,source:source);completion(result) }
+        let finish: (Result<AppRelease,Error>) -> Void = { result in if record { AppUpdatePreferences.record(bundleID,result,source:source) };completion(result) }
         switch source {
         case .privateCloud(let channel):
             DispatchQueue.global(qos: .utility).async {
