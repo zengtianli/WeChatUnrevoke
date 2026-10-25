@@ -250,4 +250,6 @@ enum L {
     static var foot_engine: String { String(localized: "Engine") }
     static var foot_configFresh: String { String(localized: "Patch database up to date") }
     static var foot_configUpdated: String { String(localized: "Patch database updated") }
+    static var flow_updatingConfig: String { String(localized: "Updating patch database…") }
+    static func err_configRefresh(_ reason: String) -> String { String(localized: "Could not update the patch database, so support for this build may not have arrived yet: \(reason). Check the network connection to raw.githubusercontent.com, then click Check again.") }
 }

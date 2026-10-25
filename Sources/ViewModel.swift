@@ -22,6 +22,9 @@ final class AppModel: ObservableObject {
     @Published private(set) var busyMessage = ""
     @Published private(set) var lastLog = ""
     @Published private(set) var writeHistoryError: String?
+    /// 最近一次拉补丁库的结果；nil = 本次运行还没拉过。
+    @Published private(set) var configRefresh: ConfigRefresh?
+    @Published private(set) var updatingConfig = false
     @Published var errorMessage: String?
     @Published var toast: String?
     @Published var variant: PatchVariant {
@@ -49,6 +52,8 @@ final class AppModel: ObservableObject {
     private var timer: Timer?
     private var checkedFingerprint: String?
     private var lastFullCheck = Date.distantPast
+    private var configTask: Task<ConfigRefresh, Never>?
+    private var lastConfigAttempt: Date?
     private var observers: [NSObjectProtocol] = []
 
     private enum Keys {
@@ -94,7 +99,7 @@ final class AppModel: ObservableObject {
         // 是在拿一个「大多数时候没变化」的更新，换掉整个首屏。
         Task {
             await refresh()
-            if await engine.refreshConfig() {
+            if await updateConfig() == .updated {
                 toast = L.foot_configUpdated
                 await refresh()
             }
@@ -123,6 +128,13 @@ final class AppModel: ObservableObject {
     /// 改属主或权限都会改变指纹；指纹覆盖不到的变化（系统授权、微信偏好）
     /// 靠每 30 分钟一次的完整体检兜底，用户也可以随时 ⌘R。
     func periodicCheck() async {
+        // 停在「还没收录」时补丁库是唯一能让它变的东西：开着的 App 也要能等到服务端新增的版本。
+        if status?.overall == .unsupportedBuild, configTask == nil,
+           Date().timeIntervalSince(lastConfigAttempt ?? .distantPast) >= AppModel.configRetryInterval,
+           await updateConfig() == .updated {
+            await refresh()
+            return
+        }
         if let current = AppModel.bundleFingerprint(Engine.weChatPath), current == checkedFingerprint,
            Date().timeIntervalSince(lastFullCheck) < AppModel.fullCheckInterval {
             return
@@ -131,6 +143,31 @@ final class AppModel: ObservableObject {
     }
 
     static let fullCheckInterval: TimeInterval = 30 * 60
+    static let configRetryInterval: TimeInterval = 30 * 60
+
+    /// 拉线上补丁库。同一时间只拉一次，后到的直接等前一次的结果——
+    /// 两份响应交错落盘，旧的可能盖掉新的。
+    func updateConfig() async -> ConfigRefresh {
+        if let running = configTask { return await running.value }
+        let engine = engine
+        let task = Task { await engine.refreshConfig() }
+        configTask = task
+        updatingConfig = true
+        let result = await task.value
+        configTask = nil
+        updatingConfig = false
+        lastConfigAttempt = Date()
+        configRefresh = result
+        return result
+    }
+
+    /// 「重新检查」。还没收录这个版本时先重新拉补丁库再体检：只体检的话，
+    /// 启动时那一次下载失败后怎么点都停在「还没收录」（#12）。其他状态只体检。
+    func recheck() async {
+        guard status?.overall == .unsupportedBuild else { return await refresh() }
+        if await updateConfig() == .updated { toast = L.foot_configUpdated }
+        await refresh()
+    }
 
     /// 会随「更新 / 打补丁 / 还原 / 重签 / 改权限」变化的几个路径的 inode、大小、
     /// 修改与状态变更时间。包不存在返回 nil（交给 refresh 报「找不到微信」）。
@@ -349,6 +386,8 @@ final class AppModel: ObservableObject {
         host arch      : \(s.hostArch ?? "unknown")  arch supported: \(s.archSupported)
         write blockers : \(s.writeBlockers.isEmpty ? "none" : s.writeBlockers.joined(separator: ", "))
         config known   : \(s.configKnown)  targets: \(s.configTargets.joined(separator: ", "))
+        config in use  : \(Engine.activeConfigSummary(build: s.build))
+        config refresh : \(configRefresh.map { $0.diagnostic + (lastConfigAttempt.map { " at " + ISO8601DateFormatter().string(from: $0) } ?? "") } ?? "not attempted")
         sip            : \(s.sip)
         running        : \(s.running)
         writable       : \(s.writable)

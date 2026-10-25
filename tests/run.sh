@@ -49,9 +49,26 @@ swiftc -parse-as-library Sources/Models.swift Sources/Engine.swift Sources/Write
 "$HISTORY_APP/Contents/MacOS/WriteHistoryTests"
 }
 
+run_config_refresh_tests() {
+CONFIG_APP="$TEST_DIR/ConfigRefreshTests.app"
+mkdir -p "$CONFIG_APP/Contents/MacOS" "$CONFIG_APP/Contents/Resources"
+cat > "$CONFIG_APP/Contents/Info.plist" <<'PLIST'
+<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0"><dict>
+<key>CFBundleIdentifier</key><string>io.github.zengtianli.unrevoke.tests.config</string>
+<key>CFBundleExecutable</key><string>ConfigRefreshTests</string>
+<key>CFBundlePackageType</key><string>APPL</string>
+<key>LSUIElement</key><true/>
+</dict></plist>
+PLIST
+swiftc -parse-as-library Sources/Models.swift Sources/Engine.swift Sources/WriteHistory.swift Sources/ViewModel.swift \
+  tests/ConfigRefreshTests.swift -o "$CONFIG_APP/Contents/MacOS/ConfigRefreshTests"
+"$CONFIG_APP/Contents/MacOS/ConfigRefreshTests"
+}
+
 # Independent compiles and Python workers share no output paths. Keep the existing
 # entry point parallel on both Macs, and report every suite even if one fails.
-JOBS=(run_python_tests run_write_failure_tests run_login_tests run_write_history_tests)
+JOBS=(run_python_tests run_write_failure_tests run_login_tests run_write_history_tests run_config_refresh_tests)
 PIDS=()
 for job in "${JOBS[@]}"; do
   ( "$job" ) > "$TEST_DIR/$job.log" 2>&1 &

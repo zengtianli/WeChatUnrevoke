@@ -1,4 +1,5 @@
 import Foundation
+import CryptoKit
 
 // =============================================================================
 // Engine — 内嵌 `wechattweak` 命令行的薄封装
@@ -92,6 +93,21 @@ enum EngineError: LocalizedError {
 private final class DataBox: @unchecked Sendable { var data = Data() }
 private final class FlagBox: @unchecked Sendable { var on = false }
 
+/// 拉一次线上补丁库的结果。
+enum ConfigRefresh: Equatable {
+    case updated
+    case unchanged
+    case failed(String)
+
+    var diagnostic: String {
+        switch self {
+        case .updated: return "updated"
+        case .unchanged: return "unchanged"
+        case .failed(let reason): return "failed: " + reason
+        }
+    }
+}
+
 actor Engine {
     static let wechatBundleID = "com.tencent.xinWeChat"
     static let defaultWeChatPath = "/Applications/WeChat.app"
@@ -125,7 +141,12 @@ actor Engine {
     }
 
     /// 缓存的 config.json：优先用联网拉到的最新版，拉不到就用随 app 打包的那份。
+    /// 测试接缝同 weChatPath：`defaults write … supportDirectory /tmp/x` 让跟版缓存落在临时目录，
+    /// 不碰真实的 ~/Library/Application Support/Unrevoke。
     static var supportDirectory: URL {
+        if let custom = UserDefaults.standard.string(forKey: "supportDirectory") {
+            return URL(fileURLWithPath: custom, isDirectory: true)
+        }
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         return base.appendingPathComponent("Unrevoke", isDirectory: true)
     }
@@ -146,32 +167,52 @@ actor Engine {
     /// 拉一次最新 config.json 存进缓存。
     /// fail-closed：拿到的东西解不成 JSON、或条目数比现有的还少，就**不覆盖**——
     /// 半截响应（代理返回的登录页、断流）写进去会让所有版本一起「不支持」。
-    /// - Returns: 真的更新了返回 true。
-    @discardableResult
-    func refreshConfig() async -> Bool {
+    /// 失败带原因返回：「没拉到」和「拉到了但没新东西」混成一个 false，下载失败的人
+    /// 只会看到「还没收录」，也没人知道是哪一步断的（#12）。
+    /// 内容变了就算更新，不看条目数：同样多的条目里改了补丁点，也要重新体检。
+    func refreshConfig() async -> ConfigRefresh {
+        var request = URLRequest(url: Engine.remoteConfigURL)
+        request.timeoutInterval = 15
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        let data: Data
         do {
-            var request = URLRequest(url: Engine.remoteConfigURL)
-            request.timeoutInterval = 15
-            request.cachePolicy = .reloadIgnoringLocalCacheData
-            let (data, response) = try await URLSession.shared.data(for: request)
-            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else { return false }
-            guard let incoming = try JSONSerialization.jsonObject(with: data) as? [[String: Any]],
-                  !incoming.isEmpty else { return false }
-
-            let currentCount: Int = {
-                guard let url = Engine.activeConfigURL(),
-                      let old = try? Data(contentsOf: url),
-                      let arr = try? JSONSerialization.jsonObject(with: old) as? [[String: Any]] else { return 0 }
-                return arr.count
-            }()
-            guard incoming.count >= currentCount else { return false }
-
+            let (body, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse else { return .failed("not an HTTP response") }
+            guard http.statusCode == 200 else { return .failed("HTTP \(http.statusCode)") }
+            data = body
+        } catch let error as URLError {
+            return .failed("network error \(error.code.rawValue): \(error.localizedDescription)")
+        } catch {
+            return .failed(error.localizedDescription)
+        }
+        guard let incoming = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]],
+              !incoming.isEmpty else {
+            return .failed("response is not a patch list (\(data.count) bytes)")
+        }
+        let current = Engine.activeConfigURL().flatMap { try? Data(contentsOf: $0) }
+        let currentCount = current.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [[String: Any]] }?.count ?? 0
+        guard incoming.count >= currentCount else {
+            return .failed("response lists \(incoming.count) builds, fewer than the \(currentCount) in use")
+        }
+        guard data != current else { return .unchanged }
+        do {
             try FileManager.default.createDirectory(at: Engine.supportDirectory, withIntermediateDirectories: true)
             try data.write(to: Engine.cachedConfigURL, options: .atomic)
-            return incoming.count > currentCount
         } catch {
-            return false
+            return .failed("cannot save: \(error.localizedDescription)")
         }
+        return .updated
+    }
+
+    /// 诊断里写清这次体检实际用的是哪份补丁库：来源、条目数、SHA256 前 12 位、有没有这个 build。
+    /// 只看源码里的 config.json 判断不了用户手上那份。
+    static func activeConfigSummary(build: String?) -> String {
+        guard let url = activeConfigURL(), let data = try? Data(contentsOf: url) else { return "none" }
+        let source = url == cachedConfigURL ? "downloaded" : "bundled"
+        let entries = (try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]) ?? []
+        let digest = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined().prefix(12)
+        let listed = build.map { b in entries.contains { ($0["version"] as? String) == b } ? "yes" : "no" } ?? "n/a"
+        return "\(source)  builds: \(entries.count)  sha256: \(digest)  lists build: \(listed)"
     }
 
     // MARK: - 子命令

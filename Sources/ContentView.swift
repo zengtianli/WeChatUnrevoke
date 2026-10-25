@@ -26,6 +26,8 @@ struct ContentView: View {
     }
 
     func refresh() async { await model.refresh() }
+    /// The recheck button and ⌘R: also re-download the patch database while the build is unsupported.
+    func recheck() async { await model.recheck() }
     func close() { model.stop() }
 
     var body: some View {
@@ -49,6 +51,9 @@ struct ContentView: View {
                     }
                     statusCard
                     if let error = model.errorMessage { errorBox(error) }
+                    if model.status?.overall == .unsupportedBuild, case .failed(let reason)? = model.configRefresh {
+                        errorBox(L.err_configRefresh(reason))
+                    }
                     if showsVariantPicker { variantPicker }
                     detailsSection
                     guardSection
@@ -63,7 +68,7 @@ struct ContentView: View {
         .task { if automaticallyStart { model.start() } }
         .onDisappear { close() }
         .onReceive(NotificationCenter.default.publisher(for: .consoleRefresh)) { _ in
-            Task { await refresh() }
+            Task { await recheck() }
         }
         .onReceive(NotificationCenter.default.publisher(for: .unrevokePreferencesChanged)) { _ in
             if automaticallyStart { model.reloadPortablePreferences() }
@@ -119,8 +124,13 @@ struct ContentView: View {
                     .buttonStyle(.borderedProminent).controlSize(.large)
                     Button(L.btn_recheck) { Task { await refresh() } }.controlSize(.large)
                 case .unsupportedBuild, .none:
-                    Button(L.btn_recheck) { Task { await refresh() } }
+                    Button(L.btn_recheck) { Task { await recheck() } }
                         .buttonStyle(.borderedProminent).controlSize(.large)
+                        .disabled(model.updatingConfig)
+                    if model.updatingConfig {
+                        ProgressView().controlSize(.small)
+                        Text(L.flow_updatingConfig).font(.callout).foregroundStyle(.secondary)
+                    }
                 }
                 if model.status?.needsAdmin == true {
                     Label(L.det_admin, systemImage: "lock")

@@ -2125,6 +2125,40 @@
           }
         }
       }
+    },
+    "Updating patch database…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Updating patch database…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在更新补丁库…"
+          }
+        }
+      }
+    },
+    "Could not update the patch database, so support for this build may not have arrived yet: %@. Check the network connection to raw.githubusercontent.com, then click Check again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not update the patch database, so support for this build may not have arrived yet: %@. Check the network connection to raw.githubusercontent.com, then click Check again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "补丁库没能更新，这个版本的支持可能还没下载到：%@。请检查能否访问 raw.githubusercontent.com，然后点「重新检查」。"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
