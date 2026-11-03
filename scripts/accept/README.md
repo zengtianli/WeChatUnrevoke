@@ -4,9 +4,9 @@
 
 | 入口 | 覆盖 |
 | --- | --- |
-| `python3 scripts/accept/functionality.py` | 当前 AppModel → Engine → 真实内嵌引擎，在独立微信副本上开启和还原，独立 doctor 复核 |
+| `python3 scripts/accept/functionality.py` | 当前 AppModel → Engine → 真实内嵌引擎，在独立微信副本上开启和还原，独立 doctor 复核；再核同包命令行 `bin/unrevoke` 的只读与 `--dry-run` 契约和跑后封印 |
 | `python3 scripts/accept/recovery.py` | 真实 AppModel/Engine 的故障注入、写后状态刷新、错误保留与重试恢复 |
-| `python3 scripts/accept/privacy.py` | 隔离数据与偏好下验证配置请求及本地读写边界，具体覆盖见脚本回执 |
+| `python3 scripts/accept/privacy.py` | 隔离数据与偏好下验证配置请求及本地读写边界；另做公开边界扫描（关键词表在本机 `boundary.local.txt`，缺表时 78） |
 | `python3 scripts/accept/native_ui.py` | 当前 App 自带 `--ui-self-test`，真实 SwiftUI 视图离屏渲染、刷新和关闭路径 |
 | `python3 scripts/accept/native_ui.py --localization` | 同一隔离 App 分别以 en、zh-Hans 离屏渲染；核对真实语言切换与整数/字符串插值 |
 

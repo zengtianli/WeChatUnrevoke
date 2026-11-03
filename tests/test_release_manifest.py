@@ -16,7 +16,9 @@ class ReleaseManifestTests(unittest.TestCase):
         declaration = next(node for node in ast.parse(gate).body
                            if isinstance(node, ast.Assign) and node.targets[0].id == "allowed")
         approved = sorted(ast.literal_eval(declaration.value))
-        self.assertEqual(len(approved), 16)
+        self.assertEqual(len(approved), 18)
+        # The agent command line ships inside the bundle.
+        self.assertIn("WeChatUnrevoke.app/Contents/Resources/bin/unrevoke", approved)
         localized = [f"WeChatUnrevoke.app/Contents/Resources/{lang}.lproj/Localizable.strings"
                      for lang in ("en", "zh-Hans")]
         self.assertTrue(set(localized).issubset(approved))

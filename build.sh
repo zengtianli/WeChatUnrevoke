@@ -142,7 +142,28 @@ if [ "$CONFIG" = "Release" ]; then
   strip -x -S "$APP/Contents/MacOS/Unrevoke" 2>/dev/null
   if [ -z "$PREBUILT_ENGINE" ]; then strip -x -S "$APP/Contents/Resources/wechattweak" 2>/dev/null; fi
 fi
+# ── 命令行 unrevoke：给 Agent 用，与界面同一个引擎、补丁库与偏好域；源码在 cli/ ──────────────
+# 与 GUI 共用 Sources/ 里的写入记录与生命周期层；对照由 tests/test_dispatcher.py 钉住。
+CLI_SOURCES=("$DIR/cli/main.swift" "$DIR/cli/WeChatProcessControl.swift" "$DIR/cli/UnrevokeLifecycle.swift"
+  "$DIR/Sources/WriteHistory.swift" "$DIR/Sources/ProductLifecycle.swift" "$DIR/Sources/AppConfiguration.swift"
+  "$DIR/Sources/AppLifecycle.swift" "$DIR/Sources/AppLifecycleUI.swift" "$DIR/Sources/AppLifecycleCLI.swift")
+CLI_OUT="$DIR/build/cli-$CONFIG"
+rm -rf "$CLI_OUT"; mkdir -p "$CLI_OUT"
+CLI_OPT=-Onone
+if [ "$CONFIG" = "Release" ]; then CLI_OPT=-O; fi
+if [ "${UNIVERSAL:-0}" = "1" ]; then
+  for arch in arm64 x86_64; do
+    xcrun swiftc "$CLI_OPT" -target "$arch-apple-macos13.0" -o "$CLI_OUT/unrevoke-$arch" "${CLI_SOURCES[@]}"
+  done
+  lipo -create -output "$CLI_OUT/unrevoke" "$CLI_OUT/unrevoke-arm64" "$CLI_OUT/unrevoke-x86_64"
+else
+  xcrun swiftc "$CLI_OPT" -target "$(uname -m)-apple-macos13.0" -o "$CLI_OUT/unrevoke" "${CLI_SOURCES[@]}"
+fi
+mkdir -p "$APP/Contents/Resources/bin"
+install -m 755 "$CLI_OUT/unrevoke" "$APP/Contents/Resources/bin/unrevoke"
+if [ "$CONFIG" = "Release" ]; then strip -x "$APP/Contents/Resources/bin/unrevoke"; fi
 # 内嵌的可执行文件要单独签，再签整包（否则整包签名把它算作未签名资源而失败）
+codesign --force -s - --identifier io.github.zengtianli.unrevoke.cli "$APP/Contents/Resources/bin/unrevoke"
 if [ -z "$PREBUILT_ENGINE" ]; then
   codesign --force -s - "$APP/Contents/Resources/wechattweak"
 else
@@ -154,13 +175,16 @@ codesign --force -s - "$APP"
 # 「构建成功」不等于「这个 .app 里的引擎能用」，所以这里实跑一次。
 "$APP/Contents/Resources/wechattweak" versions -c "$APP/Contents/Resources/config.json" >/dev/null \
   || { echo "❌ 内嵌引擎跑不起来"; exit 1; }
+"$APP/Contents/Resources/bin/unrevoke" --version >/dev/null || { echo "❌ 内嵌命令行跑不起来"; exit 1; }
 BUILDS="$(python3 -c "import json,sys;print(len(json.load(open(sys.argv[1]))))" "$APP/Contents/Resources/config.json")"
 APP_ARCHS="$(lipo -archs "$APP/Contents/MacOS/Unrevoke")"
 if [ "${UNIVERSAL:-0}" = "1" ]; then
-  case "$APP_ARCHS" in
-    *arm64*x86_64*|*x86_64*arm64*) : ;;
-    *) echo "❌ 要求 universal，但 app 本体只有 ${APP_ARCHS} —— 拒绝收工"; exit 1 ;;
-  esac
+  for BIN in "$APP/Contents/MacOS/Unrevoke" "$APP/Contents/Resources/bin/unrevoke"; do
+    case "$(lipo -archs "$BIN")" in
+      *arm64*x86_64*|*x86_64*arm64*) : ;;
+      *) echo "❌ 要求 universal，但 $(basename "$BIN") 只有 $(lipo -archs "$BIN") —— 拒绝收工"; exit 1 ;;
+    esac
+  done
 fi
 echo "   引擎 OK（${ARCHS}）· app ${APP_ARCHS} · 补丁库收录 ${BUILDS} 个微信 build"
 
@@ -182,6 +206,13 @@ if ! rm -rf "$DEST" 2>/dev/null || ! cp -R "$APP" "$DEST" 2>/dev/null; then
   rm -rf "$DEST"; cp -R "$APP" "$DEST"
 fi
 echo "✅ 已安装 → $DEST"
+# 命令行入口：~/.local/bin/unrevoke → 包内 bin/unrevoke（LINK_CLI=0 不建链接）
+if [ "${LINK_CLI:-1}" != "0" ]; then
+  LINK_DIR="${UNREVOKE_LINK_DIR:-$HOME/.local/bin}"
+  mkdir -p "$LINK_DIR"
+  ln -sfn "$DEST/Contents/Resources/bin/unrevoke" "$LINK_DIR/unrevoke"
+  echo "   命令行 → $LINK_DIR/unrevoke"
+fi
 
 # Renamed display name; keep preferences/bundle ID, archive the old installation.
 LEGACY="$(dirname "$DEST")/Unrevoke.app"

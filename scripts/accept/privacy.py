@@ -41,7 +41,19 @@ def main():
                   if line.startswith("PASS: ")]
         if len(checks) != 6:
             raise RuntimeError(f"Expected 6 privacy checks, got {len(checks)}: {output}")
-        detail("privacy", f"Privacy boundary: {len(checks)} runtime checks passed", checks=checks,
+        # 公开边界：公开仓、引擎仓、公开 ZIP、官网与产品卡不得出现本机私有工具字样（关键词表只在本机）。
+        import public_boundary
+        try:
+            boundary = public_boundary.scan()
+        except public_boundary.Unavailable as error:
+            detail("privacy", f"BLOCKED: {error}", checks=checks)
+            raise SystemExit(78)
+        failed = [row["check"] for row in boundary if not row["passed"]]
+        if failed:
+            detail("privacy", "FAIL: 公开边界 " + "；".join(failed), checks=checks, public_boundary=boundary)
+            raise SystemExit(1)
+        detail("privacy", f"Privacy boundary: {len(checks)} runtime checks and {len(boundary)} public-boundary scans passed",
+               checks=checks, public_boundary=boundary,
                method="Production Engine.refreshConfig/doctor with URLProtocol response injection and OS network deny",
                scope="Observed GUI wrapper configuration requests/cache and doctor arguments in a clean isolated profile; does not audit vendor engine internals or user clipboard actions",
                isolation="Disposable app, preferences, home and synthetic data; no real network, chat data, installed app, or user configuration accessed")

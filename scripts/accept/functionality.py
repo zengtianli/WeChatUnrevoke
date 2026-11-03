@@ -23,7 +23,7 @@ class Unavailable(Exception):
     pass
 
 
-# Chapter stops the whole acceptor at 600 s; leave room for the compile, the clone and the installed-export part.
+# Chapter stops the whole acceptor at 600 s; leave room for the compile, the clone and the command-line contract.
 HARNESS_TIMEOUT = 480
 
 
@@ -177,6 +177,14 @@ def main():
         fields["engine_sha256"] = hashlib.sha256(engine.read_bytes()).hexdigest()
         fields["scope"] = "当前 AppModel → Engine → 已构建的真实 wechattweak；真实微信独立副本；不启动微信或登录聊天"
         summary = "PASS: 真实微信副本经 AppModel 完成还原基线、默认防撤回补丁和再次还原；独立 doctor 核验通过。"
+        # 同一个被测 App 里给 Agent 的命令行：只读与拒绝/--dry-run 路径，跑完整包封印仍完整。
+        import cli_contract
+        rows = cli_contract.check(Path(app_under_test))
+        fields["cli_contract"] = rows
+        failed = [row["check"] for row in rows if not row["passed"]]
+        if failed:
+            raise RuntimeError("命令行契约：" + "；".join(failed))
+        summary += f" 命令行契约 {len(rows)} 项通过。"
     except Unavailable as error:
         code, summary = 78, "BLOCKED: " + clean(error)
     except subprocess.CalledProcessError as error:

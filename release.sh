@@ -58,6 +58,8 @@ allowed = {
     "WeChatUnrevoke.app/Contents/Resources/",
     "WeChatUnrevoke.app/Contents/Resources/config.json",
     "WeChatUnrevoke.app/Contents/Resources/wechattweak",
+    "WeChatUnrevoke.app/Contents/Resources/bin/",
+    "WeChatUnrevoke.app/Contents/Resources/bin/unrevoke",
     "WeChatUnrevoke.app/Contents/Resources/AppIcon.icns",
     "WeChatUnrevoke.app/Contents/Resources/en.lproj/",
     "WeChatUnrevoke.app/Contents/Resources/en.lproj/Localizable.strings",
@@ -76,7 +78,8 @@ codesign --verify --deep --strict "$TMP/$NAME.app"
   -c "$TMP/$NAME.app/Contents/Resources/config.json" >/dev/null \
   || { echo "❌ 打出来的包里引擎跑不起来"; rm -rf "$TMP"; exit 1; }
 # 双架构门放在**解压出来的那份**上：要验的是别人下载到的东西，不是我这台机器上的构建产物。
-for BIN in "$TMP/$NAME.app/Contents/MacOS/Unrevoke" "$TMP/$NAME.app/Contents/Resources/wechattweak"; do
+for BIN in "$TMP/$NAME.app/Contents/MacOS/Unrevoke" "$TMP/$NAME.app/Contents/Resources/wechattweak" \
+           "$TMP/$NAME.app/Contents/Resources/bin/unrevoke"; do
   A="$(lipo -archs "$BIN")"
   case "$A" in
     *arm64*x86_64*|*x86_64*arm64*) ;;

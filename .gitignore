@@ -33,3 +33,6 @@ project.yaml
 /perf/acceptance/
 /perf/delivery-evidence.json
 /perf/build-receipt.json
+
+# 公开边界扫描的本机关键词表（scripts/accept/public_boundary.py 读取）
+/scripts/accept/*.local.txt
