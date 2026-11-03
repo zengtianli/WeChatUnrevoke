@@ -74,7 +74,7 @@ struct PrivacyAcceptance {
         defer { URLProtocol.unregisterClass(PrivacyHTTPProtocol.self) }
         let engine = Engine()
         let refreshed = await engine.refreshConfig()
-        try check(refreshed, "Injected configuration was not consumed by production refreshConfig")
+        try check(refreshed == .updated, "Injected configuration was not consumed by production refreshConfig")
         let requests = PrivacyHTTPProtocol.requests()
         try check(requests.count == 1, "Production configuration request escaped interception")
         let request = requests[0]
@@ -98,12 +98,12 @@ struct PrivacyAcceptance {
 
         PrivacyHTTPProtocol.select(.offline)
         let offline = await engine.refreshConfig()
-        try check(!offline && Engine.activeConfigURL() == Engine.cachedConfigURL,
+        try check(offline != .updated && Engine.activeConfigURL() == Engine.cachedConfigURL,
                   "Offline refresh discarded usable cache")
         try check(try Data(contentsOf: Engine.cachedConfigURL) == cached, "Offline response mutated cache")
         PrivacyHTTPProtocol.select(.invalid)
         let invalid = await engine.refreshConfig()
-        try check(!invalid && (try Data(contentsOf: Engine.cachedConfigURL)) == cached,
+        try check(invalid != .updated && (try Data(contentsOf: Engine.cachedConfigURL)) == cached,
                   "Malformed network response replaced valid cache")
         try Data("broken cache".utf8).write(to: Engine.cachedConfigURL)
         try check(Engine.activeConfigURL() == bundled, "Invalid cache did not fall back to bundled configuration")
