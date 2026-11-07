@@ -57,7 +57,10 @@ final class AppShortcuts: NSObject {
         Self.serial += 1; hotKeyID = Self.serial
         super.init()
     }
-    deinit { releaseGlobal(); if let handler { RemoveEventHandler(handler) } }
+    deinit {
+        releaseGlobal(); if let handler { RemoveEventHandler(handler) }
+        menuObservers.forEach(NotificationCenter.default.removeObserver)
+    }
     private static let codes: [String: UInt32] = ["a":0,"s":1,"d":2,"f":3,"h":4,"g":5,"z":6,"x":7,"c":8,"v":9,"b":11,"q":12,"w":13,"e":14,"r":15,"y":16,"t":17,"1":18,"2":19,"3":20,"4":21,"6":22,"5":23,"9":25,"7":26,"8":28,"0":29,"o":31,"u":32,"i":34,"p":35,"l":37,"j":38,"k":40,"n":45,"m":46]
     static func keyName(code: UInt16) -> String? { codes.first { $0.value == UInt32(code) }?.key }
     private func releaseGlobal() {
@@ -135,7 +138,47 @@ final class AppShortcuts: NSObject {
         let item = NSMenuItem(title: title, action: #selector(performAction), keyEquivalent: "")
         item.target = self; menu.addItem(item); menuItem = item
         parent.identifier = NSUserInterfaceItemIdentifier("appShortcuts.actions"); parent.submenu = menu
-        if parent.menu == nil { root.addItem(parent) }
+        actionsParent = parent
+        if parent.menu == nil { root.insertItem(parent, at: Self.customMenuIndex(root)) }
+        refresh()
+        keepMenuAttached()
+    }
+    /// The top-level "Actions" item this instance's command lives in (shared by every AppShortcuts of the app).
+    private var actionsParent: NSMenuItem?
+    private var menuObservers: [NSObjectProtocol] = []
+    private var mainMenuWatch: NSKeyValueObservation?
+    /// HIG: custom menus sit before Window (and Help); at the end when the app has neither.
+    static func customMenuIndex(_ root: NSMenu) -> Int {
+        root.items.firstIndex { $0.submenu != nil && ($0.submenu === NSApp.windowsMenu || $0.submenu === NSApp.helpMenu) } ?? root.numberOfItems
+    }
+    /// SwiftUI rebuilds its `.commands` whenever a scene recomputes (often on every data refresh) and drops the
+    /// hand-added Actions menu, frequently with no later event (Tripwire/Daytrade 2026-11-06: the installed app never
+    /// showed Actions › Refresh ⌘R while Settings said it was on). Watch the three ways it disappears — an item removed
+    /// from the main menu, the main menu replaced, and after each event — and put it back on the next main-queue turn,
+    /// after SwiftUI finished its pass. When nothing was removed the check is O(1); AppKit menus never trigger it.
+    private func keepMenuAttached() {
+        guard menuObservers.isEmpty else { return }
+        menuObservers.append(NotificationCenter.default.addObserver(forName: NSApplication.didUpdateNotification, object: nil, queue: nil) { [weak self] _ in
+            self?.reattachMenu()
+        })
+        menuObservers.append(NotificationCenter.default.addObserver(forName: NSMenu.didRemoveItemNotification, object: nil, queue: nil) { [weak self] note in
+            guard let menu = note.object as? NSMenu, menu === NSApp.mainMenu else { return }
+            DispatchQueue.main.async { self?.reattachMenu() }
+        })
+        mainMenuWatch = NSApp.observe(\.mainMenu, options: [.new]) { [weak self] _, _ in
+            DispatchQueue.main.async { self?.reattachMenu() }
+        }
+    }
+    /// Puts the Actions menu back into the current main menu if it was dropped; no-op while it is attached.
+    func reattachMenu() {
+        guard let root = NSApp.mainMenu, let parent = actionsParent, parent.menu !== root else { return }
+        if let other = root.items.first(where: { $0 !== parent && $0.identifier?.rawValue == "appShortcuts.actions" }) {
+            actionsParent = other  // another AppShortcuts of this app already re-attached the shared parent
+            if let item = menuItem, item.menu !== other.submenu { item.menu?.removeItem(item); other.submenu?.addItem(item) }
+            refresh(); return
+        }
+        parent.menu?.removeItem(parent)
+        root.insertItem(parent, at: Self.customMenuIndex(root))
         refresh()
     }
     func refresh() {
