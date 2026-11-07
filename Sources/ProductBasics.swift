@@ -198,7 +198,7 @@ enum ProductBasicsSelfTest {
             var resultVisible = false
             while Date() < deadline && !resultVisible {
                 RunLoop.current.run(until: Date().addingTimeInterval(0.05))
-                resultVisible = views.compactMap { $0 as? NSTextField }.contains { $0.stringValue.contains("999.0.1") && $0.stringValue.contains("当前") }
+                resultVisible = views.compactMap { $0 as? NSTextField }.contains { $0.stringValue.contains("999.0.1") && $0.stringValue.contains(LifecycleText.pick("you have", "当前")) }
             }
             checks["updates.real_check_result_in_window"] = resultVisible
             checks["settings.no_visible_windows_or_dock"] = app.activationPolicy() == .prohibited && app.windows.allSatisfy { !$0.isVisible && !$0.isKeyWindow }
