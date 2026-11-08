@@ -30,6 +30,12 @@ final class AppConfiguration: NSObject {
     private let validateDefault: ((String, Any) throws -> Void)?
     private let files: [AppConfigurationFile]
     private let defaults: UserDefaults
+    /// appUpdateOptions lives where AppUpdatePreferences keeps it: in an isolated run (APP_LIFECYCLE_SUPPORT_DIR) that is the
+    /// run's derived domain, so `update options` and `config export/import` read and write the same place (mackit 2026-11-08).
+    private func store(_ key: String) -> UserDefaults {
+        guard key == "appUpdateOptions", AppUpdatePreferences.isolatedDomain() != nil else { return defaults }
+        return AppUpdatePreferences.defaults(Bundle.main.bundleIdentifier ?? "")
+    }
     private let worker = DispatchQueue(label: "cyou.tianli.configuration", qos: .utility)
     private var observers: [NSObjectProtocol] = []
     private let localLock = NSRecursiveLock()
@@ -229,7 +235,7 @@ final class AppConfiguration: NSObject {
         _ = defaults.synchronize()
         var values: [String: Any] = [:]
         for key in defaultsKeys {
-            if let value = defaults.object(forKey: key) { values["defaults." + key] = try Self.pack(value) }
+            if let value = store(key).object(forKey: key) { values["defaults." + key] = try Self.pack(value) }
         }
         for (index, file) in files.enumerated() {
             guard FileManager.default.fileExists(atPath: file.url.path) else { continue }
@@ -305,8 +311,8 @@ final class AppConfiguration: NSObject {
             }
             throw error
         }
-        for key in defaultsKeys { if let value = prefs[key] { defaults.set(value, forKey: key) } else { defaults.removeObject(forKey: key) } }
-        _ = defaults.synchronize()
+        for key in defaultsKeys { if let value = prefs[key] { store(key).set(value, forKey: key) } else { store(key).removeObject(forKey: key) } }
+        _ = defaults.synchronize(); _ = store("appUpdateOptions").synchronize()
         DispatchQueue.main.async { [weak self] in self?.onChange?() }
     }
 
