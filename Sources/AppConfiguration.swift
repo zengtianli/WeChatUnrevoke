@@ -32,9 +32,14 @@ final class AppConfiguration: NSObject {
     private let defaults: UserDefaults
     /// appUpdateOptions lives where AppUpdatePreferences keeps it: in an isolated run (APP_LIFECYCLE_SUPPORT_DIR) that is the
     /// run's derived domain, so `update options` and `config export/import` read and write the same place (mackit 2026-11-08).
+    /// Store editions compile this file without AppLifecycle.swift (no updater, so no appUpdateOptions): plain defaults.
     private func store(_ key: String) -> UserDefaults {
+        #if APP_STORE
+        return defaults
+        #else
         guard key == "appUpdateOptions", AppUpdatePreferences.isolatedDomain() != nil else { return defaults }
         return AppUpdatePreferences.defaults(Bundle.main.bundleIdentifier ?? "")
+        #endif
     }
     private let worker = DispatchQueue(label: "cyou.tianli.configuration", qos: .utility)
     private var observers: [NSObjectProtocol] = []
