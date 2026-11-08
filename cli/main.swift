@@ -1012,7 +1012,7 @@ no_config、invalid_config）；patch、restore 在 "result"（refused / failed�
   安装教程与使用帮助        在浏览器打开 https://unrevoke.tianli.cyou/
   管理员密码授权框          系统弹窗要真人输入密码；已有免密规则时用 patch、restore 的 --sudo
   通知授权                  打开「微信更新后自动打回补丁」时系统询问是否允许通知，要真人点
-  配置与更新…               打开「配置与更新」窗口；窗口里的当前版本用 unrevoke version 读
+  设置…                     打开「设置」窗口（⌘,）；窗口里的当前版本用 unrevoke version 读
 界面有、命令暂缺：
   本构建提供以下入口；装机验收以 Chapter 当前登记和固定脚本为准：
   开机自动运行：unrevoke login；退出微信并继续（完成后重新打开微信）：patch/restore --quit-wechat；

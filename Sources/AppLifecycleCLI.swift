@@ -52,7 +52,10 @@ enum AppLifecycleCLI {
 
     /// What the menu calls the item that opens this window. `AppLifecycleUI` adds it under this name; a product that
     /// opens the window from its own item passes that item's title instead, from one constant of its own.
-    static let defaultWindowEntry = "配置与更新…"
+    static let defaultWindowEntry = "设置…"
+    /// The shared window's name in a product that has its own settings page (`AppLifecycleUI.useSettings`): pass this
+    /// as `windowEntry` so the help names the item that really opens it (⌘, 设置… is the product's page there).
+    static let updatesWindowEntry = "配置与更新…"
 
     /// Read-only: neither line writes a file or any state, so they can sit under a product heading that promises that.
     static func helpRead(_ command: String) -> String {

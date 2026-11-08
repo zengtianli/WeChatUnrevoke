@@ -1,6 +1,7 @@
 // Shared macOS settings migration and version UI. Edit the shared source, then vendor.
 #if os(macOS)
 import AppKit
+import SwiftUI
 import Carbon.HIToolbox
 import CryptoKit
 
@@ -24,6 +25,8 @@ final class AppLifecycleUI: NSObject {
     private var spinner = NSProgressIndicator()
     private var release: AppRelease?
     private var observers: [NSObjectProtocol] = []
+    private var menuObservers: [NSObjectProtocol] = []
+    private var mainMenuWatch: NSKeyValueObservation?
     private var working = false
     var canInstallUpdate: (() -> Bool)?
     private var automaticTimer: Timer?
@@ -39,9 +42,7 @@ final class AppLifecycleUI: NSObject {
     private let intervalPopup = NSPopUpButton()
     private let channelPopup = NSPopUpButton()
     private let updateDetails = AppLifecycleUI.detailLabel()
-    private let languagePopup = NSPopUpButton()
-    private let languageNote = AppLifecycleUI.detailLabel()
-    private let reopenButton = NSButton(title: LifecycleText.pick("Reopen Now", "立即重新打开"), target: nil, action: nil)
+    private let language = LifecycleLanguageRow()
     private let cancelButton = NSButton(title:LifecycleText.pick("Cancel Download/Verification", "取消下载/验证"),target:nil,action:nil)
     private let notesButton = NSButton(title:LifecycleText.pick("What's New…", "更新内容…"),target:nil,action:nil)
     private let skipButton = NSButton(title:LifecycleText.pick("Skip Version", "跳过此版"),target:nil,action:nil)
@@ -59,20 +60,62 @@ final class AppLifecycleUI: NSObject {
         if startConfiguration { configuration?.start() }
         if instance.observers.isEmpty {
             instance.observers.append(NotificationCenter.default.addObserver(forName: NSApplication.didFinishLaunchingNotification, object: nil, queue: .main) { _ in
-                DispatchQueue.main.async { shared.attachMenu() }
+                DispatchQueue.main.async { AppLifecycleUI.shared.attachMenu() }
             })
             instance.observers.append(NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main) { _ in shared.attachMenu() })
             instance.observers.append(NotificationCenter.default.addObserver(forName: NSNotification.Name("AppConfigurationStatusChanged"), object: configuration, queue: .main) { _ in shared.refreshConfiguration() })
         }
         instance.attachMenu()
+        instance.keepMenuAttached()
         instance.scheduleAutomaticChecks()
         if instance.observers.count < 4 {
             instance.observers.append(DistributedNotificationCenter.default().addObserver(forName:Notification.Name("cyou.tianli.update-options." + instance.bundleID),object:nil,queue:.main) { _ in shared.refreshUpdateOptions();shared.scheduleAutomaticChecks() })
         }
     }
 
-    static func menuItems() -> [NSMenuItem] {
-        let settings = NSMenuItem(title: LifecycleText.pick("Settings & Updates…", "配置与更新…"), action: #selector(openSettings), keyEquivalent: "")
+    // MARK: Standard settings entry — one module for every Mac app (本人 2026-11-08「cmd , 得是 设置」「搞成一个模块，可以复用」)
+    //
+    // ⌘, always opens 设置… / Settings…, placed in the app menu by this shared layer and re-attached whenever SwiftUI
+    // rebuilds the menu. A product never hand-writes that item:
+    //   · no settings page of its own → nothing to call; ⌘, opens this shared window (language row first).
+    //   · its own settings page → `AppLifecycleUI.useSettings { open it }` once at launch; ⌘, opens that page, and this
+    //     window stays reachable as 配置与更新… (no shortcut). That page puts the language row first
+    //     (`LifecycleLanguageRow.group()` in AppKit, `LifecycleLanguagePicker()` in SwiftUI).
+    //   · a menu bar panel or status menu → `AppLifecycleUI.settingsMenuItem()`, the same 设置… as ⌘,.
+    // Checked on the real running app by menu_settings_check.py (Chapter settings-menu).
+
+    /// The product's own settings page, when it has one (`useSettings`). nil: ⌘, opens this shared window.
+    private var productSettings: (() -> Void)?
+    private static let menuID = NSUserInterfaceItemIdentifier("appLifecycle.menu")
+
+    /// Call once at launch when the product has its own settings page: ⌘, 设置… then opens it.
+    static func useSettings(_ open: @escaping () -> Void) {
+        shared.productSettings = open
+        shared.detachMenu()
+        shared.attachMenu()
+    }
+
+    /// 设置… (⌘,) for a menu bar panel or any extra menu: opens the same page as ⌘, in the app menu.
+    static func settingsMenuItem() -> NSMenuItem {
+        let item = NSMenuItem(title: LifecycleText.pick("Settings…", "设置…"), action: #selector(AppLifecycleUI.openSettingsPage), keyEquivalent: ",")
+        item.keyEquivalentModifierMask = .command
+        item.target = shared
+        return item
+    }
+
+    /// Opens what ⌘, opens: the product's own settings page, or this shared window.
+    static func openStandardSettings() { shared.openSettingsPage() }
+    @objc private func openSettingsPage() {
+        guard let productSettings else { show(); return }
+        if !NSApp.isActive { NSApp.activate(ignoringOtherApps: true) }
+        productSettings()
+    }
+
+    /// The shared window's own two items, for products that still build their menu by hand. `ownsSettings: true` names
+    /// the window 设置… (it is the settings page); false keeps 配置与更新… beside a product's own 设置….
+    static func menuItems(ownsSettings: Bool = false) -> [NSMenuItem] {
+        let title = ownsSettings ? LifecycleText.pick("Settings…", "设置…") : LifecycleText.pick("Settings & Updates…", "配置与更新…")
+        let settings = NSMenuItem(title: title, action: #selector(openSettings), keyEquivalent: "")
         settings.target = shared
         let update = NSMenuItem(title: LifecycleText.pick("Check for Updates…", "检查更新…"), action: #selector(checkUpdates), keyEquivalent: "")
         update.target = shared
@@ -80,15 +123,51 @@ final class AppLifecycleUI: NSObject {
     }
 
     private func attachMenu() {
+        // Ours already there, or a product that still adds `menuItems()` by hand (legacy): leave the menu alone.
         guard let appMenu = NSApp.mainMenu?.items.first?.submenu,
-              !appMenu.items.contains(where: { ($0.target === self && $0.action == #selector(openSettings)) || ["配置与更新…", "Settings & Updates…"].contains($0.title) }) else { return }
-        let items = Self.menuItems()
-        // Standard ⌘, opens settings, unless the app already binds ⌘, to its own settings item.
+              !appMenu.items.contains(where: { $0.identifier == Self.menuID || ($0.target === self && $0.action == #selector(openSettings))
+                  || ["配置与更新…", "Settings & Updates…"].contains($0.title) }) else { return }
+        // A ⌘, the product still binds by hand keeps it (Chapter settings-menu reports that product as not migrated).
         let taken = NSApp.mainMenu?.items.compactMap(\.submenu).flatMap(\.items).contains { $0.keyEquivalent == "," && $0.keyEquivalentModifierMask.intersection([.command, .shift, .option, .control]) == .command } ?? false
-        if !taken { items[0].keyEquivalent = ","; items[0].keyEquivalentModifierMask = .command }
+        var items: [NSMenuItem]
+        if productSettings != nil {
+            let settings = Self.settingsMenuItem()
+            if taken { settings.keyEquivalent = "" }
+            items = [settings] + Self.menuItems(ownsSettings: false)
+        } else {
+            items = Self.menuItems(ownsSettings: !taken)
+            if !taken { items[0].keyEquivalent = ","; items[0].keyEquivalentModifierMask = .command }
+        }
+        let separator = NSMenuItem.separator()
         let index = min(1, appMenu.numberOfItems)
-        for (offset, item) in items.enumerated() { appMenu.insertItem(item, at: index + offset) }
-        appMenu.insertItem(.separator(), at: index + items.count)
+        for (offset, item) in (items + [separator]).enumerated() { item.identifier = Self.menuID; appMenu.insertItem(item, at: index + offset) }
+    }
+
+    private func detachMenu() {
+        guard let appMenu = NSApp.mainMenu?.items.first?.submenu else { return }
+        appMenu.items.filter { $0.identifier == Self.menuID }.forEach(appMenu.removeItem)
+    }
+
+    /// SwiftUI rebuilds the main menu after launch and on scene updates, dropping the hand-added 设置… (⌘,) item with
+    /// no later launch/activate event (unrevoke 1.0.15 2026-11-08: the app menu had only About/Services/Hide/Quit, so ⌘,
+    /// did nothing). Re-check after every event and when the main menu is replaced; attachMenu is a no-op while attached.
+    private func keepMenuAttached() {
+        guard menuObservers.isEmpty else { return }
+        menuObservers.append(NotificationCenter.default.addObserver(forName: NSApplication.didUpdateNotification, object: nil, queue: .main) { _ in
+            AppLifecycleUI.shared.attachMenu()
+        })
+        // SwiftUI edits the main menu in place (often while the app sits in the background), so watch the main menu
+        // and the app menu themselves; attachMenu's own insertions come back here once and stop at its guard.
+        for name in [NSMenu.didAddItemNotification, NSMenu.didRemoveItemNotification, NSMenu.didChangeItemNotification] {
+            menuObservers.append(NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { note in
+                guard let menu = note.object as? NSMenu, let root = NSApp.mainMenu,
+                      menu === root || menu === root.items.first?.submenu else { return }
+                DispatchQueue.main.async { AppLifecycleUI.shared.attachMenu() }
+            })
+        }
+        mainMenuWatch = NSApp.observe(\.mainMenu, options: [.new]) { _, _ in
+            DispatchQueue.main.async { AppLifecycleUI.shared.attachMenu() }
+        }
     }
 
     @objc private func openSettings() { show() }
@@ -344,15 +423,9 @@ final class AppLifecycleUI: NSObject {
         notesButton.target = self;notesButton.action = #selector(showReleaseNotes);notesButton.isEnabled = false
         skipButton.target = self;skipButton.action = #selector(skipRelease);skipButton.isEnabled = false
         remindButton.target = self;remindButton.action = #selector(remindLater)
-        languagePopup.removeAllItems()
-        languagePopup.addItems(withTitles: LifecycleLanguage.allCases.map(\.title))
-        languagePopup.target = self; languagePopup.action = #selector(changedLanguage)
-        reopenButton.target = self; reopenButton.action = #selector(reopenForLanguage)
-        let languageControls = NSStackView(views: [languagePopup, reopenButton]); languageControls.spacing = 8
-        refreshLanguage()
+        language.refresh()
         // Every app lets the user pick its language here (本人 2026-10-18: a basic requirement for all apps).
-        var groups: [NSView] = [Self.group(LifecycleText.pick("Language", "语言"), rows: [
-            Self.row(LifecycleText.pick("App language", "界面语言"), detail: languageNote, accessory: languageControls)])]
+        var groups: [NSView] = [Self.group(LifecycleText.pick("Language", "语言"), rows: [language.row])]
         if let hotKey = MenuBarHotKey.shared {
             groups.append(Self.group(LifecycleText.pick("Menu Bar", "菜单栏"), rows: [
                 Self.row(LifecycleText.pick("Open the menu bar panel", "弹出菜单栏面板"), detail: hotKey.statusLabel, accessory: hotKey.recorder)]))
@@ -448,17 +521,6 @@ final class AppLifecycleUI: NSObject {
                 "upgrade_actual_button_target": updateButton.target === self && updateButton.action == #selector(checkUpdates),
                 "upgrade_image_rendered": data.count > 1_000 && bitmap.pixelsWide >= 400]
     }
-    private func refreshLanguage() {
-        languagePopup.selectItem(at: LifecycleLanguage.allCases.firstIndex(of: LifecycleLanguage.current) ?? 0)
-        let pending = LifecycleLanguage.needsRelaunch
-        languageNote.stringValue = pending ? LifecycleText.pick("Takes effect after the app reopens.", "重新打开 App 后生效。")
-            : LifecycleText.pick("Menus, windows and system panels switch together.", "菜单、窗口和系统面板一起切换。")
-        reopenButton.isHidden = !pending
-    }
-    @objc private func changedLanguage() {
-        LifecycleLanguage.set(LifecycleLanguage.allCases[max(0, languagePopup.indexOfSelectedItem)]); refreshLanguage()
-    }
-    @objc private func reopenForLanguage() { LifecycleLanguage.relaunch() }
     @objc private func toggleCloud() {
         configuration?.setEnabled(cloudToggle.state == .on)
         refreshConfiguration()
@@ -1217,6 +1279,66 @@ final class MenuBarHotKey: NSObject {
         if keep { register() } else { set(chord) }
     }
 }
+/// The 界面语言 row — the one implementation every settings page uses: the shared window, and a product's own AppKit
+/// settings page via `LifecycleLanguageRow.group()` (put it first). SwiftUI pages use `LifecycleLanguagePicker`.
+final class LifecycleLanguageRow: NSObject {
+    let popup = NSPopUpButton()
+    let note = AppLifecycleUI.detailLabel()
+    let reopen = NSButton(title: LifecycleText.pick("Reopen Now", "立即重新打开"), target: nil, action: nil)
+    /// The finished row (title, note, picker and Reopen Now); it keeps this controller alive.
+    private(set) var row: NSView = NSView()
+
+    override init() {
+        super.init()
+        popup.addItems(withTitles: LifecycleLanguage.allCases.map(\.title))
+        popup.target = self; popup.action = #selector(changed)
+        popup.setAccessibilityIdentifier("appLanguage")
+        reopen.target = self; reopen.action = #selector(reopenNow)
+        let controls = NSStackView(views: [popup, reopen]); controls.spacing = 8
+        let built = AppLifecycleUI.row(LifecycleText.pick("App language", "界面语言"), detail: note, accessory: controls)
+        objc_setAssociatedObject(built, Unmanaged.passUnretained(self).toOpaque(), self, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        row = built
+        refresh()
+    }
+    /// The whole 语言 group (caption and card) for a product's own AppKit settings page.
+    static func group() -> NSView {
+        AppLifecycleUI.group(LifecycleText.pick("Language", "语言"), rows: [LifecycleLanguageRow().row])
+    }
+    func refresh() {
+        popup.selectItem(at: LifecycleLanguage.allCases.firstIndex(of: LifecycleLanguage.current) ?? 0)
+        let pending = LifecycleLanguage.needsRelaunch
+        note.stringValue = pending ? LifecycleText.pick("Takes effect after the app reopens.", "重新打开 App 后生效。")
+            : LifecycleText.pick("Menus, windows and system panels switch together.", "菜单、窗口和系统面板一起切换。")
+        reopen.isHidden = !pending
+    }
+    @objc private func changed() { LifecycleLanguage.set(LifecycleLanguage.allCases[max(0, popup.indexOfSelectedItem)]); refresh() }
+    @objc private func reopenNow() { LifecycleLanguage.relaunch() }
+}
+
+/// The 界面语言 row for a SwiftUI settings page (put it first, inside the page's own Form/Section):
+/// the same choice, note and Reopen Now as `LifecycleLanguageRow`.
+@available(macOS 11.0, *)
+struct LifecycleLanguagePicker: View {
+    @State private var choice = LifecycleLanguage.current
+    @State private var pending = LifecycleLanguage.needsRelaunch
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Picker(LifecycleText.pick("App language", "界面语言"), selection: $choice) {
+                    ForEach(LifecycleLanguage.allCases, id: \.self) { option in Text(option.title).tag(option) }
+                }
+                .accessibilityIdentifier("appLanguage")
+                .onChange(of: choice) { value in LifecycleLanguage.set(value); pending = LifecycleLanguage.needsRelaunch }
+                if pending { Button(LifecycleText.pick("Reopen Now", "立即重新打开")) { LifecycleLanguage.relaunch() } }
+            }
+            Text(pending ? LifecycleText.pick("Takes effect after the app reopens.", "重新打开 App 后生效。")
+                 : LifecycleText.pick("Menus, windows and system panels switch together.", "菜单、窗口和系统面板一起切换。"))
+                .font(.caption).foregroundColor(.secondary)
+        }
+        .onAppear { choice = LifecycleLanguage.current; pending = LifecycleLanguage.needsRelaunch }
+    }
+}
+
 /// The app's own language choice: Follow System, 简体中文 or English. Stored as this app's `AppleLanguages`
 /// override, which macOS applies at the next launch (the same mechanism as System Settings → Language & Region
 /// → Applications), so menus, windows and system panels switch together. Follow System removes the override.
