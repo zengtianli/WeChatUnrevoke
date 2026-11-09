@@ -564,6 +564,8 @@ enum AppLifecycleCLI {
         guard ProcessInfo.processInfo.environment["APP_LIFECYCLE_NO_RELAUNCH"] != "1" else { return false }
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/open"); process.arguments = ["-g", "-j", app.path]
+        // open hands the caller's environment to the app; the shell's TZ is for Claude only, apps follow the system zone.
+        var environment = ProcessInfo.processInfo.environment; environment.removeValue(forKey: "TZ"); process.environment = environment
         guard (try? process.run()) != nil else { return false }
         process.waitUntilExit()
         return process.terminationStatus == 0

@@ -879,7 +879,7 @@ enum AppUpgradeInstaller {
         started=1
         if ! verified_new; then started=0; fi
         if [ "$started" = 1 ] && [ "$relaunch" = 1 ]; then
-          if ! /usr/bin/open -g -j "$target_app"; then started=0; else
+          if ! /usr/bin/env -u TZ /usr/bin/open -g -j "$target_app"; then started=0; else
             started=0
             for ((attempt=0;attempt<40;attempt++)); do
               while IFS= read -r running; do
@@ -893,7 +893,7 @@ enum AppUpgradeInstaller {
         if [ "$started" != 1 ]; then
           /bin/mv "$target_app" "$task_dir/failed-new.app"
           if [ "$first_install" != 1 ]; then /bin/mv "$backup_app" "$target_app"; fi
-          if [ "$relaunch" = 1 ]; then /usr/bin/open -g -j "$target_app"; fi
+          if [ "$relaunch" = 1 ]; then /usr/bin/env -u TZ /usr/bin/open -g -j "$target_app"; fi
           exit 1
         fi
         if [ "$first_install" != 1 ] && ! retire_old "$backup_app" "${target_app##*/}"; then
