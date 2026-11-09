@@ -34,7 +34,9 @@ DISPLAY_NAME="$(plutil -extract CFBundleName raw "$DIR/Info.plist")"
 [ -n "$DISPLAY_NAME" ] || { echo "❌ Info.plist 缺 CFBundleName"; exit 1; }
 
 # ── 1. 引擎：构建 wechattweak（universal），准备好待拷贝 ──────────────────
-ENGINE_REPO="${ENGINE_REPO:-$DIR/../vendor/WeChatTweak}"
+# Chapter's APFS copy has no sibling vendor directory. External inputs remain
+# bound by its candidate receipt; resolve them from the supplied source root.
+ENGINE_REPO="${ENGINE_REPO:-${SOP_SOURCE_REPO:-$DIR}/../vendor/WeChatTweak}"
 PREBUILT_ENGINE="${UNREVOKE_PREBUILT_ENGINE:-}"
 if [ -n "$PREBUILT_ENGINE" ]; then
   [ -x "$PREBUILT_ENGINE" ] || { echo "❌ 预构建引擎不可执行"; exit 1; }
@@ -64,7 +66,13 @@ case "$ARCHS" in
   *arm64*x86_64*|*x86_64*arm64*) : ;;
   *) echo "❌ 引擎不是 universal（实为 ${ARCHS}）—— 拒绝打包"; exit 1 ;;
 esac
-[ -f "$ENGINE_REPO/config.json" ] || { echo "❌ 引擎仓缺 config.json"; exit 1; }
+# A prebuilt signed engine can be used without its source checkout, including
+# source archives and APFS candidates whose build has no SOP_SOURCE_REPO env.
+ENGINE_CONFIG="${UNREVOKE_ENGINE_CONFIG:-$ENGINE_REPO/config.json}"
+if [ ! -f "$ENGINE_CONFIG" ] && [ -z "${UNREVOKE_ENGINE_CONFIG:-}" ] && [ -n "$PREBUILT_ENGINE" ]; then
+  ENGINE_CONFIG="$(dirname "$PREBUILT_ENGINE")/config.json"
+fi
+[ -f "$ENGINE_CONFIG" ] || { echo "❌ 缺少引擎 config.json：$ENGINE_CONFIG"; exit 1; }
 
 # ── 2. 构建 app ──────────────────────────────────────────────────────────
 # CONFIG=Release UNIVERSAL=1 → 发布用（release.sh 就是这么调的）。
@@ -89,7 +97,7 @@ if [ -f "$SIM_LANE" ]; then
   # or quiet-measurement lock around compilation. Keep its frozen app unchanged.
   SDK_JSON="$DIR/build/unrevoke-sdk-$CONFIG.json"
   SDK_APP=$("${PYTHON:-python3}" - "$SIM_LANE" "$DIR" "$CONFIG" "$SDK_JSON" <<'PY_SDK'
-import json, os, sys
+import json, os, shutil, sys, tempfile
 from pathlib import Path
 sys.path.insert(0, str(Path(sys.argv[1]).parent))
 import sim_lane
@@ -107,7 +115,21 @@ for key in list(os.environ):
 if receipt:
     built = sim_lane.reuse_build(Path(receipt), 'unrevoke-mac', root, 'mac', 'Unrevoke', config, False)
 else:
-    built = sim_lane.build(root, 'Unrevoke', 'mac', config)
+    if os.environ.get('SOP_BUILD_WORKTREE') or not (root / '.git').exists():
+        # The candidate is already a frozen source copy, not a registered app.
+        # Give the SDK the complete Xcode inputs without the live registry's
+        # project.yaml/external-engine policy (the engine is embedded later).
+        with tempfile.TemporaryDirectory(prefix='unrevoke-sdk-inputs-') as directory:
+            staged = Path(directory)
+            for name in ('Sources', 'Unrevoke.xcodeproj', 'Info.plist', 'icon', 'Localizable.xcstrings'):
+                source, target = root / name, staged / name
+                if source.is_dir():
+                    shutil.copytree(source, target)
+                else:
+                    shutil.copy2(source, target)
+            built = sim_lane.build(staged, 'Unrevoke', 'mac', config)
+    else:
+        built = sim_lane.build(root, 'Unrevoke', 'mac', config)
     output.write_text(json.dumps(built, ensure_ascii=False, indent=2) + '\n')
 print(built['app_path'])
 PY_SDK
@@ -133,7 +155,7 @@ plutil -replace CFBundleIconFile -string "AppIcon" "$APP/Contents/Info.plist"
 plutil -replace CFBundleVersion -string "$BUILD_NO" "$APP/Contents/Info.plist"
 cp "$DIR/icon/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
 cp "$ENGINE_BIN" "$APP/Contents/Resources/wechattweak"
-cp "$ENGINE_REPO/config.json" "$APP/Contents/Resources/config.json"
+cp "$ENGINE_CONFIG" "$APP/Contents/Resources/config.json"
 chmod +x "$APP/Contents/Resources/wechattweak"
 # 发布构建剥离本地符号与调试信息（崩溃符号化看 dSYM，运行不需要）：
 # 实测 1.0.8 主程序 1.33→0.63 MB、引擎 4.33→2.32 MB，安装后体积约减半。

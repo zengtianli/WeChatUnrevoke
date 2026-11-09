@@ -18,6 +18,19 @@ spec.loader.exec_module(basics)
 
 
 class ProductBasicsBindingTests(unittest.TestCase):
+    def test_clone_writes_evidence_to_original_repository(self):
+        with tempfile.TemporaryDirectory() as directory:
+            original, clone = Path(directory) / 'original', Path(directory) / 'clone'
+            out = original / 'perf/acceptance/run-test'
+            with patch.object(basics, 'ROOT', clone), patch.dict(os.environ, {
+                    'SOP_SOURCE_REPO': str(original), 'SOP_OUT_DIR': str(out)}):
+                self.assertEqual(basics.evidence_directory(), out.resolve())
+                self.assertEqual(str((out.resolve() / 'raw.json').relative_to(basics.evidence_repository())),
+                                 'perf/acceptance/run-test/raw.json')
+                with patch.dict(os.environ, {'SOP_OUT_DIR': str(original / 'outside')}):
+                    with self.assertRaisesRegex(AssertionError, 'Evidence outside'):
+                        basics.evidence_directory()
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
@@ -78,6 +91,14 @@ class ProductBasicsBindingTests(unittest.TestCase):
         self.engine.verify_build_receipt.return_value = (False, "production changed")
         with self.assertRaisesRegex(AssertionError, "production changed"):
             basics.verified_build(candidate, self.receipt)
+
+    def test_apfs_candidate_verifies_the_frozen_source_base(self):
+        clone = Path(self.temp.name).resolve() / 'clone'
+        candidate = clone / 'build/Candidate.app'
+        with patch.object(basics, 'ROOT', clone), patch.dict(os.environ, {'SOP_REPO': str(clone)}):
+            basics.verified_build(candidate, self.receipt)
+        self.engine.verify_build_receipt.assert_called_once_with(
+            {'id': 'unrevoke-mac', 'repo': clone}, candidate, receipt_path=self.receipt, code_only=True)
 
     def test_standalone_installed_run_keeps_production_verification(self):
         with patch.dict(os.environ, clear=True):

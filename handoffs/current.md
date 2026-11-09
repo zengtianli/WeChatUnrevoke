@@ -1,5 +1,15 @@
 # Chapter 源码与测试交接（2026-10-08）
 
+## 2026-11-09：候选副本构建与两项验收
+
+- 本轮仅修 `build.sh`、`scripts/accept/product_basics.py`、三项对应回归测试和本交接；目标是 privacy、product_basics 取得当前源码的真实结论。沿 Chapter 原声明核对写入，不修改共享引擎、不推送、不发版、不升版本、不安装。
+- 原候选包在 APFS 副本内沿用已装引擎，却从副本旁不存在的 vendor 目录读配置，报“引擎仓缺 config.json”。构建支持 `SOP_SOURCE_REPO`；现行候选入口未传该环境时，预构建引擎可读取同包配置，显式配置路径缺失仍失败。核对过本机引擎仓与已装包配置逐字节一致。
+- SDK 编译无 Git 元数据的副本时只投影完整 Xcode 输入，避免将副本的登记文件当成已登记组件；仍调用 `sim_lane.build`，使用其共享 BuildSlot，Chapter 继续核候选输入与产物回执。候选代码来自副本，未改成构建原工作区。
+- 构建通过后实际暴露验收脚本的副本路径错误：证据目录和相对引用应写原仓库，候选生产源码校验应使用副本根目录。已分别修正，保留真实来源、产物、签名和四项行为断言。
+- 定向测试均用 `pytest -n auto`：构建两文件 11 passed、7 subtests passed；基础验收绑定 10 passed。
+- 最终 `chapter sop accept --app unrevoke-mac --check privacy --check product_basics --json` 退出 0，两项 passed、input_stable=true。privacy：6 项运行时检查、9 项公开边界扫描，证据 `perf/acceptance/run-bylz7mlk/privacy.json`。product_basics：APFS 候选副本的设置、快捷键、iCloud、更新四项真实隔离行为全部通过，证据 `perf/acceptance/run-zkac_2qw/product_basics.json`。
+- 验收对象均为候选，未改变已装版本；无 Git 的 APFS 候选沿原规则使用构建号 1，原仓库候选为 1.0.15 (153)，两者各自有 Chapter 构建回执，不能当成已安装或已发布版本。没有剩余受阻项。
+
 ## 2026-10-18：delivery-localization 编译超时定向修复
 
 - 本轮范围仅 `scripts/accept/native_ui.py` 与本交接，预算 20 分钟；复用 Chapter `--pid 52908 --session chapter-task:526d30de49a74875822d14d5c3099bbf` claims，写前核对，不另开或释放声明；开工工作区干净，不推送、发版、装机、部署或改授权。

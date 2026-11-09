@@ -3,7 +3,7 @@ import importlib.util
 import io
 import json
 from pathlib import Path
-import re
+import os
 import subprocess
 import unittest
 from unittest.mock import patch
@@ -17,9 +17,12 @@ spec.loader.exec_module(publish)
 class PublishEngineDefaultTests(unittest.TestCase):
     def test_default_engine_matches_build_script(self):
         # publish.py once pointed two levels up and only worked with ENGINE_REPO set.
-        match = re.search(r'ENGINE_REPO="\$\{ENGINE_REPO:-\$DIR/([^}]+)\}"', (ROOT / "build.sh").read_text())
-        self.assertIsNotNone(match)
-        self.assertEqual(publish.DEFAULT_ENGINE.resolve(), (ROOT / match.group(1)).resolve())
+        assignment = next(line for line in (ROOT / "build.sh").read_text().splitlines()
+                          if line.startswith('ENGINE_REPO='))
+        env = {**os.environ, 'DIR': str(ROOT), 'ENGINE_REPO': '', 'SOP_SOURCE_REPO': ''}
+        result = subprocess.run(['/bin/bash', '-c', assignment + '\nprintf "%s" "$ENGINE_REPO"'],
+                                env=env, text=True, capture_output=True, check=True)
+        self.assertEqual(publish.DEFAULT_ENGINE.resolve(), Path(result.stdout).resolve())
 
 
 class PublishSiteShipTests(unittest.TestCase):

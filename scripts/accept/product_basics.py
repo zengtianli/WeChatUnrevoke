@@ -23,6 +23,19 @@ FEATURES = ("settings", "shortcuts", "icloud", "updates")
 INSTALLED = Path("/Applications/WeChatUnrevoke.app")
 
 
+def evidence_repository():
+    return Path(os.environ.get("SOP_SOURCE_REPO", str(ROOT))).resolve()
+
+
+def evidence_directory():
+    # Chapter runs the acceptor in an APFS copy, but keeps evidence in the
+    # original repository. Resolve both sides so symlinks cannot escape it.
+    repository = evidence_repository()
+    out = Path(os.environ["SOP_OUT_DIR"]).resolve()
+    assert out.is_relative_to(repository / "perf/acceptance"), "Evidence outside repository acceptance directory"
+    return out
+
+
 def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -52,6 +65,11 @@ def verified_build(app, receipt_path):
     sys.path.insert(0, str(Path.home() / "Apps/chapter/engine"))
     import app_sop
     registered = app_sop.load_apps("unrevoke-mac")[0]
+    if app != INSTALLED and app.is_relative_to(ROOT) and os.environ.get("SOP_REPO"):
+        # Verify against the same frozen component Chapter used to build this
+        # candidate; the registered live tree has a different source base.
+        assert Path(os.environ["SOP_REPO"]).resolve() == ROOT.resolve(), "Candidate source root mismatch"
+        registered = {**registered, "repo": ROOT}
     binding = None
     if app == INSTALLED and any(
             key in os.environ for key in ("SOP_CODE_BINDING_SHA256", "SOP_BUILD_CURRENT")):
@@ -87,8 +105,7 @@ def main():
     app, receipt_path = args.app.resolve(), args.receipt.resolve()
     spec = json.loads(os.environ["SOP_PRODUCT_BASICS_SPEC"])
     assert os.environ["SOP_APP_ID"] == spec["app_id"] == "unrevoke-mac"
-    out = Path(os.environ["SOP_OUT_DIR"]).resolve()
-    assert out.is_relative_to(ROOT / "perf/acceptance")
+    out = evidence_directory()
     run = out / ("product-basics-" + uuid.uuid4().hex)
     run.mkdir(parents=True)
     checks, cases = {}, []
@@ -257,7 +274,7 @@ def main():
         required = spec["features"][feature]["required_checks"]
         passed = error is None and all(checks.get(name) is True for name in required + names)
         features[feature] = {"result": "passed" if passed else "failed", "method": "ui_automation" if feature == "settings" else "real_product",
-                             "checks": list(dict.fromkeys(required + names)), "evidence": str(raw_path.relative_to(ROOT)), "evidence_sha256": sha(raw_path)}
+                             "checks": list(dict.fromkeys(required + names)), "evidence": str(raw_path.relative_to(evidence_repository())), "evidence_sha256": sha(raw_path)}
     detail = {"schema_version": 1, "app_id": "unrevoke-mac", "spec_digest": spec["digest"], "features": features,
               "artifact_scope": scope, "summary": "真实隔离四项基础行为验收" + ("失败：" + error if error else "完成"), "scope": raw["scope"]}
     write(out / "product_basics.detail.json", detail)
