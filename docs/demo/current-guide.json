@@ -119,6 +119,42 @@
         "ViewModel.swift": "6f31affb2739f09645d84fc03f376ce8bf6c880910bc83465b22478764e11841",
         "WriteHistory.swift": "d630bfe96cef9f8d3a0c4959387f8486ac057ba0b5c7bd817baa388091162438"
       }
+    },
+    "1.0.17": {
+      "historical_reference": true,
+      "summary": "Reuse historical three-state media only as a reference for the existing anti-recall status flow. Version 1.0.17 adds a Second WeChat section to the main window; the old unprotected, protected and antiRevokeOnly screens do not show that section or its create, update, open and remove actions. The current main window layout has changed. This is an explicit historical-media reuse declaration bound to the current source and release artifact, not a new recording, unchanged-UI claim, runtime measurement or validation against real WeChat.",
+      "not_covered": [
+        "Second WeChat section added to the main window in 1.0.17",
+        "Second WeChat copy creation, update, opening, removal and independent account/chat data",
+        "Fixed local signing identity creation, executable launch checks and signing fallback",
+        "Screen capture, microphone and camera permission reset and re-grant after upgrade",
+        "Unsupported-build patch database refresh, download progress and failure messages",
+        "Command-R patch database refresh and the 30-minute automatic retry",
+        "Expanded patch database diagnostics",
+        "Settings and update window",
+        "Shortcut configuration",
+        "iCloud transport and recovery",
+        "Update checks and installation"
+      ],
+      "build": "159",
+      "release_sha256": "458aeba22529230c80944165db4573d3c0aaae5414d91e066995289673b76f1e",
+      "source_sha256": {
+        "AppCommandMode.swift": "6f5918fa8b7c909c1c2b1e75ffe77279821a8f4c715e637b0207e5714e6a2621",
+        "AppConfiguration.swift": "1f9c895d4edce78c9c46b0e43d5aede16bcdf1fa22b3a4e9bf00717c8e4ddf52",
+        "AppLifecycle.swift": "53981005fefe9c319868f5e7e769583185cc20f5ac137f08a8edded57a728020",
+        "AppLifecycleCLI.swift": "9e927b8c2e127619495102edeb098e5262d5f66fb8727f0add8ed3493936563f",
+        "AppLifecycleUI.swift": "7af7292c8260af42f4cff41ff1bfdc70d18f6471de69107c4b8c80be4e1b476d",
+        "AppShortcuts.swift": "2cef914600da3aa89cf4413d594127757e4aaea707cf8e3edc52a08e9312143b",
+        "ContentView.swift": "f2714934fccf3f52966b6aff8879146982328a086a626c1fc9c2ac1773131077",
+        "Engine.swift": "1e7a9179f31e6c6baaed048f4788cfc6c8004792c03adaeb1cf31629fa993701",
+        "LaneSignal.swift": "e7e68ac41417ddd06e7049a7bd4e01a92d52305bc999cd6ddd323178c64a2ce8",
+        "Models.swift": "bf5a555940e4a8c69027e85abc45af6125a9d4a04db38b36b81217087676e0bf",
+        "ProductBasics.swift": "06315d0df55a22fe1b3eb32a9505fbd470d811f4a46c8cbcc9d2b3d2979300b9",
+        "ProductLifecycle.swift": "f60068691215d4d5b6c5428829e7b50311e6012dc153fb74e779ed3cf482c6fb",
+        "UnrevokeApp.swift": "06a50a6c74589d3d9e48f14df88a0d71019b15784f8be1704ae8b68cd27d4bc6",
+        "ViewModel.swift": "38139d280a6580de6cb1b84bdde95b26eb8506ba6047bf6bef93fa63068ef799",
+        "WriteHistory.swift": "d630bfe96cef9f8d3a0c4959387f8486ac057ba0b5c7bd817baa388091162438"
+      }
     }
   },
   "ui_reviews": [
