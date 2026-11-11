@@ -135,7 +135,7 @@ for i,(state,title,line1,line2) in enumerate(scenes):
     fixture={'overall':state,'build':'示例版本','app_path':str(target),'config_known':True,'config_targets':['revoke','update'],'running':False,'writable':True,'signature':'valid','sip':'enabled','entitlements_ok':True,'entitlement_key_count':15,'anti_revoke_keeptip':'pristine' if state=='unprotected' else 'patched','update_block':'notApplicable' if state=='antiRevokeOnly' else ('pristine' if state=='unprotected' else 'patched'),'update_source':'App Store' if state=='antiRevokeOnly' else 'config'}
     spec=WORK/f'{state}.json';spec.write_text(json.dumps(fixture,ensure_ascii=False))
     image=OUT/f'current-{state}.png'
-    run(APP/'Contents/MacOS/Guide',image,ROOT/'icon/AppIcon.png','-AppleLanguages','(zh-Hans)','-AppleLocale','zh_CN','-weChatPath',target,'-everProtected','NO',env={**ENV,'UNREVOKE_GUIDE_FIXTURE':str(spec),'UNREVOKE_GUIDE_TARGET':str(target)})
+    run(APP/'Contents/MacOS/Guide',image,ROOT/'icon/AppIcon.png','-AppleLanguages','(zh-Hans)','-AppleLocale','zh_CN','-weChatPath',target,'-secondWeChatPath',str(target)+'.second/WeChat2.app','-everProtected','NO',env={**ENV,'UNREVOKE_GUIDE_FIXTURE':str(spec),'UNREVOKE_GUIDE_TARGET':str(target)})
     if options.snapshots_only:
         continue
     caption=WORK/f'{state}-caption.json';caption.write_text(json.dumps({'title':title,'line1':line1,'line2':line2},ensure_ascii=False))

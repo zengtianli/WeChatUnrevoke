@@ -18,6 +18,23 @@
         }
       }
     },
+    "A copy of WeChat is placed at %@. It signs in separately and keeps its own chat history. It will ask once for Screen Recording, Microphone and Camera when it first needs them.\n\nWhether signing in to several accounts at once is acceptable under WeChat's rules is your call.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A copy of WeChat is placed at %@. It signs in separately and keeps its own chat history. It will ask once for Screen Recording, Microphone and Camera when it first needs them.\n\nWhether signing in to several accounts at once is acceptable under WeChat's rules is your call."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "会在 %@ 放一份微信副本。它单独登录，聊天记录也单独保存；首次用到截屏、麦克风、摄像头时会各请求一次授权。\n\n同时登录多个账号是否符合微信的使用规则，请自行判断。"
+          }
+        }
+      }
+    },
     "Access to WeChat files was denied; this error alone does not identify the cause. Check each item:\n1. Administrator access: root-owned files or missing user write access require administrator authorization for this operation.\n2. File permissions and locks: check the reported file and its directory for ownership, access permissions, ACLs and immutable flags (uchg/schg). Administrator authorization may not remove a lock.\n3. App Management: if file permissions are correct, allow the current WeChatUnrevoke in System Settings → Privacy & Security → App Management, then quit and reopen it. This system permission is separate from administrator authorization.\nEntitlements are shown in Details and are separate from file write permissions. Keep the original engine log when copying diagnostics.": {
       "extractionState": "manual",
       "localizations": {
@@ -426,6 +443,40 @@
         }
       }
     },
+    "Create a second WeChat?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create a second WeChat?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "要创建第二个微信吗？"
+          }
+        }
+      }
+    },
+    "Create second WeChat": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create second WeChat"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "创建第二个微信"
+          }
+        }
+      }
+    },
     "Details": {
       "extractionState": "manual",
       "localizations": {
@@ -749,6 +800,23 @@
         }
       }
     },
+    "It has to be fully quit before it can be replaced or removed. Quit it now?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It has to be fully quit before it can be replaced or removed. Quit it now?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "要先完全退出它，才能更新或移除。现在退出吗？"
+          }
+        }
+      }
+    },
     "Keep recall notice": {
       "extractionState": "manual",
       "localizations": {
@@ -847,6 +915,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "已丢失"
+          }
+        }
+      }
+    },
+    "Making the second WeChat (copying and re-signing, about half a minute)…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Making the second WeChat (copying and re-signing, about half a minute)…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在制作第二个微信（复制并重新签名，约半分钟）…"
+          }
+        }
+      }
+    },
+    "Moved to the Trash. Its chat history was kept.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moved to the Trash. Its chat history was kept."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已移到废纸篓，聊天记录已保留。"
           }
         }
       }
@@ -970,6 +1072,23 @@
         }
       }
     },
+    "Not available for this WeChat yet: a copy only lasts when its built-in updater can be blocked, and this version is not supported yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not available for this WeChat yet: a copy only lasts when its built-in updater can be blocked, and this version is not supported yet."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前微信暂时不能创建：副本要能关掉内置更新器才留得住，而这个版本还没收录。"
+          }
+        }
+      }
+    },
     "Not patched yet": {
       "extractionState": "manual",
       "localizations": {
@@ -1017,6 +1136,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "防撤回和拦截自动更新还差一项没打上，点下面的按钮补上。"
+          }
+        }
+      }
+    },
+    "Open": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开"
           }
         }
       }
@@ -1140,6 +1276,23 @@
         }
       }
     },
+    "Quit the second WeChat and continue": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quit the second WeChat and continue"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "退出第二个微信并继续"
+          }
+        }
+      }
+    },
     "Re-apply automatically after a WeChat update": {
       "extractionState": "manual",
       "localizations": {
@@ -1208,6 +1361,23 @@
         }
       }
     },
+    "Ready · version %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ready · version %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已就绪 · 版本 %@"
+          }
+        }
+      }
+    },
     "Reapply after updates": {
       "extractionState": "manual",
       "localizations": {
@@ -1238,6 +1408,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "防撤回方式"
+          }
+        }
+      }
+    },
+    "Remove the second WeChat?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove the second WeChat?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "要移除第二个微信吗？"
+          }
+        }
+      }
+    },
+    "Remove…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移除…"
           }
         }
       }
@@ -1344,6 +1548,23 @@
         }
       }
     },
+    "Second WeChat": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Second WeChat"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "第二个微信"
+          }
+        }
+      }
+    },
     "Select WeChat App…": {
       "extractionState": "manual",
       "localizations": {
@@ -1408,6 +1629,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "请选择有效的 Mac 微信 App。"
+          }
+        }
+      }
+    },
+    "Sign in to another account at the same time. The second WeChat is a copy with its own login and chat history; it takes no extra disk space and the first WeChat is not changed.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in to another account at the same time. The second WeChat is a copy with its own login and chat history; it takes no extra disk space and the first WeChat is not changed."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同时登录另一个账号。第二个微信是一份副本，有自己的登录和聊天记录；不额外占磁盘，主微信不受影响。"
           }
         }
       }
@@ -1514,6 +1752,40 @@
         }
       }
     },
+    "The copy is moved to the Trash. Its chat history stays in %@; delete that folder yourself if you no longer need it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The copy is moved to the Trash. Its chat history stays in %@; delete that folder yourself if you no longer need it."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "副本会移到废纸篓。它的聊天记录仍保留在 %@，不再需要时请自行删除该文件夹。"
+          }
+        }
+      }
+    },
+    "The copy is still version %@; WeChat is now %@. Update the copy to match.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The copy is still version %@; WeChat is now %@. Update the copy to match."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "副本还是 %1$@ 版，微信已是 %2$@。更新副本以保持一致。"
+          }
+        }
+      }
+    },
     "The diagnostic file exceeds 4 MB.": {
       "extractionState": "manual",
       "localizations": {
@@ -1612,6 +1884,57 @@
           "stringUnit": {
             "state": "translated",
             "value": "补丁库有 build %@ 的补丁点，但只有另一种处理器架构的；这台 Mac 上微信运行的是 %@ 代码，照着打不会有任何效果，所以不提供开启。该架构的补丁点收录后会随配置联网更新。"
+          }
+        }
+      }
+    },
+    "The second WeChat did not quit. Quit it yourself, then try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The second WeChat did not quit. Quit it yourself, then try again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "第二个微信没有退出。请手动退出后再试。"
+          }
+        }
+      }
+    },
+    "The second WeChat is ready.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The second WeChat is ready."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "第二个微信已就绪。"
+          }
+        }
+      }
+    },
+    "The second WeChat is running": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The second WeChat is running"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "第二个微信正在运行"
           }
         }
       }
@@ -1799,6 +2122,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "更新拦截"
+          }
+        }
+      }
+    },
+    "Update the copy": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update the copy"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新副本"
           }
         }
       }
@@ -2162,16 +2502,16 @@
     },
     "包内缺少引擎 wechattweak，请重新安装 WeChatUnrevoke": {
       "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "包内缺少引擎 wechattweak，请重新安装 WeChatUnrevoke"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "The bundled wechattweak engine is missing. Reinstall WeChatUnrevoke."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "包内缺少引擎 wechattweak，请重新安装 WeChatUnrevoke"
           }
         }
       }

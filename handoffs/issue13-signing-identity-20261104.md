@@ -22,3 +22,8 @@
 1. 本人同意后推送 WeChatTweak master（公开仓）。
 2. appship 会话发 WeChatUnrevoke 新版（内嵌新引擎）。
 3. #13 回复草稿经本人过目后发；#12 关闭指向 #13。Docket T20261104-1 / -4。
+
+## 2026-11-11 更新
+- 引擎 `ddc756c` 已推送 WeChatTweak；WeChatUnrevoke 1.0.16 (155) 已发（Release + cask + 站点，appship `handoffs/unrevoke-1.0.16-20261111.md`）。
+- #13 已回复两条（`tccutil reset` 临时办法、1.0.16 通知），留开等 Meowouuo 确认；#10、#11、#12 已回复并关闭。
+- Docket：T20261104-2/-3/-4 完成；T20261104-1 改为等对方，截止 2026-11-25。上面「待办」三条均已完成，SIP 开启机器仍未实测。

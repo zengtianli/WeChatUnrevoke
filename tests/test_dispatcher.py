@@ -64,6 +64,21 @@ class GuiParityTests(unittest.TestCase):
                          tokens(cli_patch, {"app": "APP", "variant": "VARIANT"}))
         self.assertEqual(tokens(gui_restore, {"app": "APP"}), tokens(cli_restore, {"app": "APP"}))
 
+    def test_second_wechat_matches_gui(self):
+        # 第二个微信：包名、位置偏好键与缺省位置、交给引擎的 clone 参数，界面与命令行必须一致。
+        engine = gui("Engine.swift")
+        self.assertEqual(one(r'static let secondBundleID = "([\w.]+)"', engine, "Engine.secondBundleID").group(1),
+                         one(r'let secondBundleID = "([\w.]+)"', SOURCE, "cli secondBundleID").group(1))
+        gui_path = one(r'string\(forKey: "(\w+)"\) \?\? NSHomeDirectory\(\) \+ "([^"]+)"', engine, "secondWeChatPath").groups()
+        cli_path = one(r'savedPrefs\(\)\["(\w+)"\] as\? String \?\? home \+ "([^"]+)"', SOURCE, "cli secondPath").groups()
+        self.assertEqual(gui_path, cli_path)
+        gui_clone = one(r'runWrite\(\[("clone"[^\]]*)\] \+ configArgs\(\)', engine, "Engine.makeSecond").group(1)
+        cli_clone = one(r'let command = \[("clone"[^\]]*)\] \+ configArgs\(\[\]\)', SOURCE, "cli second make").group(1)
+        names = {"app": "MAIN", "mainPath": "MAIN", "Engine.secondWeChatPath": "TO", "path": "TO",
+                 "Engine.secondBundleID": "ID", "secondBundleID": "ID"}
+        self.assertEqual([names.get(t.strip(), t.strip()) for t in gui_clone.split(",")],
+                         [names.get(t.strip(), t.strip()) for t in cli_clone.split(",")])
+
     def test_defaults_keys_and_fallbacks_match_gui(self):
         model, engine = gui("ViewModel.swift"), gui("Engine.swift")
         keys_block = one(r"private enum Keys \{(.*?)\n    \}", model, "AppModel.Keys").group(1)
@@ -179,6 +194,17 @@ if cmd in ("patch", "restore"):
         state["overall"] = state.get("after_" + cmd, "protected" if cmd == "patch" else "unprotected")
         json.dump(state, open(path, "w"))
     sys.exit(code)
+if cmd == "clone":
+    import plistlib
+    code = state.get("clone_exit", 0)
+    print(state.get("clone_output", "Second WeChat ready"))
+    if code == 0:
+        dest = opt("--to")
+        build = plistlib.load(open(os.path.join(app, "Contents/Info.plist"), "rb"))["CFBundleVersion"]
+        os.makedirs(os.path.join(dest, "Contents"), exist_ok=True)
+        plistlib.dump({{"CFBundleIdentifier": opt("--bundle-id"), "CFBundleVersion": build}},
+                      open(os.path.join(dest, "Contents/Info.plist"), "wb"))
+    sys.exit(code)
 if cmd == "versions":
     print("------ Current version ------")
     sys.exit(0)
@@ -276,6 +302,9 @@ class DispatcherBehaviourTests(unittest.TestCase):
         self.gui_name = f"UnrvkNo{os.getpid() % 10000}{n}"[:15]
         self.set_state(overall="unprotected")
         self.defaults("write", "weChatPath", str(self.wechat))
+        # Never the real ~/Applications/WeChat2.app: every case gets its own, initially absent, copy location.
+        self.second = self.work / "Second/WeChat2.app"
+        self.defaults("write", "secondWeChatPath", str(self.second))
         self.addCleanup(self.drop_domain)
 
     # helpers -----------------------------------------------------------------
@@ -334,14 +363,15 @@ class DispatcherBehaviourTests(unittest.TestCase):
         for args in ([], ["--help"], ["patch", "--help"], ["restore", "--help"], ["settings", "--help"],
                      ["settings", "set", "--help"], ["config", "--help"], ["config", "refresh", "--help"],
                      ["versions", "--help"], ["version", "--help"],
-                     ["doctor", "--help"], ["versions", "-h"], ["settings", "--json", "--help"]):
+                     ["doctor", "--help"], ["versions", "-h"], ["settings", "--json", "--help"],
+                     ["second", "--help"], ["second", "make", "--help"]):
             result = self.cli_run(*args)
             self.assertEqual(result.returncode, 0, (args, result.stderr))
             self.assertTrue(result.stdout.endswith("\n") and len(result.stdout) > 40, args)
         self.assertIn("用法", self.cli_run("version", "--help").stdout)  # help, not the version line
         self.assertIn("is_main_wechat", self.cli_run("doctor", "--help").stdout)  # our help, not the engine's
         top = self.cli_run("--help").stdout
-        for word in ("doctor", "versions", "settings", "config", "patch", "restore"):
+        for word in ("doctor", "versions", "settings", "config", "patch", "restore", "second"):
             self.assertIn(f"unrevoke {word}", top)
         self.assertEqual(self.engine_calls(), [])
 
@@ -358,7 +388,8 @@ class DispatcherBehaviourTests(unittest.TestCase):
         self.assertEqual(sorted(int(c) for c in codes), sorted(int(n) for n in re.findall(r"(?m)^  (\d+) ", table)))
 
         shapes = self.help_block(top, "--json 输出：", "\n退出码：")
-        labels = ["doctor", "versions", "settings", "settings set", "config", "config refresh", "patch / restore", "version"]
+        labels = ["doctor", "versions", "settings", "settings set", "config", "config refresh", "patch / restore",
+                  "second", "version"]
         starts = {label: one(rf"(?m)^  {re.escape(label)} +(?=[{{引])", shapes, label).start() for label in labels}
 
         def documented(label):
@@ -377,6 +408,9 @@ class DispatcherBehaviourTests(unittest.TestCase):
         self.assertLessEqual(keys("config"), documented("config"))
         self.assertLessEqual(keys("patch", "--dry-run"), documented("patch / restore"))
         self.assertLessEqual(keys("restore", "--dry-run"), documented("patch / restore"))
+        self.assertEqual(keys("second"), documented("second") - {"second", "dry_run", "result", "message", "exit_code",
+                                                                 "command", "engine_exit_code", "engine_output"})
+        self.assertLessEqual(keys("second", "make", "--dry-run"), documented("second"))
         self.set_state(overall="protected")
         self.assertLessEqual(keys("restore", "--dry-run"), documented("patch / restore"))
         self.assertEqual(self.writes(), [])
@@ -711,6 +745,45 @@ class DispatcherBehaviourTests(unittest.TestCase):
         self.set_state(overall="unprotected", after_patch="partial")
         code, payload = self.cli_json("patch")
         self.assertEqual((code, payload["reason"]), (1, "not_protected_after_write"))
+
+    def test_second_wechat_status_make_update_remove(self):
+        code, payload = self.cli_json("second")
+        self.assertEqual((code, payload["exists"], payload["path"], payload["bundle_id"]),
+                         (0, False, str(self.second), "com.tencent.xinWeChat2"))
+        clone = ["clone", "-a", str(self.wechat), "--to", str(self.second), "--bundle-id", "com.tencent.xinWeChat2",
+                 "-c", str(self.bundled_config)]
+        code, payload = self.cli_json("second", "make", "--dry-run")
+        self.assertEqual((code, payload["result"], payload["command"][1:]), (0, "would_create", clone))
+        self.assertFalse(self.second.exists())
+        code, payload = self.cli_json("second", "make")
+        self.assertEqual((code, payload["result"], payload["exists"], payload["outdated"]), (0, "created", True, False))
+        self.assertEqual([c for c in self.engine_calls() if c[0] == "clone"], [clone])
+        # WeChat was updated: the copy is reported as outdated and `make` rebuilds it.
+        fake_app(self.second, "com.tencent.xinWeChat2", build="100")
+        self.assertTrue(self.cli_json("second", "status")[1]["outdated"])
+        code, payload = self.cli_json("second", "make")
+        self.assertEqual((code, payload["result"], payload["build"], payload["outdated"]), (0, "updated", "269627", False))
+        # remove needs --yes; the copy goes to the Trash, not away for good.
+        self.assertEqual(self.cli_run("second", "remove", "--json").returncode, 2)
+        self.assertTrue(self.second.exists())
+        code, payload = self.cli_json("second", "remove", "--yes")
+        self.assertEqual((code, payload["result"], payload["exists"]), (0, "removed", False))
+        self.assertFalse(self.second.exists())
+        self.assertEqual(self.cli_json("second", "remove", "--yes")[1]["result"], "absent")
+
+    def test_second_wechat_refusals_leave_things_alone(self):
+        # The engine refuses (unsupported build, foreign bundle in the way): failure is reported, nothing is created.
+        self.set_state(overall="unsupportedBuild", clone_exit=1, clone_output="Cannot make a copy that would last")
+        code, payload = self.cli_json("second", "make")
+        self.assertEqual((code, payload["result"], payload["exists"]), (1, "failed", False))
+        self.assertIn("would last", payload["message"])
+        # Something else at that path is not "our copy": status says absent and remove does not touch it.
+        fake_app(self.second, "com.example.other")
+        self.assertFalse(self.cli_json("second")[1]["exists"])
+        self.assertEqual(self.cli_json("second", "remove", "--yes")[1]["result"], "absent")
+        self.assertTrue(self.second.exists())
+        self.assertEqual(self.cli_json("second", "open")[0], 65)
+        self.assertEqual(self.cli_run("second", "bogus", "--json").returncode, 2)
 
     def test_restore_needs_yes_and_flips_the_gui_flag(self):
         self.set_state(overall="protected")

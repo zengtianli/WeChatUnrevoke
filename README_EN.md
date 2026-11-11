@@ -28,6 +28,7 @@ WeChatUnrevoke reads your WeChat build and lets you manage patches through a nat
 | Understand protection | Separate anti-recall, update-blocking and entitlement details. |
 | Recover after updates | Automatic reapplication only when WeChat is closed, no password is needed, and full protection previously succeeded. |
 | Builds whose updater cannot be blocked | Anti-recall and the update block run independently: anti-recall is still applied, and the reason the update block is missing is shown. |
+| Sign in to a second account | From v1.0.17: Second WeChat makes a copy (`~/Applications/WeChat2.app`) with its own login and chat history and no extra disk use; after a WeChat update, click Update the copy. |
 | Restore or troubleshoot | Restore patch bytes or copy diagnostics with retained engine output and write errors. |
 
 **No activation codes, no need to disable SIP, no kernel extension or persistent root helper.** Native SwiftUI with an embedded Swift CLI; no Python runtime. Patch configuration can update online; engine and interface changes still require app updates.
@@ -79,6 +80,7 @@ For problems, copy diagnostics into an [issue](https://github.com/zengtianli/WeC
 - Compatibility work targets the latest stable release from WeChat's official website. Supported builds come from the [patch configuration](https://github.com/zengtianli/WeChatTweak/blob/master/config.json). If an older build is missing, update to the official stable build listed in the [support table](https://github.com/zengtianli/WeChatTweak#支持的版本); the App Store may distribute a different build. Reapply the patch after updating WeChat. Quit and reopen WeChatUnrevoke while online to refresh its patch configuration. Unsupported builds are reported explicitly.
 - Group chats preserve messages without recall notices. Private-chat notices may not appear immediately next to the original message.
 - Anti-recall-only mode leaves automatic updates enabled. Updates can remove patches.
+- The second WeChat is a copy without the App Sandbox. A copy only lasts when its built-in updater can be blocked, so a direct-download WeChat has to be a supported version. The copy asks once for Screen Recording, Microphone and Camera on first use. Removing it moves only the app to the Trash; chat history stays in `~/Library/Containers/com.tencent.xinWeChat2`. Verified side by side with the first WeChat on 4.1.15.22 (direct download, Apple Silicon, SIP disabled); SIP-enabled Macs still need feedback. Whether signing in to several accounts is acceptable under WeChat's rules is your call.
 - This is an unofficial tool, unaffiliated with Tencent. It modifies your local WeChat client; understand and accept the associated risks. It does not read or upload chat content. Configuration updates connect to GitHub; help links open the project website.
 
 ## Open source, feedback and sharing

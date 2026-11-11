@@ -973,6 +973,7 @@ unrevoke — WeChatUnrevoke 命令行。界面给人用，命令行给 Agent 用
   unrevoke restore --yes [-a <app>] [--sudo] [--dry-run] [--json]                     还原微信
   unrevoke settings set variant <keeptip|silent> | auto-repatch <on|off> [--json]
   unrevoke config refresh [--dry-run] [--json]    联网更新补丁库（与界面启动时同一规则）
+  unrevoke second [status|make|open|remove --yes] [--dry-run] [--json]   第二个微信（多开副本）：查看、创建/更新、打开、移除
 其他：
   unrevoke version [--json] | --version | --help
 
@@ -981,7 +982,7 @@ unrevoke — WeChatUnrevoke 命令行。界面给人用，命令行给 Agent 用
 no_config、invalid_config）；patch、restore 在 "result"（refused / failed）与 "reason"；config refresh 在 "result"。
   doctor          引擎的体检对象 {overall, build, app_path, config_known, config_targets, running, writable, sip,
                   signature, entitlements_ok, entitlement_key_count, anti_revoke_keeptip, anti_revoke_silent,
-                  update_block, update_source, verdict[, sparkle, next_command]} 加 {bundle_id, is_main_wechat}；
+                  update_block, update_source, verdict[, sparkle, next_command, is_copy]} 加 {bundle_id, is_main_wechat}；
                   overall 是唯一判决
   versions        {app_path, bundle_id, current_build, known, supported_builds, supported_count, config: {source, path}}
   settings        {domain, variant, variant_saved, auto_repatch, auto_repatch_saved, ever_protected, last_build,
@@ -994,6 +995,8 @@ no_config、invalid_config）；patch、restore 在 "result"（refused / failed�
   patch / restore {action, dry_run, result, reason, message, exit_code, app_path, gui_target, bundle_id, before, after,
                   needs_admin, via, command, engine_exit_code, engine_output[, variant, variant_source,
                   quit_wechat, quit_requested, before_write, reopened]}
+  second          {action, path, bundle_id, data_path, exists, build, version, running, main_path, main_build, outdated
+                  [, dry_run, result, message, exit_code, command, engine_exit_code, engine_output]}
   version         {version, build}
 
 退出码：
@@ -1088,6 +1091,121 @@ func logsCommand(_ args: [String]) -> Never {
     }
 }
 
+// MARK: - second（界面的「第二个微信」一栏）
+
+/// 与 GUI Engine.secondBundleID / secondWeChatPath 同值（tests/test_dispatcher.py 钉住）。
+let secondBundleID = "com.tencent.xinWeChat2"
+func secondPath() -> String {
+    canonical(savedPrefs()["secondWeChatPath"] as? String ?? home + "/Applications/WeChat2.app")
+}
+
+let secondHelp = """
+unrevoke second — 第二个微信（多开副本；= 界面的「第二个微信」一栏）
+
+用法：unrevoke second [status] [--json]
+      unrevoke second make [--dry-run] [--json]
+      unrevoke second open [--json]
+      unrevoke second remove --yes [--json]
+
+  status   只读：副本在不在、版本、是否在运行、是否落后于主微信（缺省动作）
+  make     创建，或按主微信当前版本重做（= 「创建第二个微信」「更新副本」）。只读主微信（可以开着），
+           不需要管理员；整包克隆后关掉副本的内置更新器、换成自己的包名并重签，约半分钟。
+           --dry-run 只给出将要执行的引擎命令
+  open     在后台打开副本
+  remove   把副本移到废纸篓（需 --yes）；聊天记录在 ~/Library/Containers/com.tencent.xinWeChat2，不动
+
+副本固定在 ~/Applications/WeChat2.app（偏好 secondWeChatPath 可改）、包名 com.tencent.xinWeChat2，有自己的登录和
+聊天记录。副本正在运行时 make、remove 以 75 拒绝，不会替你退出它。主微信的版本尚未收录（关不掉副本的更新器）
+时引擎拒绝并以 1 退出，不留半成品；那个位置上放着别的东西时同样拒绝。
+"""
+
+func secondState() -> [String: Any] {
+    let path = secondPath()
+    let info = NSDictionary(contentsOfFile: path + "/Contents/Info.plist")
+    let ours = (info?["CFBundleIdentifier"] as? String) == secondBundleID
+    let mainPath = canonical(guiTarget())
+    let mainBuild = NSDictionary(contentsOfFile: mainPath + "/Contents/Info.plist")?["CFBundleVersion"] as? String
+    let build = ours ? info?["CFBundleVersion"] as? String : nil
+    let running = ours && run("/usr/bin/pgrep", ["-f", path + "/Contents/MacOS/"]).code == 0
+    return [
+        "path": path, "bundle_id": secondBundleID, "data_path": home + "/Library/Containers/" + secondBundleID,
+        "exists": ours, "build": build ?? NSNull(),
+        "version": (ours ? (info?["WeChatBundleVersion"] as? String ?? info?["CFBundleShortVersionString"] as? String) : nil) ?? NSNull(),
+        "running": running, "main_path": mainPath, "main_build": mainBuild ?? NSNull(),
+        "outdated": ours && build != nil && mainBuild != nil && build != mainBuild,
+    ]
+}
+
+func secondCommand(_ args: [String]) -> Never {
+    let sub = subcommand(args)
+    let action = sub?.word ?? "status"
+    let parsed = parse(sub?.rest ?? args, flags: ["--json", "--dry-run", "--yes"], help: secondHelp)
+    let json = parsed.json
+    var state = secondState()
+    state["action"] = action
+    func finish(_ ok: Bool, _ code: Int32, _ result: String, _ message: String, _ extra: [String: Any] = [:]) -> Never {
+        if json {
+            emit(state.merging(["ok": ok, "result": result, "message": message, "exit_code": Int(code)]) { $1 }
+                .merging(extra) { $1 })
+        } else if ok { print(message) } else { warn("unrevoke second \(action)：" + message) }
+        exit(code)
+    }
+    let path = state["path"] as! String
+    let exists = state["exists"] as! Bool
+    let running = state["running"] as! Bool
+    switch action {
+    case "status":
+        if json { state["ok"] = true; emit(state); exit(Code.ok) }
+        if exists {
+            print("第二个微信：\(path)")
+            print("版本 \(state["version"] as? String ?? "?")（build \(state["build"] as? String ?? "?")）" +
+                  ((state["outdated"] as! Bool) ? "，落后于主微信 build \(state["main_build"] as? String ?? "?")：unrevoke second make 更新" : "") +
+                  (running ? "，运行中" : "，未运行"))
+        } else {
+            print("还没有第二个微信：unrevoke second make 创建到 \(path)")
+        }
+        exit(Code.ok)
+    case "make":
+        requireEngine(json: json)
+        let mainPath = state["main_path"] as! String
+        guard fm.fileExists(atPath: mainPath) else { finish(false, Code.noApp, "refused", "找不到主微信 \(mainPath)") }
+        let command = ["clone", "-a", mainPath, "--to", path, "--bundle-id", secondBundleID] + configArgs([])
+        if parsed.flags.contains("--dry-run") {
+            finish(true, Code.ok, exists ? "would_update" : "would_create", "将执行：wechattweak " + command.joined(separator: " "),
+                   ["dry_run": true, "command": [engine] + command])
+        }
+        guard !running else { finish(false, Code.busy, "refused", "第二个微信正在运行，先完全退出它再重做") }
+        let result = run(engine, command, timeout: 600, environment: engineEnvironment())
+        state = secondState().merging(["action": action]) { $1 }
+        let extra: [String: Any] = ["command": [engine] + command, "engine_exit_code": Int(result.code),
+                                    "engine_output": tail(result.combined, lines: 40)]
+        guard result.code == 0, !result.timedOut, state["exists"] as? Bool == true else {
+            finish(false, Code.failed, "failed", result.timedOut ? "引擎 600 秒没跑完" : tail(result.combined, lines: 12), extra)
+        }
+        finish(true, Code.ok, exists ? "updated" : "created", "第二个微信已就绪：\(path)", extra)
+    case "open":
+        guard exists else { finish(false, Code.refused, "refused", "还没有第二个微信：先 unrevoke second make") }
+        var clean = env
+        clean["TZ"] = nil   // 终端里的 TZ 会被微信继承，时间显示会错
+        let opened = run("/usr/bin/open", ["-g", path], environment: clean)
+        guard opened.code == 0 else { finish(false, Code.failed, "failed", opened.combined) }
+        finish(true, Code.ok, "opened", "已在后台打开 \(path)")
+    case "remove":
+        guard parsed.flags.contains("--yes") else { usageError("remove 需要 --yes 确认", json: json, help: secondHelp) }
+        guard exists else { finish(true, Code.ok, "absent", "没有第二个微信，无需移除") }
+        guard !running else { finish(false, Code.busy, "refused", "第二个微信正在运行，先完全退出它再移除") }
+        do {
+            try fm.trashItem(at: URL(fileURLWithPath: path), resultingItemURL: nil)
+        } catch {
+            finish(false, Code.failed, "failed", error.localizedDescription)
+        }
+        state = secondState().merging(["action": action]) { $1 }
+        finish(true, Code.ok, "removed", "已移到废纸篓；聊天记录保留在 \(state["data_path"] as! String)")
+    default:
+        usageError("未知动作 \(action)", json: json, help: secondHelp)
+    }
+}
+
 func versionCommand(_ args: [String]) -> Never {
     let parsed = parse(args, flags: ["--json"], help: versionHelp)
     let info = versionInfo()
@@ -1118,5 +1236,6 @@ case "settings": settingsCommand(rest)
 case "login": loginCommand(rest)
 case "logs": logsCommand(rest)
 case "config": configCommand(rest)
+case "second": secondCommand(rest)
 default: usageError("未知命令 \(command!)", json: arguments.contains("--json"), help: usage)
 }

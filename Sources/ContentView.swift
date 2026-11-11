@@ -56,6 +56,7 @@ struct ContentView: View {
                     }
                     if showsVariantPicker { variantPicker }
                     detailsSection
+                    secondSection
                     guardSection
                 }
                 .padding(24)
@@ -261,6 +262,37 @@ struct ContentView: View {
         ]
     }
 
+    // MARK: - 第二个微信
+
+    private var secondSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(L.second_title).font(.headline)
+            Text(L.second_note).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            if model.second.exists {
+                Text(model.secondOutdated
+                     ? L.second_outdated(model.second.version ?? model.second.build ?? "?",
+                                         model.status?.fullVersion ?? model.status?.shortVersion ?? model.status?.build ?? "?")
+                     : L.second_ready(model.second.version ?? model.second.build ?? "?"))
+                    .font(.callout)
+                    .foregroundStyle(model.secondOutdated ? Color.orange : Color.primary)
+                    .fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: 10) {
+                    if model.secondOutdated && model.canMakeSecond {
+                        Button(L.btn_secondUpdate) { Task { await model.makeSecondWeChat() } }
+                            .buttonStyle(.borderedProminent)
+                    }
+                    Button(L.btn_secondOpen) { model.openSecondWeChat() }
+                    Button(L.btn_secondRemove, role: .destructive) { Task { await model.removeSecondWeChat() } }
+                }
+            } else if model.canMakeSecond {
+                Button(L.btn_secondCreate) { Task { await model.makeSecondWeChat() } }
+            } else if model.status != nil {
+                Text(L.second_unavailable).font(.caption).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .disabled(model.isBusy)
+    }
+
     // MARK: - 守护
 
     private var guardSection: some View {
@@ -349,6 +381,7 @@ enum NativeUISelfTest {
         let fixture = URL(fileURLWithPath: root)
         let expectedPath = fixture.appendingPathComponent("WeChat.app").path
         try require(Engine.weChatPath == expectedPath, "The test target must be the disposable fixture")
+        try require(Engine.secondWeChatPath.hasPrefix(fixture.path + "/"), "The second WeChat must be a disposable location too")
         try require(!UserDefaults.standard.bool(forKey: "autoRepatch"), "Automatic writes must be disabled")
         defer { UserDefaults.standard.removePersistentDomain(forName: bundleID) }
         let model = AppModel(confirmAction: { _, _, _ in false })
@@ -401,6 +434,9 @@ enum NativeUISelfTest {
         checks["refresh_decodes_build_and_entitlements"] = model.status?.overall == .protected
             && model.status?.build == "90001" && model.status?.entitlementKeyCount == 3
             && model.status?.entitlementsOK == true && model.errorMessage == nil
+        // No copy at the disposable location: the section offers to create one (and nothing was created).
+        checks["second_wechat_offered_when_absent"] = !model.second.exists && model.canMakeSecond && !model.secondOutdated
+            && !FileManager.default.fileExists(atPath: Engine.secondWeChatPath)
         try capture("protected")
 
         try state("antiRevokeOnly")

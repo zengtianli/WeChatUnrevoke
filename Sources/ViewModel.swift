@@ -25,6 +25,8 @@ final class AppModel: ObservableObject {
     /// 最近一次拉补丁库的结果；nil = 本次运行还没拉过。
     @Published private(set) var configRefresh: ConfigRefresh?
     @Published private(set) var updatingConfig = false
+    /// 第二个微信的现状；每次体检后与写动作后重读。
+    @Published private(set) var second = SecondWeChat(path: Engine.secondWeChatPath, exists: false)
     @Published var errorMessage: String?
     @Published var toast: String?
     @Published var variant: PatchVariant {
@@ -214,6 +216,7 @@ final class AppModel: ObservableObject {
             guard generation == writeGeneration, !isBusy || duringWrite else { return }
             checkedFingerprint = fingerprint
             lastFullCheck = Date()
+            refreshSecond()
             let previous = status
             status = fresh
             errorMessage = lastWriteError
@@ -347,6 +350,96 @@ final class AppModel: ObservableObject {
             writeHistoryError = error.localizedDescription
         }
         return succeeded
+    }
+
+    // MARK: - 第二个微信
+
+    func refreshSecond() {
+        var fresh = Engine.secondWeChat()
+        fresh.running = !secondRunningApps().isEmpty
+        if fresh != second { second = fresh }
+    }
+
+    /// 主微信的判决允许做副本吗：副本要能关掉更新器才留得住，引擎做不到时会拒绝，这里提前把按钮收起来。
+    var canMakeSecond: Bool {
+        guard let status else { return false }
+        switch status.overall {
+        case .brokenBundle, .mixed: return false
+        case .unsupportedBuild: return status.installChannel == "appStore"
+        default: return true
+        }
+    }
+
+    /// 副本落后于主微信（微信升级过）。
+    var secondOutdated: Bool {
+        guard second.exists, let main = status?.build, let copy = second.build else { return false }
+        return main != copy
+    }
+
+    /// 创建，或按主微信当前版本重做。主微信只读、可以开着；副本在跑就先问再退。
+    func makeSecondWeChat() async {
+        guard !isBusy, !readOnly, canMakeSecond else { return }
+        refreshSecond()
+        if !second.exists {
+            guard confirm(title: L.flow_secondCreateConfirm, body: L.flow_secondCreateBody(second.path),
+                          ok: L.btn_secondCreate) else { return }
+        }
+        guard await quitSecondIfRunning() else { return }
+        isBusy = true
+        busyMessage = L.flow_secondMaking
+        errorMessage = nil
+        defer { isBusy = false; busyMessage = "" }
+        do {
+            lastLog = try await engine.makeSecond()
+            lastWriteError = nil
+            toast = L.flow_secondDone
+        } catch {
+            lastLog = (error as? EngineError)?.diagnosticOutput ?? error.localizedDescription
+            errorMessage = error.localizedDescription
+        }
+        refreshSecond()
+    }
+
+    func openSecondWeChat() {
+        guard second.exists else { return }
+        NSWorkspace.shared.openApplication(at: URL(fileURLWithPath: second.path), configuration: NSWorkspace.OpenConfiguration())
+    }
+
+    /// 副本进废纸篓；聊天记录在包外，不动。
+    func removeSecondWeChat() async {
+        guard !isBusy, !readOnly, second.exists else { return }
+        guard confirm(title: L.flow_secondRemoveConfirm, body: L.flow_secondRemoveBody(Engine.secondDataPath),
+                      ok: L.btn_secondRemove) else { return }
+        guard await quitSecondIfRunning() else { return }
+        do {
+            try FileManager.default.trashItem(at: URL(fileURLWithPath: second.path), resultingItemURL: nil)
+            toast = L.flow_secondRemoved
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        refreshSecond()
+    }
+
+    private func secondRunningApps() -> [NSRunningApplication] {
+        let target = URL(fileURLWithPath: Engine.secondWeChatPath).resolvingSymlinksInPath().standardizedFileURL
+        return NSRunningApplication.runningApplications(withBundleIdentifier: Engine.secondBundleID)
+            .filter { $0.bundleURL?.resolvingSymlinksInPath().standardizedFileURL == target }
+    }
+
+    private func quitSecondIfRunning() async -> Bool {
+        guard !secondRunningApps().isEmpty else { return true }
+        guard confirm(title: L.flow_secondRunning, body: L.flow_secondRunningBody, ok: L.btn_secondQuitAndGo) else { return false }
+        secondRunningApps().forEach { _ = $0.terminate() }
+        for _ in 0..<20 {
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            if secondRunningApps().isEmpty {
+                // 主进程退出后辅助进程还会活几秒，引擎按整个 Contents/MacOS/ 判断。
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
+                return true
+            }
+        }
+        errorMessage = L.err_secondStillRunning
+        return false
     }
 
     // MARK: - 微信进程

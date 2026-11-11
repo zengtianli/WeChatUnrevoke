@@ -132,6 +132,17 @@ enum PatchVariant: String, CaseIterable, Identifiable {
 // 文案由 Localizable.xcstrings 同时维护英文和简体中文，跟随系统语言。
 // =============================================================================
 
+/// 第二个微信（多开副本）的现状。只读副本的 Info.plist，不调引擎。
+struct SecondWeChat: Equatable {
+    var path: String
+    /// 目标位置上有一份包名为 `Engine.secondBundleID` 的副本。
+    var exists: Bool
+    /// 副本的 `CFBundleVersion`，与主微信的 build 比较即知是否落后。
+    var build: String?
+    var version: String?
+    var running: Bool = false
+}
+
 enum L {
 
     // 错误
@@ -207,6 +218,28 @@ enum L {
     static var flow_doneRestore: String { String(localized: "Restored to stock. WeChat's auto-updater is live again.") }
     static var flow_restoreConfirm: String { String(localized: "Restore WeChat to stock?") }
     static var flow_restoreBody: String { String(localized: "Every patch point is written back to its original bytes and the bundle is re-signed. Anti-recall stops working and WeChat's auto-updater comes back.") }
+
+    // 第二个微信
+    static var second_title: String { String(localized: "Second WeChat") }
+    static var second_note: String { String(localized: "Sign in to another account at the same time. The second WeChat is a copy with its own login and chat history; it takes no extra disk space and the first WeChat is not changed.") }
+    static func second_ready(_ version: String) -> String { String(localized: "Ready · version \(version)") }
+    static func second_outdated(_ copy: String, _ main: String) -> String { String(localized: "The copy is still version \(copy); WeChat is now \(main). Update the copy to match.") }
+    static var second_unavailable: String { String(localized: "Not available for this WeChat yet: a copy only lasts when its built-in updater can be blocked, and this version is not supported yet.") }
+    static var btn_secondCreate: String { String(localized: "Create second WeChat") }
+    static var btn_secondUpdate: String { String(localized: "Update the copy") }
+    static var btn_secondOpen: String { String(localized: "Open") }
+    static var btn_secondRemove: String { String(localized: "Remove…") }
+    static var btn_secondQuitAndGo: String { String(localized: "Quit the second WeChat and continue") }
+    static var flow_secondCreateConfirm: String { String(localized: "Create a second WeChat?") }
+    static func flow_secondCreateBody(_ path: String) -> String { String(localized: "A copy of WeChat is placed at \(path). It signs in separately and keeps its own chat history. It will ask once for Screen Recording, Microphone and Camera when it first needs them.\n\nWhether signing in to several accounts at once is acceptable under WeChat's rules is your call.") }
+    static var flow_secondRunning: String { String(localized: "The second WeChat is running") }
+    static var flow_secondRunningBody: String { String(localized: "It has to be fully quit before it can be replaced or removed. Quit it now?") }
+    static var flow_secondMaking: String { String(localized: "Making the second WeChat (copying and re-signing, about half a minute)…") }
+    static var flow_secondDone: String { String(localized: "The second WeChat is ready.") }
+    static var flow_secondRemoveConfirm: String { String(localized: "Remove the second WeChat?") }
+    static func flow_secondRemoveBody(_ data: String) -> String { String(localized: "The copy is moved to the Trash. Its chat history stays in \(data); delete that folder yourself if you no longer need it.") }
+    static var flow_secondRemoved: String { String(localized: "Moved to the Trash. Its chat history was kept.") }
+    static var err_secondStillRunning: String { String(localized: "The second WeChat did not quit. Quit it yourself, then try again.") }
 
     // 守护
     static var guard_title: String { String(localized: "Re-apply automatically after a WeChat update") }

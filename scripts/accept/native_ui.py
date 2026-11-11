@@ -92,6 +92,7 @@ cat "$UNREVOKE_UI_FIXTURE/$state.json"
             language_args = ['-AppleLanguages', f'({language})', '-AppleLocale',
                              'en_US' if language == 'en' else 'zh_CN'] if language else []
             log = run([str(executable), "--ui-self-test", "-weChatPath", str(fixture / "WeChat.app"),
+                           "-secondWeChatPath", str(fixture / "Second/WeChat2.app"),
                        "-autoRepatch", "NO", "-everProtected", "NO", *language_args], env=env, timeout=45)
             result = json.loads((destination / "result.json").read_text())
             assert result["checks"] and all(result["checks"].values()), result

@@ -120,6 +120,26 @@ actor Engine {
         UserDefaults.standard.string(forKey: "weChatPath") ?? defaultWeChatPath
     }
 
+    /// 第二个微信（多开副本）：固定一个位置、一个包名。包名同时决定它的数据目录
+    /// `~/Library/Containers/com.tencent.xinWeChat2/`，所以不能随副本重做而变。
+    /// 测试接缝同 weChatPath：`defaults write … secondWeChatPath /tmp/x/WeChat2.app`。
+    static let secondBundleID = "com.tencent.xinWeChat2"
+    static var secondWeChatPath: String {
+        UserDefaults.standard.string(forKey: "secondWeChatPath") ?? NSHomeDirectory() + "/Applications/WeChat2.app"
+    }
+    static var secondDataPath: String { "~/Library/Containers/" + secondBundleID }
+
+    /// 只读：目标位置上是不是我们的副本、哪个版本。别的东西占着这个位置时算「不存在」，
+    /// 创建时由引擎拒绝并说明，不在这里覆盖。
+    static func secondWeChat() -> SecondWeChat {
+        let path = secondWeChatPath
+        let info = NSDictionary(contentsOfFile: path + "/Contents/Info.plist")
+        let ours = (info?["CFBundleIdentifier"] as? String) == secondBundleID
+        return SecondWeChat(path: path, exists: ours,
+                            build: ours ? info?["CFBundleVersion"] as? String : nil,
+                            version: ours ? (info?["WeChatBundleVersion"] as? String ?? info?["CFBundleShortVersionString"] as? String) : nil)
+    }
+
     /// 上游 config.json 的权威地址。新微信版本发布后我往这里追加补丁点，
     /// 已装的 Unrevoke 下次启动就能认新版本 —— **不需要用户更新 app**。
     /// 这是「自动跟版」真正的实现处，不是 UI 上的一句话。
@@ -240,6 +260,12 @@ actor Engine {
 
     func restore(app: String = Engine.weChatPath, admin: Bool) async throws -> String {
         try await runWrite(["restore", "-a", app] + configArgs(), admin: admin)
+    }
+
+    /// 创建或按主微信当前版本重做第二个微信。只读主微信、只写用户自己的 ~/Applications，不需要管理员。
+    func makeSecond(app: String = Engine.weChatPath) async throws -> String {
+        try await runWrite(["clone", "-a", app, "--to", Engine.secondWeChatPath, "--bundle-id", Engine.secondBundleID] + configArgs(),
+                      admin: false)
     }
 
     private func runWrite(_ args: [String], admin: Bool) async throws -> String {
