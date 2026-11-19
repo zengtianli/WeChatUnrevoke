@@ -1,5 +1,12 @@
 # Chapter 源码与测试交接（2026-10-08）
 
+## 2026-11-18：在“别人的 Mac”上从装到用走一遍（干净环境）
+
+- 新增 `tests/clean_env.py`（共享 `clean_env.py` 原生模式的配置）。跑法：先 `INSTALL_APP=0 CONFIG=Release UNREVOKE_OUTPUT_APP="$PWD/build/clean-env/WeChatUnrevoke.app" bash build.sh`（发行同款：本仓与引擎仓当前源码现编），再 `python3 tests/clean_env.py`；记录 `build/clean-env/report.json`。不用 `build/candidate`：候选包沿用本机已装引擎（sudo 免密规则按摘要钉着它），别人拿到的包里的引擎是按源码现编的。
+- 走的内容：第一次打开的默认值（keeptip、自动重打开、目标 /Applications/WeChat.app、随包补丁库、没有写入记录、没有第二个微信）；补丁库联网更新与断网（断网几秒内给“联网失败”原因、缓存不动）；检查更新读 GitHub Releases 与断网；只读体检真实微信；在临时目录的微信副本（APFS 克隆，隐藏目录）上还原 → 默认 keeptip 开启 → 重复开启是空操作 → 还原 → 设置里改 silent → 计划与开启用上存下的方式 → 还原，每步独立 doctor 复核，最后副本签名 `codesign --verify --deep --strict` 通过。真实 `/Applications/WeChat.app` 与已装 App 用共享的 `protect` 挡写，另核真实微信关键文件前后摘要一致。2026-11-18 44 项全过，约 2.5 分钟。
+- 走查发现引擎两处问题，已在引擎仓本地提交 `0ff9649`（未推送）：读微信 build 号走 AppleScript `do shell script "defaults read …"`，没有图形登录会话（SSH、launchd、沙箱）时报 -600、连 doctor 都跑不了，改为直接读 Info.plist；非 root 时签名身份放在密码库给的家目录而不是 Foundation 的家目录，改为 `NSHomeDirectory`；读不出的签名钥匙串原来会被删掉重建，改为挪到旁边（`signing.keychain-db.unreadable-<时间>`）。这些要等下次发版（发布器按源码编引擎）才到用户手里；本机已装的引擎没换，sudo 免密摘要不受影响。
+- 偏好只写一次：挡了 cfprefsd 后 CF 直写只能新建偏好文件、改不了已有的（共享原版文件头有实测），所以走查里设置只改一次。开机自动运行、管理员授权框、通知授权和窗口本身要真人与系统，不在这里（窗口另有 Chapter native_ui 离屏验收）。
+
 ## 2026-11-09：候选副本构建与两项验收
 
 - 本轮仅修 `build.sh`、`scripts/accept/product_basics.py`、三项对应回归测试和本交接；目标是 privacy、product_basics 取得当前源码的真实结论。沿 Chapter 原声明核对写入，不修改共享引擎、不推送、不发版、不升版本、不安装。
