@@ -26,6 +26,18 @@ struct AppRelease {
         if versions != .orderedSame { return versions == .orderedDescending }
         return AppVersion.compare(self.build, build) == .orderedDescending
     }
+
+    /// A GitHub tag vX.Y.Z and an App Store lookup name only a version (build "0"). At the same version such a release is
+    /// the one installed, not older than it (MacKit 2026-11-18: GitHub v0.3.7 read back as "0.3.7 (0)", every copy of
+    /// 0.3.7 was told it was ahead of the channel).
+    var knowsBuild: Bool { !build.isEmpty && AppVersion.compare(build, "0") != .orderedSame }
+    var label: String { knowsBuild ? "\(version) (\(build))" : version }
+
+    func isOlder(than version: String, build: String) -> Bool {
+        let versions = AppVersion.compare(self.version, version)
+        if versions != .orderedSame { return versions == .orderedAscending }
+        return knowsBuild && AppVersion.compare(self.build, build) == .orderedAscending
+    }
 }
 
 enum AppVersion {
@@ -50,8 +62,10 @@ enum AppVersion {
 
 struct AppUpdateError: LocalizedError {
     let message: String
+    /// The system's own words when `message` restates a system error (kept for the command's JSON, not shown).
+    var detail: String? = nil
     var errorDescription: String? { message }
-    init(_ message: String) { self.message = message }
+    init(_ message: String, detail: String? = nil) { self.message = message; self.detail = detail }
 }
 
 struct AppUpdateOptions: Codable {
@@ -243,7 +257,7 @@ enum AppUpdateChecker {
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         session.dataTask(with: request) { data, response, error in
             defer { session.finishTasksAndInvalidate() }
-            if let error { completion(.failure(error)); return }
+            if let error { completion(.failure(networkFailure(error))); return }
             guard let response = response as? HTTPURLResponse, response.url?.scheme == "https", response.statusCode == 200 else {
                 let code = (response as? HTTPURLResponse)?.statusCode ?? 0
                 completion(.failure(AppUpdateError("未能读取发行记录（HTTP \(code)）。请稍后重试。"))); return
@@ -254,6 +268,30 @@ enum AppUpdateChecker {
             completion(.success(data))
         }.resume()
         #endif
+    }
+
+    /// A failed request in plain words. The system text sits inside 「检查未完成：…」 otherwise, often in English whatever
+    /// the app's language ("The operation couldn’t be completed. Operation not permitted" when a firewall or sandbox
+    /// blocks the connection, MacKit 2026-11-18); it stays in `detail`. Errors this does not recognise pass through.
+    static func networkFailure(_ error: Error) -> Error {
+        var chain: [NSError] = [error as NSError]
+        while chain.count < 4, let next = chain.last?.userInfo[NSUnderlyingErrorKey] as? NSError { chain.append(next) }
+        let detail = (error as NSError).localizedDescription
+        if chain.contains(where: { ["kNWErrorDomainPOSIX", NSPOSIXErrorDomain].contains($0.domain) && [Int(EPERM), Int(EACCES)].contains($0.code) }) {
+            return AppUpdateError("这台 Mac 不允许它联网（被防火墙或沙箱拦下）。", detail: detail)
+        }
+        guard let url = chain.first(where: { $0.domain == NSURLErrorDomain }) else { return error }
+        switch url.code {
+        case NSURLErrorNotConnectedToInternet, NSURLErrorNetworkConnectionLost, NSURLErrorDataNotAllowed, NSURLErrorInternationalRoamingOff:
+            return AppUpdateError("这台 Mac 没有连上网络。", detail: detail)
+        case NSURLErrorTimedOut: return AppUpdateError("更新服务器没有及时回应（连接超时）。", detail: detail)
+        case NSURLErrorCannotFindHost, NSURLErrorDNSLookupFailed: return AppUpdateError("找不到更新服务器（网络或域名解析不通）。", detail: detail)
+        case NSURLErrorCannotConnectToHost: return AppUpdateError("连不上更新服务器。", detail: detail)
+        case NSURLErrorSecureConnectionFailed, NSURLErrorServerCertificateHasBadDate, NSURLErrorServerCertificateUntrusted,
+             NSURLErrorServerCertificateHasUnknownRoot, NSURLErrorServerCertificateNotYetValid:
+            return AppUpdateError("和更新服务器建立安全连接失败。", detail: detail)
+        default: return error
+        }
     }
 
     static func manifest(_ data: Data, at feed: URL, bundleID: String, channel: String? = nil) throws -> AppRelease {
@@ -433,6 +471,12 @@ enum LifecycleText {
         "无效的发行仓库。": "Invalid release repository.",
         "未配置 App Store 发行渠道。": "No App Store release channel is configured.",
         "更新来源必须使用 HTTPS。": "The update source must use HTTPS.",
+        "这台 Mac 不允许它联网（被防火墙或沙箱拦下）。": "This Mac does not let the app go online (a firewall or sandbox blocked it).",
+        "这台 Mac 没有连上网络。": "This Mac is not connected to the internet.",
+        "更新服务器没有及时回应（连接超时）。": "The update server did not answer in time.",
+        "找不到更新服务器（网络或域名解析不通）。": "The update server could not be found (network or DNS is down).",
+        "连不上更新服务器。": "Could not connect to the update server.",
+        "和更新服务器建立安全连接失败。": "A secure connection to the update server failed.",
         "发行记录为空或过大。": "The release record is empty or too large.",
         "发行记录缺少有效版本。": "The release record has no valid version.",
         "发行包属于另一个 App。": "The release belongs to another app.",

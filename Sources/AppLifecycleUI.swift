@@ -294,11 +294,11 @@ final class AppLifecycleUI: NSObject {
                     self.notesButton.isEnabled = true
                     self.skipButton.isEnabled = release.isNewer(than:self.currentVersion,build:self.currentBuild)
                     if release.isNewer(than: self.currentVersion, build: self.currentBuild) {
-                        self.status.stringValue = LifecycleText.pick("Version \(release.version) (\(release.build)) is available; you have \(self.currentVersion) (\(self.currentBuild)). Updating keeps this Mac's settings.", "有新版 \(release.version) (\(release.build))，当前 \(self.currentVersion) (\(self.currentBuild))。升级会保留本机配置。")
+                        self.status.stringValue = LifecycleText.pick("Version \(release.label) is available; you have \(self.currentVersion) (\(self.currentBuild)). Updating keeps this Mac's settings.", "有新版 \(release.label)，当前 \(self.currentVersion) (\(self.currentBuild))。升级会保留本机配置。")
                         self.installButton.isHidden = release.downloadURL == nil
                         self.installButton.title = AppUpgradeInstaller.supportsReplacement(release: release, currentBundle: Bundle.main.bundleURL) ? LifecycleText.pick("Update to New Version…", "升级到新版…") : LifecycleText.pick("Download New Version…", "下载新版…")
-                    } else if AppVersion.compare(self.currentVersion, release.version) == .orderedDescending || (AppVersion.compare(self.currentVersion,release.version) == .orderedSame && AppVersion.compare(self.currentBuild,release.build) == .orderedDescending) {
-                        self.status.stringValue = LifecycleText.pick("You have \(self.currentVersion) (\(self.currentBuild)); this channel's release is \(release.version) (\(release.build)).", "当前 \(self.currentVersion) (\(self.currentBuild))；此渠道正式发行版本为 \(release.version) (\(release.build))。")
+                    } else if release.isOlder(than: self.currentVersion, build: self.currentBuild) {
+                        self.status.stringValue = LifecycleText.pick("You have \(self.currentVersion) (\(self.currentBuild)); this channel's release is \(release.label).", "当前 \(self.currentVersion) (\(self.currentBuild))；此渠道正式发行版本为 \(release.label)。")
                     } else { self.status.stringValue = LifecycleText.pick("You have the latest version on this channel: \(self.currentVersion) (\(self.currentBuild)).", "当前已是此渠道最新版：\(self.currentVersion) (\(self.currentBuild))。") }
                     if !present,release.isNewer(than:self.currentVersion,build:self.currentBuild) {
                         let options = AppUpdatePreferences.options(self.bundleID)

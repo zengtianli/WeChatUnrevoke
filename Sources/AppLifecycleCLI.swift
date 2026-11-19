@@ -367,14 +367,16 @@ enum AppLifecycleCLI {
         case .none:
             throw Failure(exit: 1, code: "check_incomplete", message: "检查未完成：\(Int(product.timeout)) 秒内没有读到发行记录", extra: ["current": current, "source": source])
         case .failure(let error)?:
-            throw Failure(exit: 1, code: "check_incomplete", message: "检查未完成：" + error.localizedDescription, extra: ["current": current, "source": source])
+            var extra: [String: Any] = ["current": current, "source": source]
+            if let detail = (error as? AppUpdateError)?.detail { extra["detail"] = detail }
+            throw Failure(exit: 1, code: "check_incomplete", message: "检查未完成：" + error.localizedDescription, extra: extra)
         case .success(let value)?: release = value
         }
         let state: String, message: String
         if release.isNewer(than: version, build: build) {
-            state = "update_available"; message = "有新版 \(release.version) (\(release.build))，当前 \(version) (\(build))。升级会保留本机配置。"
-        } else if AppVersion.compare(version, release.version) == .orderedDescending || (AppVersion.compare(version,release.version) == .orderedSame && AppVersion.compare(build,release.build) == .orderedDescending) {
-            state = "ahead_of_channel"; message = "当前 \(version) (\(build))；此渠道正式发行版本为 \(release.version) (\(release.build))。"
+            state = "update_available"; message = "有新版 \(release.label)，当前 \(version) (\(build))。升级会保留本机配置。"
+        } else if release.isOlder(than: version, build: build) {
+            state = "ahead_of_channel"; message = "当前 \(version) (\(build))；此渠道正式发行版本为 \(release.label)。"
         } else { state = "up_to_date"; message = "当前已是此渠道最新版：\(version) (\(build))。" }
         return Checked(version: version, build: build, current: current, source: source, release: release, state: state, message: message)
     }
